@@ -1,0 +1,5 @@
+EXERCISE 7🡪 https://csis.pace.edu/~marchese/CS389/L9/Use%20Case%20Diagrams.pdf
+
+Description:
+
+A user placing an order with a sales company  follows these steps: 1. Browse catalog and select items. 2. Call a sales representative. 3. Supply shipping information. 4. Supply payment information. 5. Receive confirmation number from salesperson.

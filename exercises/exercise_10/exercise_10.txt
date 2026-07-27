@@ -1,0 +1,5 @@
+EXERCISE 10🡪 https://ceur-ws.org/Vol-2503/paper2_2.pdf
+
+Description:
+
+Software has to be developed that supports a company in organizing business trips. The story could be characterized as follows: As an employee, I want to get the permission of a business trip, so that train tickets and hotel are booked. The corresponding use case can be called organizing a trip. The primary actor is Employee, and there are two secondary actors called Manager and Agent. A manager has to give the permission of a business trip, and an agent supports the booking of hotel and train tickets. The main success scenario could be: ask for permission, wait for an answer, ask for booking, wait for documents, travel.

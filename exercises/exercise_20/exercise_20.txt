@@ -1,0 +1,5 @@
+EXERCISE 20 https://boardmix.com/examples/use-case-diagram-example/
+
+Description:
+
+In the following use case diagram example, we are depicting an online railway reservation system. In this case, there are three main actors, the traveler, the railway website, and the clerk. The railway website has the “check ticket availability”, “pay fare amount”, “book ticket”, “fill out personal information and travel details”, “cancel ticket”, and “refund money” use cases. The “book ticket” has an included relationship with the “pay fare amount” use case. The “fill out personal information and travel details” has an included relationship with the “book ticket” and “cancel ticket” use cases. Finally, the “cancel ticket” use case has the inclusion of a “refund ticket”. The traveler interacts with the “check ticket availability”, “pay fare amount”, “book ticket”, “fill out personal information and travel details”, and “cancel ticket” use cases. The clerk has only the “cancel ticket” use case.

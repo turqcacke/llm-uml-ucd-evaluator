@@ -1,0 +1,9 @@
+EXERCISE 21 https://boardmix.com/examples/use-case-diagram-example/
+
+Description:
+
+This example shows you a use case diagram for a travel agency system. In this diagram, we have the customer, the airline company, the travel agent, and the touring company as actors.
+
+The customer has the use cases “book airline tickets” and “pay travel agent”. The “book airline tickets” has the use case extensions of “book a tour”, while the “pay travel agent” has an included relationship with “pay for airline tickets” and “travel agent commission” use cases.
+
+The travel agent has the use cases “book airline tickets”, "deliver airline ticket” and “pay a travel agent”. As you see the extend and include relationship for the “book airline tickets” and “pay travel agent” use cases are the same. The “deliver airline ticket” also has an extended relationship with the “arrange tour” use case.

@@ -1,0 +1,5 @@
+EXERCISE 9🡪 https://www.lucidchart.com/pages/UML-use-case-scenario-examples
+
+Description:
+
+For the process of publishing a story, a writer must draft a story and also revise it afterwards. In the meanwhile, the proofreader should review the story, which then is going to be seen by the editor, who should also suggest further edits. Then, the agent contacts publishing houses to sell the short story. The distributor then can package the story. Finally, the bookseller is able to deliver the story to final consumers.

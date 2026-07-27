@@ -1,0 +1,266 @@
+{
+  "id": "eb99907b-f213-49f6-9979-99493da632b4",
+  "title": "Exercise 8",
+  "model": {
+    "version": "3.0.0",
+    "type": "UseCaseDiagram",
+    "size": { "width": 660, "height": 620 },
+    "interactive": { "elements": {}, "relationships": {} },
+    "elements": {
+      "1e6e4ef0-54cb-47c1-ab0d-7c45e46fea5e": {
+        "id": "1e6e4ef0-54cb-47c1-ab0d-7c45e46fea5e",
+        "name": "Grocery Cart System",
+        "type": "UseCaseSystem",
+        "owner": null,
+        "bounds": { "x": -210, "y": -280, "width": 510, "height": 570 }
+      },
+      "689f8fec-8c2e-4f10-acd8-8a9beb19db83": {
+        "id": "689f8fec-8c2e-4f10-acd8-8a9beb19db83",
+        "name": "Modify cart",
+        "type": "UseCase",
+        "owner": "1e6e4ef0-54cb-47c1-ab0d-7c45e46fea5e",
+        "bounds": { "x": -180, "y": -200, "width": 170, "height": 70 }
+      },
+      "5c30be46-d1b6-45eb-9ba7-bf138badcea4": {
+        "id": "5c30be46-d1b6-45eb-9ba7-bf138badcea4",
+        "name": "View cart",
+        "type": "UseCase",
+        "owner": "1e6e4ef0-54cb-47c1-ab0d-7c45e46fea5e",
+        "bounds": { "x": -180, "y": -90, "width": 170, "height": 70 }
+      },
+      "8a8076e0-748e-4e4a-b571-2be3ea5f7442": {
+        "id": "8a8076e0-748e-4e4a-b571-2be3ea5f7442",
+        "name": "Add items",
+        "type": "UseCase",
+        "owner": "1e6e4ef0-54cb-47c1-ab0d-7c45e46fea5e",
+        "bounds": { "x": 50, "y": -240, "width": 160, "height": 70 }
+      },
+      "f96ff041-1d82-4002-a95c-bb8b27779a5b": {
+        "id": "f96ff041-1d82-4002-a95c-bb8b27779a5b",
+        "name": "Remove items",
+        "type": "UseCase",
+        "owner": "1e6e4ef0-54cb-47c1-ab0d-7c45e46fea5e",
+        "bounds": { "x": 50, "y": -140, "width": 160, "height": 70 }
+      },
+      "5c56f3bb-6177-4563-af97-51dee8e277cd": {
+        "id": "5c56f3bb-6177-4563-af97-51dee8e277cd",
+        "name": "Realize checkout",
+        "type": "UseCase",
+        "owner": "1e6e4ef0-54cb-47c1-ab0d-7c45e46fea5e",
+        "bounds": { "x": 20, "y": 0, "width": 190, "height": 80 }
+      },
+      "89d3181b-ca26-4185-852a-d7dcff4d991b": {
+        "id": "89d3181b-ca26-4185-852a-d7dcff4d991b",
+        "name": "Calculate total price",
+        "type": "UseCase",
+        "owner": "1e6e4ef0-54cb-47c1-ab0d-7c45e46fea5e",
+        "bounds": { "x": -200, "y": 180, "width": 170, "height": 70 }
+      },
+      "f45ea612-f7a9-4828-9748-d57a7f9ef809": {
+        "id": "f45ea612-f7a9-4828-9748-d57a7f9ef809",
+        "name": "Process payment",
+        "type": "UseCase",
+        "owner": "1e6e4ef0-54cb-47c1-ab0d-7c45e46fea5e",
+        "bounds": { "x": -30, "y": 160, "width": 150, "height": 70 }
+      },
+      "c247f179-5f84-4e9e-b432-aa476c039afe": {
+        "id": "c247f179-5f84-4e9e-b432-aa476c039afe",
+        "name": "Send confirmation",
+        "type": "UseCase",
+        "owner": "1e6e4ef0-54cb-47c1-ab0d-7c45e46fea5e",
+        "bounds": { "x": 120, "y": 180, "width": 160, "height": 70 }
+      },
+      "9602b365-54be-41ce-832b-c62d166c9ec1": {
+        "id": "9602b365-54be-41ce-832b-c62d166c9ec1",
+        "name": "Customer",
+        "type": "UseCaseActor",
+        "owner": null,
+        "bounds": { "x": -310, "y": -110, "width": 70, "height": 120 }
+      }
+    },
+    "relationships": {
+      "6720b729-0845-4e5f-a793-5dd4ea10ceeb": {
+        "id": "6720b729-0845-4e5f-a793-5dd4ea10ceeb",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -10, "y": -205, "width": 60, "height": 40 },
+        "path": [
+          { "x": 0, "y": 40 },
+          { "x": 60, "y": 0 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "689f8fec-8c2e-4f10-acd8-8a9beb19db83"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "8a8076e0-748e-4e4a-b571-2be3ea5f7442"
+        },
+        "isManuallyLayouted": false
+      },
+      "459a40d1-a62c-48c6-8205-e28fc4361083": {
+        "id": "459a40d1-a62c-48c6-8205-e28fc4361083",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -10, "y": -165, "width": 60, "height": 60 },
+        "path": [
+          { "x": 0, "y": 0 },
+          { "x": 60, "y": 60 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "689f8fec-8c2e-4f10-acd8-8a9beb19db83"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "f96ff041-1d82-4002-a95c-bb8b27779a5b"
+        },
+        "isManuallyLayouted": false
+      },
+      "6e4a62aa-6ab9-4138-b7b5-09771444c5d5": {
+        "id": "6e4a62aa-6ab9-4138-b7b5-09771444c5d5",
+        "name": "",
+        "type": "UseCaseExtend",
+        "owner": null,
+        "bounds": { "x": -10, "y": -55, "width": 125, "height": 55 },
+        "path": [
+          { "x": 0, "y": 0 },
+          { "x": 125, "y": 55 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "5c30be46-d1b6-45eb-9ba7-bf138badcea4"
+        },
+        "target": {
+          "direction": "Up",
+          "element": "5c56f3bb-6177-4563-af97-51dee8e277cd"
+        },
+        "isManuallyLayouted": false
+      },
+      "c1433410-d07f-4c18-a0ea-abdd64707aa7": {
+        "id": "c1433410-d07f-4c18-a0ea-abdd64707aa7",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -240, "y": -55, "width": 60, "height": 5 },
+        "path": [
+          { "x": 0, "y": 5 },
+          { "x": 60, "y": 0 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "9602b365-54be-41ce-832b-c62d166c9ec1"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "5c30be46-d1b6-45eb-9ba7-bf138badcea4"
+        },
+        "isManuallyLayouted": false
+      },
+      "f1d6c85e-dd12-4773-af86-95021046adea": {
+        "id": "f1d6c85e-dd12-4773-af86-95021046adea",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -240, "y": -50, "width": 260, "height": 90 },
+        "path": [
+          { "x": 0, "y": 0 },
+          { "x": 260, "y": 90 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "9602b365-54be-41ce-832b-c62d166c9ec1"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "5c56f3bb-6177-4563-af97-51dee8e277cd"
+        },
+        "isManuallyLayouted": false
+      },
+      "2806e777-99ea-457f-9fb7-2957f6747485": {
+        "id": "2806e777-99ea-457f-9fb7-2957f6747485",
+        "name": "",
+        "type": "UseCaseInclude",
+        "owner": null,
+        "bounds": { "x": -115, "y": 80, "width": 230, "height": 100 },
+        "path": [
+          { "x": 230, "y": 0 },
+          { "x": 0, "y": 100 }
+        ],
+        "source": {
+          "direction": "Down",
+          "element": "5c56f3bb-6177-4563-af97-51dee8e277cd"
+        },
+        "target": {
+          "direction": "Up",
+          "element": "89d3181b-ca26-4185-852a-d7dcff4d991b"
+        },
+        "isManuallyLayouted": false
+      },
+      "6264e449-edab-4683-a95e-81eb5162c740": {
+        "id": "6264e449-edab-4683-a95e-81eb5162c740",
+        "name": "",
+        "type": "UseCaseInclude",
+        "owner": null,
+        "bounds": { "x": 45, "y": 80, "width": 70, "height": 80 },
+        "path": [
+          { "x": 70, "y": 0 },
+          { "x": 0, "y": 80 }
+        ],
+        "source": {
+          "direction": "Down",
+          "element": "5c56f3bb-6177-4563-af97-51dee8e277cd"
+        },
+        "target": {
+          "direction": "Up",
+          "element": "f45ea612-f7a9-4828-9748-d57a7f9ef809"
+        },
+        "isManuallyLayouted": false
+      },
+      "aa70a973-ab56-44ce-82eb-9257fcf8cc9d": {
+        "id": "aa70a973-ab56-44ce-82eb-9257fcf8cc9d",
+        "name": "",
+        "type": "UseCaseInclude",
+        "owner": null,
+        "bounds": { "x": 115, "y": 80, "width": 85, "height": 100 },
+        "path": [
+          { "x": 0, "y": 0 },
+          { "x": 85, "y": 100 }
+        ],
+        "source": {
+          "direction": "Down",
+          "element": "5c56f3bb-6177-4563-af97-51dee8e277cd"
+        },
+        "target": {
+          "direction": "Up",
+          "element": "c247f179-5f84-4e9e-b432-aa476c039afe"
+        },
+        "isManuallyLayouted": false
+      },
+      "d8c46bba-9bf9-4736-9597-19d98709dbbc": {
+        "id": "d8c46bba-9bf9-4736-9597-19d98709dbbc",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -240, "y": -165, "width": 60, "height": 115 },
+        "path": [
+          { "x": 0, "y": 115 },
+          { "x": 60, "y": 0 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "9602b365-54be-41ce-832b-c62d166c9ec1"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "689f8fec-8c2e-4f10-acd8-8a9beb19db83"
+        },
+        "isManuallyLayouted": false
+      }
+    },
+    "assessments": {}
+  },
+  "lastUpdate": "2025-06-12T10:05:47.367Z"
+}

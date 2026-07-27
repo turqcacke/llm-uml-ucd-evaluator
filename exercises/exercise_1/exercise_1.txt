@@ -1,0 +1,5 @@
+EXERCISE 1🡪 https://irm.com.au/use-use-cases/
+
+Description:
+
+At the start of each semester a student can request a prospectus containing a course list. Information about a course is provided, such as the tutor, department and pre-requisites. The new system will allow students to create a schedule, then select four courses. Each student chooses two others in case their first choices become full or are cancelled. No course can have more than 10 students. No course can have less than 3 students or it will be cancelled. This will be the same functionality as available to other internal users of the system. When registration is complete, the registration system sends a message to the billing system to send out a bill to the student. Tutors use the system to find which classes they are teaching and who the students are. The registrar will administer the system. For a period at the beginning of the semester the student can change their schedule. Students must be allowed to access the system during this time to add or delete courses.

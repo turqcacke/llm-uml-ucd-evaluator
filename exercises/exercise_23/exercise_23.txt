@@ -1,0 +1,9 @@
+ESERCIZIO 23 https://boardmix.com/examples/use-case-diagram-example/
+
+Description:
+
+The following example has multiple actors, such as the website user, the system authentication, the identity provider, as well as the payment services (for example a credit card service).
+
+As it’s depicted, the website user can be a new user or a returning user. The user interacts with the use cases “view items”, “make a purchase”, and “client register”. Checkout is an included use case for this actor.
+
+The system authentication interacts with the use cases “view items”, “client register”, and “checkout”. The identity provider has the use cases “view items” and “checkout”, while the payment services only interact with the use case “checkout”.

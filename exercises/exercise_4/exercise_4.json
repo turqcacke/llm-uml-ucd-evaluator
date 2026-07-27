@@ -1,0 +1,327 @@
+{
+  "id": "1e8cdbd5-69ba-4096-9871-a3da2cdce100",
+  "title": "Exercise 4",
+  "model": {
+    "version": "3.0.0",
+    "type": "UseCaseDiagram",
+    "size": { "width": 760, "height": 760 },
+    "interactive": { "elements": {}, "relationships": {} },
+    "elements": {
+      "0bff348f-7769-4f7f-adfb-723b50108eab": {
+        "id": "0bff348f-7769-4f7f-adfb-723b50108eab",
+        "name": "ATM System",
+        "type": "UseCaseSystem",
+        "owner": null,
+        "bounds": { "x": -190, "y": -360, "width": 440, "height": 710 }
+      },
+      "80c0718b-2579-4286-9549-1471e174d16e": {
+        "id": "80c0718b-2579-4286-9549-1471e174d16e",
+        "name": "Withdraw money",
+        "type": "UseCase",
+        "owner": "0bff348f-7769-4f7f-adfb-723b50108eab",
+        "bounds": { "x": -50, "y": -310, "width": 150, "height": 70 }
+      },
+      "afe0c712-f74d-4bf5-b59f-d475a33ffd14": {
+        "id": "afe0c712-f74d-4bf5-b59f-d475a33ffd14",
+        "name": "Consult balance",
+        "type": "UseCase",
+        "owner": "0bff348f-7769-4f7f-adfb-723b50108eab",
+        "bounds": { "x": -50, "y": -200, "width": 140, "height": 60 }
+      },
+      "c6f773e4-3d89-4a32-8726-add2fd715e50": {
+        "id": "c6f773e4-3d89-4a32-8726-add2fd715e50",
+        "name": "Deposit cash",
+        "type": "UseCase",
+        "owner": "0bff348f-7769-4f7f-adfb-723b50108eab",
+        "bounds": { "x": -50, "y": -110, "width": 140, "height": 60 }
+      },
+      "f38e8a84-40fb-458e-9d21-7c179c2875f3": {
+        "id": "f38e8a84-40fb-458e-9d21-7c179c2875f3",
+        "name": "Deposit cheques",
+        "type": "UseCase",
+        "owner": "0bff348f-7769-4f7f-adfb-723b50108eab",
+        "bounds": { "x": -60, "y": -20, "width": 150, "height": 60 }
+      },
+      "d5e82720-f1a5-4455-882d-b60336616cec": {
+        "id": "d5e82720-f1a5-4455-882d-b60336616cec",
+        "name": "Refill dispenser",
+        "type": "UseCase",
+        "owner": "0bff348f-7769-4f7f-adfb-723b50108eab",
+        "bounds": { "x": -50, "y": 90, "width": 140, "height": 60 }
+      },
+      "ae8c5e11-a5bf-41c6-ba64-3e72016b8933": {
+        "id": "ae8c5e11-a5bf-41c6-ba64-3e72016b8933",
+        "name": "Retrieve swallowed cards",
+        "type": "UseCase",
+        "owner": "0bff348f-7769-4f7f-adfb-723b50108eab",
+        "bounds": { "x": -80, "y": 170, "width": 210, "height": 60 }
+      },
+      "17296f9c-e839-40c8-aa77-433db16c1703": {
+        "id": "17296f9c-e839-40c8-aa77-433db16c1703",
+        "name": "Retrieve cheques",
+        "type": "UseCase",
+        "owner": "0bff348f-7769-4f7f-adfb-723b50108eab",
+        "bounds": { "x": -70, "y": 250, "width": 200, "height": 60 }
+      },
+      "89ac5501-b431-4f85-9b73-87100ae86193": {
+        "id": "89ac5501-b431-4f85-9b73-87100ae86193",
+        "name": "Visa card holder",
+        "type": "UseCaseActor",
+        "owner": null,
+        "bounds": { "x": -310, "y": -300, "width": 80, "height": 140 }
+      },
+      "fbb18592-64f8-4232-9e0c-c685aae356e4": {
+        "id": "fbb18592-64f8-4232-9e0c-c685aae356e4",
+        "name": "Bank customer",
+        "type": "UseCaseActor",
+        "owner": null,
+        "bounds": { "x": -310, "y": -100, "width": 80, "height": 140 }
+      },
+      "3e01279f-fb1c-4b27-a079-6a2ccb59aaeb": {
+        "id": "3e01279f-fb1c-4b27-a079-6a2ccb59aaeb",
+        "name": "Maintainance operator",
+        "type": "UseCaseActor",
+        "owner": null,
+        "bounds": { "x": -320, "y": 110, "width": 80, "height": 140 }
+      },
+      "a0c155f4-5f10-4a66-bc5d-8223072b5088": {
+        "id": "a0c155f4-5f10-4a66-bc5d-8223072b5088",
+        "name": "Visa IS",
+        "type": "UseCaseActor",
+        "owner": null,
+        "bounds": { "x": 280, "y": -280, "width": 80, "height": 140 }
+      },
+      "180129cf-7d17-4af4-a9b8-790a46389f93": {
+        "id": "180129cf-7d17-4af4-a9b8-790a46389f93",
+        "name": "Bank IS",
+        "type": "UseCaseActor",
+        "owner": null,
+        "bounds": { "x": 280, "y": -40, "width": 80, "height": 140 }
+      }
+    },
+    "relationships": {
+      "04ce1367-8ffa-4565-b3bb-dc342a4d89e3": {
+        "id": "04ce1367-8ffa-4565-b3bb-dc342a4d89e3",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -230, "y": -170, "width": 180, "height": 140 },
+        "path": [
+          { "x": 0, "y": 140 },
+          { "x": 180, "y": 0 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "fbb18592-64f8-4232-9e0c-c685aae356e4"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "afe0c712-f74d-4bf5-b59f-d475a33ffd14"
+        },
+        "isManuallyLayouted": false
+      },
+      "f9551820-0c15-47dd-866d-7a93ec1f37e9": {
+        "id": "f9551820-0c15-47dd-866d-7a93ec1f37e9",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -230, "y": -80, "width": 180, "height": 50 },
+        "path": [
+          { "x": 0, "y": 50 },
+          { "x": 180, "y": 0 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "fbb18592-64f8-4232-9e0c-c685aae356e4"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "c6f773e4-3d89-4a32-8726-add2fd715e50"
+        },
+        "isManuallyLayouted": false
+      },
+      "9e481bbb-59a9-4782-9f6a-4685f7903ab9": {
+        "id": "9e481bbb-59a9-4782-9f6a-4685f7903ab9",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -230, "y": -30, "width": 170, "height": 40 },
+        "path": [
+          { "x": 0, "y": 0 },
+          { "x": 170, "y": 40 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "fbb18592-64f8-4232-9e0c-c685aae356e4"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "f38e8a84-40fb-458e-9d21-7c179c2875f3"
+        },
+        "isManuallyLayouted": false
+      },
+      "db6c4415-3d1b-4357-a6b9-5ac0ba341c44": {
+        "id": "db6c4415-3d1b-4357-a6b9-5ac0ba341c44",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": 90, "y": -170, "width": 190, "height": 200 },
+        "path": [
+          { "x": 190, "y": 200 },
+          { "x": 0, "y": 0 }
+        ],
+        "source": {
+          "direction": "Left",
+          "element": "180129cf-7d17-4af4-a9b8-790a46389f93"
+        },
+        "target": {
+          "direction": "Right",
+          "element": "afe0c712-f74d-4bf5-b59f-d475a33ffd14"
+        },
+        "isManuallyLayouted": false
+      },
+      "69135508-7441-4b1a-b1a7-685e5e352047": {
+        "id": "69135508-7441-4b1a-b1a7-685e5e352047",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": 90, "y": -80, "width": 190, "height": 110 },
+        "path": [
+          { "x": 190, "y": 110 },
+          { "x": 0, "y": 0 }
+        ],
+        "source": {
+          "direction": "Left",
+          "element": "180129cf-7d17-4af4-a9b8-790a46389f93"
+        },
+        "target": {
+          "direction": "Right",
+          "element": "c6f773e4-3d89-4a32-8726-add2fd715e50"
+        },
+        "isManuallyLayouted": false
+      },
+      "7594553b-0b1f-4d6e-95fc-fee76cec93bb": {
+        "id": "7594553b-0b1f-4d6e-95fc-fee76cec93bb",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": 90, "y": 10, "width": 190, "height": 20 },
+        "path": [
+          { "x": 190, "y": 20 },
+          { "x": 0, "y": 0 }
+        ],
+        "source": {
+          "direction": "Left",
+          "element": "180129cf-7d17-4af4-a9b8-790a46389f93"
+        },
+        "target": {
+          "direction": "Right",
+          "element": "f38e8a84-40fb-458e-9d21-7c179c2875f3"
+        },
+        "isManuallyLayouted": false
+      },
+      "e9da0c88-e9a1-47a8-9303-92c35c4df1ed": {
+        "id": "e9da0c88-e9a1-47a8-9303-92c35c4df1ed",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": 100, "y": -275, "width": 180, "height": 65 },
+        "path": [
+          { "x": 180, "y": 65 },
+          { "x": 0, "y": 0 }
+        ],
+        "source": {
+          "direction": "Left",
+          "element": "a0c155f4-5f10-4a66-bc5d-8223072b5088"
+        },
+        "target": {
+          "direction": "Right",
+          "element": "80c0718b-2579-4286-9549-1471e174d16e"
+        },
+        "isManuallyLayouted": false
+      },
+      "3f5cd56b-f8f7-4579-b09a-45e63369282c": {
+        "id": "3f5cd56b-f8f7-4579-b09a-45e63369282c",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -230, "y": -275, "width": 180, "height": 45 },
+        "path": [
+          { "x": 0, "y": 45 },
+          { "x": 180, "y": 0 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "89ac5501-b431-4f85-9b73-87100ae86193"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "80c0718b-2579-4286-9549-1471e174d16e"
+        },
+        "isManuallyLayouted": false
+      },
+      "6c5ff065-29d9-4d06-8527-96311d6956ec": {
+        "id": "6c5ff065-29d9-4d06-8527-96311d6956ec",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -240, "y": 120, "width": 190, "height": 60 },
+        "path": [
+          { "x": 0, "y": 60 },
+          { "x": 190, "y": 0 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "3e01279f-fb1c-4b27-a079-6a2ccb59aaeb"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "d5e82720-f1a5-4455-882d-b60336616cec"
+        },
+        "isManuallyLayouted": false
+      },
+      "e238b1c8-94d0-40cf-af4c-cc3952a17ff3": {
+        "id": "e238b1c8-94d0-40cf-af4c-cc3952a17ff3",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -240, "y": 180, "width": 160, "height": 20 },
+        "path": [
+          { "x": 0, "y": 0 },
+          { "x": 160, "y": 20 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "3e01279f-fb1c-4b27-a079-6a2ccb59aaeb"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "ae8c5e11-a5bf-41c6-ba64-3e72016b8933"
+        },
+        "isManuallyLayouted": false
+      },
+      "81943a27-547e-4444-aa67-aa27c8805285": {
+        "id": "81943a27-547e-4444-aa67-aa27c8805285",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -240, "y": 180, "width": 170, "height": 100 },
+        "path": [
+          { "x": 0, "y": 0 },
+          { "x": 170, "y": 100 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "3e01279f-fb1c-4b27-a079-6a2ccb59aaeb"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "17296f9c-e839-40c8-aa77-433db16c1703"
+        },
+        "isManuallyLayouted": false
+      }
+    },
+    "assessments": {}
+  },
+  "lastUpdate": "2025-06-11T21:13:05.788Z"
+}

@@ -1,0 +1,374 @@
+{
+  "id": "50cef7e8-55a9-4634-b432-b7cb51fc61b6",
+  "title": "Esercizio 22",
+  "model": {
+    "version": "3.0.0",
+    "type": "UseCaseDiagram",
+    "size": { "width": 780, "height": 780 },
+    "interactive": { "elements": {}, "relationships": {} },
+    "elements": {
+      "ba1ee4f9-fc6d-4101-95c7-cf858738fa95": {
+        "id": "ba1ee4f9-fc6d-4101-95c7-cf858738fa95",
+        "name": "Restaurant System",
+        "type": "UseCaseSystem",
+        "owner": null,
+        "bounds": { "x": -250, "y": -370, "width": 480, "height": 710 }
+      },
+      "151c04cd-0711-4987-89b4-280ce3a5f9bc": {
+        "id": "151c04cd-0711-4987-89b4-280ce3a5f9bc",
+        "name": "pay for food",
+        "type": "UseCase",
+        "owner": "ba1ee4f9-fc6d-4101-95c7-cf858738fa95",
+        "bounds": { "x": -200, "y": 210, "width": 110, "height": 60 }
+      },
+      "b23b41aa-1944-4292-ad15-f9596fc595c4": {
+        "id": "b23b41aa-1944-4292-ad15-f9596fc595c4",
+        "name": "pay for wine",
+        "type": "UseCase",
+        "owner": "ba1ee4f9-fc6d-4101-95c7-cf858738fa95",
+        "bounds": { "x": 70, "y": 210, "width": 120, "height": 60 }
+      },
+      "0f22070f-51e1-4894-b7f3-dbeceed70970": {
+        "id": "0f22070f-51e1-4894-b7f3-dbeceed70970",
+        "name": "eat food",
+        "type": "UseCase",
+        "owner": "ba1ee4f9-fc6d-4101-95c7-cf858738fa95",
+        "bounds": { "x": -210, "y": 90, "width": 110, "height": 60 }
+      },
+      "c6985731-3de4-4be2-85e4-c22ff67de066": {
+        "id": "c6985731-3de4-4be2-85e4-c22ff67de066",
+        "name": "drink wine",
+        "type": "UseCase",
+        "owner": "ba1ee4f9-fc6d-4101-95c7-cf858738fa95",
+        "bounds": { "x": 70, "y": 90, "width": 110, "height": 60 }
+      },
+      "1f39add3-6b29-4d29-944b-d2a4e53045f1": {
+        "id": "1f39add3-6b29-4d29-944b-d2a4e53045f1",
+        "name": "serve wine",
+        "type": "UseCase",
+        "owner": "ba1ee4f9-fc6d-4101-95c7-cf858738fa95",
+        "bounds": { "x": -70, "y": -40, "width": 110, "height": 70 }
+      },
+      "11a014cf-684e-4e84-8503-30251a66445e": {
+        "id": "11a014cf-684e-4e84-8503-30251a66445e",
+        "name": "serve food",
+        "type": "UseCase",
+        "owner": "ba1ee4f9-fc6d-4101-95c7-cf858738fa95",
+        "bounds": { "x": -210, "y": -140, "width": 110, "height": 70 }
+      },
+      "7703b4ec-93de-43f8-afbb-9b6e7925430d": {
+        "id": "7703b4ec-93de-43f8-afbb-9b6e7925430d",
+        "name": "cook food",
+        "type": "UseCase",
+        "owner": "ba1ee4f9-fc6d-4101-95c7-cf858738fa95",
+        "bounds": { "x": 50, "y": -110, "width": 110, "height": 70 }
+      },
+      "6751cd5b-4086-4892-b121-c13637b1ed42": {
+        "id": "6751cd5b-4086-4892-b121-c13637b1ed42",
+        "name": "order food",
+        "type": "UseCase",
+        "owner": "ba1ee4f9-fc6d-4101-95c7-cf858738fa95",
+        "bounds": { "x": -210, "y": -300, "width": 110, "height": 70 }
+      },
+      "1f05d762-11f1-426a-a508-029bfc1ba6c6": {
+        "id": "1f05d762-11f1-426a-a508-029bfc1ba6c6",
+        "name": "order wine",
+        "type": "UseCase",
+        "owner": "ba1ee4f9-fc6d-4101-95c7-cf858738fa95",
+        "bounds": { "x": 60, "y": -310, "width": 110, "height": 70 }
+      },
+      "55868542-8ffe-4f91-97d5-cf25a9544a6a": {
+        "id": "55868542-8ffe-4f91-97d5-cf25a9544a6a",
+        "name": "waiter",
+        "type": "UseCaseActor",
+        "owner": null,
+        "bounds": { "x": -370, "y": -280, "width": 80, "height": 140 }
+      },
+      "3372db86-4b7d-478d-96b5-503ddcc2c50f": {
+        "id": "3372db86-4b7d-478d-96b5-503ddcc2c50f",
+        "name": "client",
+        "type": "UseCaseActor",
+        "owner": null,
+        "bounds": { "x": -370, "y": -10, "width": 80, "height": 140 }
+      },
+      "76e679bf-755e-4878-94e2-d3a2283881ff": {
+        "id": "76e679bf-755e-4878-94e2-d3a2283881ff",
+        "name": "chef",
+        "type": "UseCaseActor",
+        "owner": null,
+        "bounds": { "x": 290, "y": -100, "width": 80, "height": 140 }
+      },
+      "b70e3378-5dd3-45f9-935b-be967069b04a": {
+        "id": "b70e3378-5dd3-45f9-935b-be967069b04a",
+        "name": "cashier",
+        "type": "UseCaseActor",
+        "owner": null,
+        "bounds": { "x": -370, "y": 180, "width": 80, "height": 140 }
+      }
+    },
+    "relationships": {
+      "08849a36-1c86-4c92-bd5c-f445eb8eed56": {
+        "id": "08849a36-1c86-4c92-bd5c-f445eb8eed56",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": 160, "y": -75, "width": 130, "height": 45 },
+        "path": [
+          { "x": 130, "y": 45 },
+          { "x": 0, "y": 0 }
+        ],
+        "source": {
+          "direction": "Left",
+          "element": "76e679bf-755e-4878-94e2-d3a2283881ff"
+        },
+        "target": {
+          "direction": "Right",
+          "element": "7703b4ec-93de-43f8-afbb-9b6e7925430d"
+        },
+        "isManuallyLayouted": false
+      },
+      "0eb1da4a-2f70-4baa-945c-24b7a9f47433": {
+        "id": "0eb1da4a-2f70-4baa-945c-24b7a9f47433",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -100, "y": -265, "width": 390, "height": 235 },
+        "path": [
+          { "x": 390, "y": 235 },
+          { "x": 0, "y": 0 }
+        ],
+        "source": {
+          "direction": "Left",
+          "element": "76e679bf-755e-4878-94e2-d3a2283881ff"
+        },
+        "target": {
+          "direction": "Right",
+          "element": "6751cd5b-4086-4892-b121-c13637b1ed42"
+        },
+        "isManuallyLayouted": false
+      },
+      "4b6c4946-e36f-438b-9a05-d5420083d8c7": {
+        "id": "4b6c4946-e36f-438b-9a05-d5420083d8c7",
+        "name": "",
+        "type": "UseCaseExtend",
+        "owner": null,
+        "bounds": { "x": -100, "y": -275, "width": 160, "height": 10 },
+        "path": [
+          { "x": 160, "y": 0 },
+          { "x": 0, "y": 10 }
+        ],
+        "source": {
+          "direction": "Left",
+          "element": "1f05d762-11f1-426a-a508-029bfc1ba6c6"
+        },
+        "target": {
+          "direction": "Right",
+          "element": "6751cd5b-4086-4892-b121-c13637b1ed42"
+        },
+        "isManuallyLayouted": false
+      },
+      "d1e6c18f-d3c2-4070-bf14-ed659fdde997": {
+        "id": "d1e6c18f-d3c2-4070-bf14-ed659fdde997",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -290, "y": -265, "width": 80, "height": 55 },
+        "path": [
+          { "x": 0, "y": 55 },
+          { "x": 80, "y": 0 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "55868542-8ffe-4f91-97d5-cf25a9544a6a"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "6751cd5b-4086-4892-b121-c13637b1ed42"
+        },
+        "isManuallyLayouted": false
+      },
+      "cc583a44-fadc-4f66-89dc-53d9f4fd944e": {
+        "id": "cc583a44-fadc-4f66-89dc-53d9f4fd944e",
+        "name": "",
+        "type": "UseCaseExtend",
+        "owner": null,
+        "bounds": { "x": -155, "y": -70, "width": 85, "height": 65 },
+        "path": [
+          { "x": 85, "y": 65 },
+          { "x": 0, "y": 0 }
+        ],
+        "source": {
+          "direction": "Left",
+          "element": "1f39add3-6b29-4d29-944b-d2a4e53045f1"
+        },
+        "target": {
+          "direction": "Down",
+          "element": "11a014cf-684e-4e84-8503-30251a66445e"
+        },
+        "isManuallyLayouted": false
+      },
+      "4989949d-26fb-453a-af87-6be27c4b825c": {
+        "id": "4989949d-26fb-453a-af87-6be27c4b825c",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -290, "y": -210, "width": 80, "height": 105 },
+        "path": [
+          { "x": 0, "y": 0 },
+          { "x": 80, "y": 105 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "55868542-8ffe-4f91-97d5-cf25a9544a6a"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "11a014cf-684e-4e84-8503-30251a66445e"
+        },
+        "isManuallyLayouted": false
+      },
+      "dffbec11-d080-4963-bff0-3af070c5c7dc": {
+        "id": "dffbec11-d080-4963-bff0-3af070c5c7dc",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -290, "y": -265, "width": 80, "height": 325 },
+        "path": [
+          { "x": 0, "y": 325 },
+          { "x": 80, "y": 0 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "3372db86-4b7d-478d-96b5-503ddcc2c50f"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "6751cd5b-4086-4892-b121-c13637b1ed42"
+        },
+        "isManuallyLayouted": false
+      },
+      "6831baaa-48ec-4133-8bd0-e283c98565cd": {
+        "id": "6831baaa-48ec-4133-8bd0-e283c98565cd",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -290, "y": 60, "width": 80, "height": 60 },
+        "path": [
+          { "x": 0, "y": 0 },
+          { "x": 80, "y": 60 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "3372db86-4b7d-478d-96b5-503ddcc2c50f"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "0f22070f-51e1-4894-b7f3-dbeceed70970"
+        },
+        "isManuallyLayouted": false
+      },
+      "a7022b61-d043-47c5-af59-7425688fac54": {
+        "id": "a7022b61-d043-47c5-af59-7425688fac54",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -290, "y": -210, "width": 90, "height": 450 },
+        "path": [
+          { "x": 0, "y": 0 },
+          { "x": 90, "y": 450 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "55868542-8ffe-4f91-97d5-cf25a9544a6a"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "151c04cd-0711-4987-89b4-280ce3a5f9bc"
+        },
+        "isManuallyLayouted": false
+      },
+      "bd3616b9-9051-4882-8dc7-8d9b78165a56": {
+        "id": "bd3616b9-9051-4882-8dc7-8d9b78165a56",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -290, "y": 240, "width": 90, "height": 10 },
+        "path": [
+          { "x": 0, "y": 10 },
+          { "x": 90, "y": 0 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "b70e3378-5dd3-45f9-935b-be967069b04a"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "151c04cd-0711-4987-89b4-280ce3a5f9bc"
+        },
+        "isManuallyLayouted": false
+      },
+      "8337c2d2-c5b1-4a91-97f9-a4b5f28378fc": {
+        "id": "8337c2d2-c5b1-4a91-97f9-a4b5f28378fc",
+        "name": "",
+        "type": "UseCaseExtend",
+        "owner": null,
+        "bounds": { "x": -90, "y": 240, "width": 160, "height": 1 },
+        "path": [
+          { "x": 160, "y": 0 },
+          { "x": 0, "y": 0 }
+        ],
+        "source": {
+          "direction": "Left",
+          "element": "b23b41aa-1944-4292-ad15-f9596fc595c4"
+        },
+        "target": {
+          "direction": "Right",
+          "element": "151c04cd-0711-4987-89b4-280ce3a5f9bc"
+        },
+        "isManuallyLayouted": false
+      },
+      "432a74ab-72bd-4431-a099-8d9d8f901698": {
+        "id": "432a74ab-72bd-4431-a099-8d9d8f901698",
+        "name": "",
+        "type": "UseCaseExtend",
+        "owner": null,
+        "bounds": { "x": -100, "y": 120, "width": 170, "height": 1 },
+        "path": [
+          { "x": 170, "y": 0 },
+          { "x": 0, "y": 0 }
+        ],
+        "source": {
+          "direction": "Left",
+          "element": "c6985731-3de4-4be2-85e4-c22ff67de066"
+        },
+        "target": {
+          "direction": "Right",
+          "element": "0f22070f-51e1-4894-b7f3-dbeceed70970"
+        },
+        "isManuallyLayouted": false
+      },
+      "3de23a29-7ba1-473a-a6dc-26961aa4fe5a": {
+        "id": "3de23a29-7ba1-473a-a6dc-26961aa4fe5a",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -290, "y": 60, "width": 90, "height": 180 },
+        "path": [
+          { "x": 0, "y": 0 },
+          { "x": 90, "y": 180 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "3372db86-4b7d-478d-96b5-503ddcc2c50f"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "151c04cd-0711-4987-89b4-280ce3a5f9bc"
+        },
+        "isManuallyLayouted": false
+      }
+    },
+    "assessments": {}
+  },
+  "lastUpdate": "2025-06-11T10:18:30.808Z"
+}

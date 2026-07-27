@@ -1,0 +1,5 @@
+EXERCISE 18 https://www.cs.unibo.it/~nuzzoles/courses/sw-applications/slides/12_UML_Use_Case_and_Activity_diagrams.pdf
+
+Exercise 18 Description:
+
+A user can request a quiz for the system. The system picks a set of questions from its database, and compose them together to make a quiz. It rates the user’s answers, and gives hints if the user requests it. In addition to users, we also have tutors who provide questions and hints. And also examinators who must certify questions to make sure they are not too trivial, and that they are sensical. Make a use case diagram to model this system. Work out some of your use cases.

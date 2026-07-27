@@ -1,0 +1,11 @@
+EXERCISE 22 https://boardmix.com/examples/use-case-diagram-example/
+
+Description:
+
+This example is about a restaurant system. As we can see in the diagram, a restaurant has four actors, which are the waiter, the client, the chef, and the cashier.
+
+The client’s main use cases are “order food”, “eat food”, and “pay for food”. As extended use cases, they can also “order wine”, “drink wine”, and “pay for wine”.
+
+The waiter’s use cases are to “order food”, “serve food”, and “pay for food” since they are the ones that facilitate the payment. If the client also orders wine, they also have the extended use cases of “order wine”, “serve wine”, and “pay for wine”.
+
+The chef interacts with the use cases “order food” and “prepare food”. Finally, the cashier only accepts the payment, so their main use case is “pay for food”. In some cases, they also have the extended use case of “pay for wine”.

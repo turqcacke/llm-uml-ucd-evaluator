@@ -1,0 +1,273 @@
+{
+  "id": "00ae9028-531a-4e78-9558-4580324b17e8",
+  "title": "Exercise 6",
+  "model": {
+    "version": "3.0.0",
+    "type": "UseCaseDiagram",
+    "size": { "width": 1060, "height": 680 },
+    "interactive": { "elements": {}, "relationships": {} },
+    "elements": {
+      "b1f91e0f-6072-4b8f-8e84-cd4866890709": {
+        "id": "b1f91e0f-6072-4b8f-8e84-cd4866890709",
+        "name": "Patient Record System",
+        "type": "UseCaseSystem",
+        "owner": null,
+        "bounds": { "x": -220, "y": -240, "width": 610, "height": 560 }
+      },
+      "a88436b2-f959-49b7-8c33-eda5a0bc1018": {
+        "id": "a88436b2-f959-49b7-8c33-eda5a0bc1018",
+        "name": "Enter patient information",
+        "type": "UseCase",
+        "owner": "b1f91e0f-6072-4b8f-8e84-cd4866890709",
+        "bounds": { "x": -50, "y": -210, "width": 210, "height": 70 }
+      },
+      "bc2c07be-08d8-4eeb-bcf3-faf2033f0c58": {
+        "id": "bc2c07be-08d8-4eeb-bcf3-faf2033f0c58",
+        "name": "Schedule appointment",
+        "type": "UseCase",
+        "owner": "b1f91e0f-6072-4b8f-8e84-cd4866890709",
+        "bounds": { "x": -30, "y": -90, "width": 190, "height": 50 }
+      },
+      "190facb2-ce96-4abc-8d8d-4828b9921334": {
+        "id": "190facb2-ce96-4abc-8d8d-4828b9921334",
+        "name": "Update diagnosis results",
+        "type": "UseCase",
+        "owner": "b1f91e0f-6072-4b8f-8e84-cd4866890709",
+        "bounds": { "x": 120, "y": -20, "width": 210, "height": 50 }
+      },
+      "0bc2a4fe-1213-4751-8bc9-d6bec9427c21": {
+        "id": "0bc2a4fe-1213-4751-8bc9-d6bec9427c21",
+        "name": "Update treatment prescribed",
+        "type": "UseCase",
+        "owner": "b1f91e0f-6072-4b8f-8e84-cd4866890709",
+        "bounds": { "x": 110, "y": 100, "width": 240, "height": 50 }
+      },
+      "af571bf4-25e2-4223-bb6c-2f07199fa9da": {
+        "id": "af571bf4-25e2-4223-bb6c-2f07199fa9da",
+        "name": "Update info about regarding visits results",
+        "type": "UseCase",
+        "owner": "b1f91e0f-6072-4b8f-8e84-cd4866890709",
+        "bounds": { "x": -210, "y": 30, "width": 340, "height": 60 }
+      },
+      "b7b38a0e-74b2-47d8-bb16-7667ee34d361": {
+        "id": "b7b38a0e-74b2-47d8-bb16-7667ee34d361",
+        "name": "Print historic patient reports",
+        "type": "UseCase",
+        "owner": "b1f91e0f-6072-4b8f-8e84-cd4866890709",
+        "bounds": { "x": -170, "y": 140, "width": 240, "height": 70 }
+      },
+      "c8ead954-5afd-4d30-ba9e-26842c535655": {
+        "id": "c8ead954-5afd-4d30-ba9e-26842c535655",
+        "name": "See patients hisotry",
+        "type": "UseCase",
+        "owner": "b1f91e0f-6072-4b8f-8e84-cd4866890709",
+        "bounds": { "x": 150, "y": 200, "width": 170, "height": 60 }
+      },
+      "a4a32517-6da9-41c1-bb49-3eb6d4fb21ac": {
+        "id": "a4a32517-6da9-41c1-bb49-3eb6d4fb21ac",
+        "name": "Receptionist",
+        "type": "UseCaseActor",
+        "owner": null,
+        "bounds": { "x": -320, "y": -200, "width": 80, "height": 140 }
+      },
+      "ce6f010a-cb6c-4158-9508-57d310b1e582": {
+        "id": "ce6f010a-cb6c-4158-9508-57d310b1e582",
+        "name": "Doctor",
+        "type": "UseCaseActor",
+        "owner": null,
+        "bounds": { "x": 430, "y": 10, "width": 80, "height": 140 }
+      },
+      "ef801d6e-c0b8-48dc-ac5d-de1f96bb1aa1": {
+        "id": "ef801d6e-c0b8-48dc-ac5d-de1f96bb1aa1",
+        "name": "Nurse",
+        "type": "UseCaseActor",
+        "owner": null,
+        "bounds": { "x": -320, "y": 40, "width": 80, "height": 140 }
+      }
+    },
+    "relationships": {
+      "f0a05331-3451-46ce-aed0-64809de88cf2": {
+        "id": "f0a05331-3451-46ce-aed0-64809de88cf2",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -240, "y": -175, "width": 190, "height": 45 },
+        "path": [
+          { "x": 0, "y": 45 },
+          { "x": 190, "y": 0 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "a4a32517-6da9-41c1-bb49-3eb6d4fb21ac"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "a88436b2-f959-49b7-8c33-eda5a0bc1018"
+        },
+        "isManuallyLayouted": false
+      },
+      "78348232-f496-4c23-827a-cc97e215a6e6": {
+        "id": "78348232-f496-4c23-827a-cc97e215a6e6",
+        "name": "",
+        "type": "UseCaseExtend",
+        "owner": null,
+        "bounds": { "x": 55, "y": -140, "width": 10, "height": 50 },
+        "path": [
+          { "x": 0, "y": 0 },
+          { "x": 10, "y": 50 }
+        ],
+        "source": {
+          "direction": "Down",
+          "element": "a88436b2-f959-49b7-8c33-eda5a0bc1018"
+        },
+        "target": {
+          "direction": "Up",
+          "element": "bc2c07be-08d8-4eeb-bcf3-faf2033f0c58"
+        },
+        "isManuallyLayouted": false
+      },
+      "4dbd8751-f65d-44ab-a7fe-29f12064131b": {
+        "id": "4dbd8751-f65d-44ab-a7fe-29f12064131b",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -240, "y": 60, "width": 30, "height": 50 },
+        "path": [
+          { "x": 0, "y": 50 },
+          { "x": 30, "y": 0 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "ef801d6e-c0b8-48dc-ac5d-de1f96bb1aa1"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "af571bf4-25e2-4223-bb6c-2f07199fa9da"
+        },
+        "isManuallyLayouted": false
+      },
+      "0392e307-ac33-456e-9e4a-0bc911f461bf": {
+        "id": "0392e307-ac33-456e-9e4a-0bc911f461bf",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": 330, "y": 5, "width": 100, "height": 75 },
+        "path": [
+          { "x": 100, "y": 75 },
+          { "x": 0, "y": 0 }
+        ],
+        "source": {
+          "direction": "Left",
+          "element": "ce6f010a-cb6c-4158-9508-57d310b1e582"
+        },
+        "target": {
+          "direction": "Right",
+          "element": "190facb2-ce96-4abc-8d8d-4828b9921334"
+        },
+        "isManuallyLayouted": false
+      },
+      "706ba442-f90c-4abc-8914-d4bd2c8c238c": {
+        "id": "706ba442-f90c-4abc-8914-d4bd2c8c238c",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": 350, "y": 80, "width": 80, "height": 45 },
+        "path": [
+          { "x": 80, "y": 0 },
+          { "x": 0, "y": 45 }
+        ],
+        "source": {
+          "direction": "Left",
+          "element": "ce6f010a-cb6c-4158-9508-57d310b1e582"
+        },
+        "target": {
+          "direction": "Right",
+          "element": "0bc2a4fe-1213-4751-8bc9-d6bec9427c21"
+        },
+        "isManuallyLayouted": false
+      },
+      "aa80ae64-f4a9-498c-9207-1c752721ae13": {
+        "id": "aa80ae64-f4a9-498c-9207-1c752721ae13",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": 320, "y": 80, "width": 110, "height": 150 },
+        "path": [
+          { "x": 110, "y": 0 },
+          { "x": 0, "y": 150 }
+        ],
+        "source": {
+          "direction": "Left",
+          "element": "ce6f010a-cb6c-4158-9508-57d310b1e582"
+        },
+        "target": {
+          "direction": "Right",
+          "element": "c8ead954-5afd-4d30-ba9e-26842c535655"
+        },
+        "isManuallyLayouted": false
+      },
+      "02433e3b-432d-48f9-aff2-088c0109c6c8": {
+        "id": "02433e3b-432d-48f9-aff2-088c0109c6c8",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -240, "y": 110, "width": 70, "height": 65 },
+        "path": [
+          { "x": 0, "y": 0 },
+          { "x": 70, "y": 65 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "ef801d6e-c0b8-48dc-ac5d-de1f96bb1aa1"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "b7b38a0e-74b2-47d8-bb16-7667ee34d361"
+        },
+        "isManuallyLayouted": false
+      },
+      "cf25e2d3-11e0-400b-9a0f-b402c6efb101": {
+        "id": "cf25e2d3-11e0-400b-9a0f-b402c6efb101",
+        "name": "",
+        "type": "UseCaseInclude",
+        "owner": null,
+        "bounds": { "x": -40, "y": 5, "width": 160, "height": 25 },
+        "path": [
+          { "x": 0, "y": 25 },
+          { "x": 160, "y": 0 }
+        ],
+        "source": {
+          "direction": "Up",
+          "element": "af571bf4-25e2-4223-bb6c-2f07199fa9da"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "190facb2-ce96-4abc-8d8d-4828b9921334"
+        },
+        "isManuallyLayouted": false
+      },
+      "033ffa58-495c-448c-86ef-80e814f020f4": {
+        "id": "033ffa58-495c-448c-86ef-80e814f020f4",
+        "name": "",
+        "type": "UseCaseInclude",
+        "owner": null,
+        "bounds": { "x": -40, "y": 90, "width": 150, "height": 47.5 },
+        "path": [
+          { "x": 0, "y": 0 },
+          { "x": 150, "y": 47.5 }
+        ],
+        "source": {
+          "direction": "Down",
+          "element": "af571bf4-25e2-4223-bb6c-2f07199fa9da"
+        },
+        "target": {
+          "direction": "Downleft",
+          "element": "0bc2a4fe-1213-4751-8bc9-d6bec9427c21"
+        },
+        "isManuallyLayouted": false
+      }
+    },
+    "assessments": {}
+  },
+  "lastUpdate": "2025-06-11T22:38:52.559Z"
+}

@@ -1,0 +1,212 @@
+{
+  "id": "a8fee571-8a28-4d09-b60f-900ce810df96",
+  "title": "Exercise 10",
+  "model": {
+    "version": "3.0.0",
+    "type": "UseCaseDiagram",
+    "size": { "width": 740, "height": 560 },
+    "interactive": { "elements": {}, "relationships": {} },
+    "elements": {
+      "295c25b7-f73b-413a-9980-9eb297b4dacd": {
+        "id": "295c25b7-f73b-413a-9980-9eb297b4dacd",
+        "name": "Trip Managemet System",
+        "type": "UseCaseSystem",
+        "owner": null,
+        "bounds": { "x": -250, "y": -240, "width": 450, "height": 500 }
+      },
+      "2cc00baa-7a9e-4b52-b225-be5eb90af890": {
+        "id": "2cc00baa-7a9e-4b52-b225-be5eb90af890",
+        "name": "Organize trip",
+        "type": "UseCase",
+        "owner": "295c25b7-f73b-413a-9980-9eb297b4dacd",
+        "bounds": { "x": -130, "y": -200, "width": 160, "height": 70 }
+      },
+      "690c8242-2fd7-45fc-a477-332c079a027e": {
+        "id": "690c8242-2fd7-45fc-a477-332c079a027e",
+        "name": "Book hotel",
+        "type": "UseCase",
+        "owner": "295c25b7-f73b-413a-9980-9eb297b4dacd",
+        "bounds": { "x": -210, "y": 80, "width": 140, "height": 70 }
+      },
+      "9779905e-c05d-428a-929e-3c43bc25b964": {
+        "id": "9779905e-c05d-428a-929e-3c43bc25b964",
+        "name": "Book train tickets",
+        "type": "UseCase",
+        "owner": "295c25b7-f73b-413a-9980-9eb297b4dacd",
+        "bounds": { "x": -70, "y": 20, "width": 160, "height": 70 }
+      },
+      "4a276f6b-e4cd-48c1-8d29-b02d3582ae74": {
+        "id": "4a276f6b-e4cd-48c1-8d29-b02d3582ae74",
+        "name": "Get/Give permission",
+        "type": "UseCase",
+        "owner": "295c25b7-f73b-413a-9980-9eb297b4dacd",
+        "bounds": { "x": 10, "y": -90, "width": 180, "height": 80 }
+      },
+      "dcc09ed0-70f4-4948-8271-92e56f52cb0a": {
+        "id": "dcc09ed0-70f4-4948-8271-92e56f52cb0a",
+        "name": "Employee",
+        "type": "UseCaseActor",
+        "owner": null,
+        "bounds": { "x": -350, "y": -90, "width": 80, "height": 140 }
+      },
+      "7ff09e49-e577-4a93-8244-008aa211be8c": {
+        "id": "7ff09e49-e577-4a93-8244-008aa211be8c",
+        "name": "Manager",
+        "type": "UseCaseActor",
+        "owner": null,
+        "bounds": { "x": 230, "y": -170, "width": 80, "height": 140 }
+      },
+      "75119c46-1086-4f84-9f84-c1ea2b8ccc86": {
+        "id": "75119c46-1086-4f84-9f84-c1ea2b8ccc86",
+        "name": "Agent",
+        "type": "UseCaseActor",
+        "owner": null,
+        "bounds": { "x": 220, "y": 90, "width": 80, "height": 140 }
+      }
+    },
+    "relationships": {
+      "625482f2-3f69-4c95-bb89-d0267b4327ee": {
+        "id": "625482f2-3f69-4c95-bb89-d0267b4327ee",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -270, "y": -165, "width": 140, "height": 145 },
+        "path": [
+          { "x": 0, "y": 145 },
+          { "x": 140, "y": 0 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "dcc09ed0-70f4-4948-8271-92e56f52cb0a"
+        },
+        "target": {
+          "direction": "Left",
+          "element": "2cc00baa-7a9e-4b52-b225-be5eb90af890"
+        },
+        "isManuallyLayouted": false
+      },
+      "e6ed7593-7555-465d-a741-cea80f7522e0": {
+        "id": "e6ed7593-7555-465d-a741-cea80f7522e0",
+        "name": "",
+        "type": "UseCaseInclude",
+        "owner": null,
+        "bounds": { "x": 30, "y": -165, "width": 70, "height": 75 },
+        "path": [
+          { "x": 0, "y": 0 },
+          { "x": 70, "y": 75 }
+        ],
+        "source": {
+          "direction": "Right",
+          "element": "2cc00baa-7a9e-4b52-b225-be5eb90af890"
+        },
+        "target": {
+          "direction": "Up",
+          "element": "4a276f6b-e4cd-48c1-8d29-b02d3582ae74"
+        },
+        "isManuallyLayouted": false
+      },
+      "9edb04aa-aa8a-4241-8e9a-f3606e614178": {
+        "id": "9edb04aa-aa8a-4241-8e9a-f3606e614178",
+        "name": "",
+        "type": "UseCaseInclude",
+        "owner": null,
+        "bounds": { "x": -50, "y": -130, "width": 60, "height": 150 },
+        "path": [
+          { "x": 0, "y": 0 },
+          { "x": 60, "y": 150 }
+        ],
+        "source": {
+          "direction": "Down",
+          "element": "2cc00baa-7a9e-4b52-b225-be5eb90af890"
+        },
+        "target": {
+          "direction": "Up",
+          "element": "9779905e-c05d-428a-929e-3c43bc25b964"
+        },
+        "isManuallyLayouted": false
+      },
+      "44fcd5b3-1235-48f9-86e2-06e5f844cad4": {
+        "id": "44fcd5b3-1235-48f9-86e2-06e5f844cad4",
+        "name": "",
+        "type": "UseCaseInclude",
+        "owner": null,
+        "bounds": { "x": -140, "y": -130, "width": 90, "height": 210 },
+        "path": [
+          { "x": 90, "y": 0 },
+          { "x": 0, "y": 210 }
+        ],
+        "source": {
+          "direction": "Down",
+          "element": "2cc00baa-7a9e-4b52-b225-be5eb90af890"
+        },
+        "target": {
+          "direction": "Up",
+          "element": "690c8242-2fd7-45fc-a477-332c079a027e"
+        },
+        "isManuallyLayouted": false
+      },
+      "2a72ab5b-e862-455c-a5b9-7b11bd4beb87": {
+        "id": "2a72ab5b-e862-455c-a5b9-7b11bd4beb87",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": 190, "y": -100, "width": 40, "height": 50 },
+        "path": [
+          { "x": 40, "y": 0 },
+          { "x": 0, "y": 50 }
+        ],
+        "source": {
+          "direction": "Left",
+          "element": "7ff09e49-e577-4a93-8244-008aa211be8c"
+        },
+        "target": {
+          "direction": "Right",
+          "element": "4a276f6b-e4cd-48c1-8d29-b02d3582ae74"
+        },
+        "isManuallyLayouted": false
+      },
+      "111392a9-b3b1-41cc-b37e-cdb85c3acfa5": {
+        "id": "111392a9-b3b1-41cc-b37e-cdb85c3acfa5",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": 90, "y": 55, "width": 130, "height": 105 },
+        "path": [
+          { "x": 130, "y": 105 },
+          { "x": 0, "y": 0 }
+        ],
+        "source": {
+          "direction": "Left",
+          "element": "75119c46-1086-4f84-9f84-c1ea2b8ccc86"
+        },
+        "target": {
+          "direction": "Right",
+          "element": "9779905e-c05d-428a-929e-3c43bc25b964"
+        },
+        "isManuallyLayouted": false
+      },
+      "e298adac-6752-45fb-a9fe-6bc6ca93c630": {
+        "id": "e298adac-6752-45fb-a9fe-6bc6ca93c630",
+        "name": "",
+        "type": "UseCaseAssociation",
+        "owner": null,
+        "bounds": { "x": -70, "y": 115, "width": 290, "height": 45 },
+        "path": [
+          { "x": 290, "y": 45 },
+          { "x": 0, "y": 0 }
+        ],
+        "source": {
+          "direction": "Left",
+          "element": "75119c46-1086-4f84-9f84-c1ea2b8ccc86"
+        },
+        "target": {
+          "direction": "Right",
+          "element": "690c8242-2fd7-45fc-a477-332c079a027e"
+        },
+        "isManuallyLayouted": false
+      }
+    },
+    "assessments": {}
+  },
+  "lastUpdate": "2025-06-12T11:47:35.562Z"
+}

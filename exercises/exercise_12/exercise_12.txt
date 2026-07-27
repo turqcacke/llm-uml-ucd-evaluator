@@ -1,0 +1,5 @@
+EXERCISE 12🡪 https://www.uml-diagrams.org/examples/hospital-management-use-case-diagram-example.html?context=uc-examples
+
+Description:
+
+Hospital Management System is a large system including several subsystems or modules providing a variety of functions. Purpose: Describe major services (functionality) provided by a hospital's reception. The Hospital Reception subsystem or module supports some of the many job duties of hospital receptionists. Receptionist schedules patient's appointments and admission to the hospital, collects information from patient upon patient's arrival and/or by phone. For the patient that will stay in the hospital ("inpatient") she or he should have a bed allotted in a ward. Receptionists might also receive patient's payments, record them in a database and provide receipts, file insurance claims and medical reports.

@@ -1,0 +1,5 @@
+EXERCISE 19 https://www.lix.polytechnique.fr/~liberti/teaching/isic/inf561-07/umlexsol.pdf
+
+Description:
+
+Propose a use case diagram for a vending machine that sells beverages and snacks. Make use of inclusion and extension associations, mark multiplicities and remember that a vending machine may need technical assistance from time to time.

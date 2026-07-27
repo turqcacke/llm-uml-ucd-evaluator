@@ -1,0 +1,5 @@
+EXERCISE 11🡪 https://www.uml-diagrams.org/airport-checkin-uml-use-case-diagram-example.html
+
+Description:
+
+Airport Check-in and security screening: Business actors are Passenger, Tour Guide, Minor (Child), Passenger with Special Needs (e.g. with disabilities), all playing external roles in relation to airport business. Business use cases are Individual Check-In, Group Check-In (for groups of tourists), Security Screening, etc. - representing business functions or processes taking place in airports and serving the needs of passengers. Business use cases Baggage Check-in and Baggage Handling extend Check-In use cases, because passengers might have no luggage, so baggage check-in and handling are optional.

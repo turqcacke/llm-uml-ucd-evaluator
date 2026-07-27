@@ -1,0 +1,7 @@
+EXERCISE 14 https://www.edrawsoft.com/article/use-case-diagram-examples.html
+
+Description:
+
+In this exercise site user and the webmaster are the actors of the UML diagram. The site user wants to search for documents, browse documents, and view events. These are the use cases or the functionality the user wants to do. The download and preview documents are the use cases too, and they are in relation to each other based on user requirements.
+
+The webmaster upload documents, post new events to the homepage and add a user and these use cases are in relation with the managed folders and add company but still based on what the actor wants.
