@@ -31,12 +31,12 @@ async def test_matcher_sends_reference_and_candidate_to_llm() -> None:
     )
     chat_model = FakeChatModel(result)
     reference = UseCaseDiagramPresentation(
-        nodes={Node(id="reference", name="Buyer", type=NodeType.ACTOR)},
-        relations=set(),
+        nodes=[Node(id="reference", name="Buyer", type=NodeType.ACTOR)],
+        relations=[],
     )
     candidate = UseCaseDiagramPresentation(
-        nodes={Node(id="candidate", name="Customer", type=NodeType.ACTOR)},
-        relations=set(),
+        nodes=[Node(id="candidate", name="Customer", type=NodeType.ACTOR)],
+        relations=[],
     )
 
     actual = await UseCaseDiagramMatcher(chat_model).execute(

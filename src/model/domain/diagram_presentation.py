@@ -16,35 +16,35 @@ class UseCaseDiagramPresentation(BaseModel):
         description="App-generated diagram ID.",
     )
 
-    nodes: set[Node] = Field(
+    nodes: list[Node] = Field(
         description="All nodes; IDs must be unique compact strings."
     )
-    relations: set[NodeRelation] = Field(
+    relations: list[NodeRelation] = Field(
         description="All relations; IDs must be unique compact strings."
     )
 
-    actors: SkipJsonSchema[set[str]] = Field(
-        default_factory=set,
+    actors: SkipJsonSchema[list[str]] = Field(
+        default_factory=list,
         description="Actor node IDs; derived during validation.",
     )
-    usecases: SkipJsonSchema[set[str]] = Field(
-        default_factory=set,
+    usecases: SkipJsonSchema[list[str]] = Field(
+        default_factory=list,
         description="Use case node IDs; derived during validation.",
     )
-    notes: SkipJsonSchema[set[str]] = Field(
-        default_factory=set,
+    notes: SkipJsonSchema[list[str]] = Field(
+        default_factory=list,
         description="Note node IDs; derived during validation.",
     )
-    others: SkipJsonSchema[set[str]] = Field(
-        default_factory=set,
+    others: SkipJsonSchema[list[str]] = Field(
+        default_factory=list,
         description="Other node IDs; derived during validation.",
     )
-    systems: SkipJsonSchema[set[str]] = Field(
-        default_factory=set,
+    systems: SkipJsonSchema[list[str]] = Field(
+        default_factory=list,
         description="System node IDs; derived during validation.",
     )
-    external_systems: SkipJsonSchema[set[str]] = Field(
-        default_factory=set,
+    external_systems: SkipJsonSchema[list[str]] = Field(
+        default_factory=list,
         description="External system node IDs; derived during validation.",
     )
 
@@ -68,6 +68,13 @@ class UseCaseDiagramPresentation(BaseModel):
 
     @model_validator(mode="after")
     def distribute_nodes(self) -> Self:
+        if len({node.id for node in self.nodes}) != len(self.nodes):
+            raise ValueError("Node IDs must be unique.")
+        if len({relation.id for relation in self.relations}) != len(
+            self.relations
+        ):
+            raise ValueError("Relation IDs must be unique.")
+
         stores = {
             NodeType.ACTOR: self.actors,
             NodeType.USECASE: self.usecases,
@@ -80,5 +87,5 @@ class UseCaseDiagramPresentation(BaseModel):
             store.clear()
 
         for node in self.nodes:
-            stores.get(node.type, self.others).add(node.id)
+            stores.get(node.type, self.others).append(node.id)
         return self
