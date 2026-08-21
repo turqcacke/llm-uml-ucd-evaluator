@@ -1,7 +1,4 @@
-from typing import Annotated
-
 from pydantic import BaseModel
-from pydantic.fields import Field
 
 from .key_value import Bounds
 from .node import ApollonNode, ApollonNodeType
@@ -12,13 +9,10 @@ from .relation import (
     RelationEndpoint,
 )
 
-ApollonItem = Annotated[
-    ApollonNode | ApollonRelation, Field(discriminator="type")
-]
-
 
 class ApollonJsonModel(BaseModel):
-    elements: dict[str, ApollonItem]
+    elements: dict[str, ApollonNode]
+    relationships: dict[str, ApollonRelation]
 
 
 class ApollonJson(BaseModel):
@@ -26,7 +20,6 @@ class ApollonJson(BaseModel):
 
 
 __all__ = [
-    "ApollonItem",
     "ApollonJsonModel",
     "ApollonJson",
     "ApollonNode",

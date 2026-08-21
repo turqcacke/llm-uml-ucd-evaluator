@@ -11,6 +11,7 @@ class ApollonRelationType(StrEnum):
     EXTEND = "UseCaseExtend"
     INCLUDE = "UseCaseInclude"
     GENERALIZATION = "UseCaseGeneralization"
+    SUPPORT = "UseCaseSupport"
 
 
 class RelationEndpoint(BaseModel):
@@ -31,6 +32,7 @@ class ApollonRelation(BaseModel):
         ApollonRelationType.EXTEND,
         ApollonRelationType.INCLUDE,
         ApollonRelationType.GENERALIZATION,
+        ApollonRelationType.SUPPORT,
     ]
     owner: str | None = Field(default=None)
     bounds: Bounds
