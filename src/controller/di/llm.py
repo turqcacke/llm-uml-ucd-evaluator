@@ -20,6 +20,7 @@ def get_text_extractor_chat_model(
     model = LangChainChatModel(
         model=settings.EXTRACTOR_MODEL,
         api_key=settings.EXTRACTOR_API_KEY.get_secret_value(),
+        base_url=settings.EXTRACTOR_BASE_URL,
         system_prompt=prompts.EXTRATOR_FROM_DESCRIPTION
         if type_ == "text"
         else prompts.EXTRACTOR_FROM_APOLLON_MODEL,
@@ -33,6 +34,7 @@ def get_use_case_diagram_matcher_chat_model() -> ChatModel[MatchingResult]:
     model = LangChainChatModel(
         model=settings.MATCHER_MODEL,
         api_key=settings.MATCHER_API_KEY.get_secret_value(),
+        base_url=settings.MATCHER_BASE_URL,
         system_prompt=prompts.USE_CASE_DIAGRAM_MATCHER,
         response_type=MatchingResult,
     )

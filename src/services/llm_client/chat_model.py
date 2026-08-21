@@ -31,6 +31,7 @@ class LangChainChatModel[TResponse](ChatModel[TResponse]):
         system_prompt: str,
         response_type: type[TResponse],
         model_provider: str | None = None,
+        base_url: str | None = None,
         guardrails: list[str] | None = None,
         **additional_args: Any,
     ) -> None:
@@ -41,6 +42,7 @@ class LangChainChatModel[TResponse](ChatModel[TResponse]):
                 model=model,
                 api_key=api_key,
                 model_provider=model_provider,
+                base_url=base_url,
                 **additional_args,
             )
         except Exception as exc:

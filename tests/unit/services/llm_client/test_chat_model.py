@@ -1,9 +1,32 @@
 import pytest
 
 from src.model.domain.evaluation import MatchingResult
-from src.services.llm_client.exceptions import ConfigError
 from src.services.llm_client import chat_model
 from src.services.llm_client.chat_model import _as_llm_exception
+from src.services.llm_client.exceptions import ConfigError
+
+
+def test_initialization_passes_base_url_to_langchain(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    passed_arguments: dict[str, object] = {}
+
+    def capture_initialization(**kwargs: object) -> None:
+        passed_arguments.update(kwargs)
+
+    monkeypatch.setattr(
+        chat_model, "init_chat_model", capture_initialization
+    )
+
+    chat_model.LangChainChatModel(
+        "gpt-5",
+        "test-key",
+        base_url="https://llm.example.test/v1",
+        system_prompt="",
+        response_type=MatchingResult,
+    )
+
+    assert passed_arguments["base_url"] == "https://llm.example.test/v1"
 
 
 def test_request_error_uses_model_as_provider_fallback() -> None:
