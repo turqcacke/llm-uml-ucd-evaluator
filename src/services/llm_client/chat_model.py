@@ -6,7 +6,7 @@ from langchain_core.exceptions import OutputParserException
 from openai import BadRequestError, NotFoundError
 from pydantic import BaseModel, ValidationError
 
-from src.logging.logger import logger
+from src.app_logging import logger
 from src.model.llm.context import LlmMessage, LLMRoles
 
 from .exceptions import (

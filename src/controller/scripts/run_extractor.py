@@ -2,10 +2,10 @@ import argparse
 import asyncio
 from pathlib import Path
 
+from src.app_logging import logger
 from src.config import BASE_URL
 from src.controller.di import container
 from src.controller.scripts.results import save_result
-from src.logging.logger import logger
 from src.services.llm_client.exceptions import LlmProviderException
 from src.services.pipelines.extractor.text import (
     DesciptionExtractorInput,

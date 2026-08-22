@@ -1,7 +1,7 @@
 from pathlib import Path
 from uuid import uuid4
 
-from src.logging.logger import logger
+from src.app_logging import logger
 
 
 def save_result(output: str, directory: Path) -> None:
