@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from src.config import get_settings
 from src.model.domain.evaluation import MatchingResult
 from src.services.llm_client import chat_model
-from src.services.shared import prompts
+from src.services.shared import guardrails, prompts
 
 
 @pytest.fixture
@@ -24,7 +24,11 @@ def llm_calls(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
             self.model = model
             self.response_type: type[BaseModel] = BaseModel
 
-        def with_structured_output(self, response_type: type[BaseModel]):
+        def with_structured_output(
+            self,
+            response_type: type[BaseModel],
+            **_: object,
+        ):
             self.response_type = response_type
             return self
 
@@ -50,7 +54,7 @@ def llm_calls(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     monkeypatch.setenv("EXTRACTOR_API_KEY", "test-key")
     monkeypatch.setenv("MATCHER_MODEL", "test-matcher")
     monkeypatch.setenv("MATCHER_API_KEY", "test-key")
-    monkeypatch.setattr(prompts, "EXTRATOR_FROM_DESCRIPTION", "Extract prose")
+    monkeypatch.setattr(prompts, "EXTRACTOR_FROM_DESCRIPTION", "Extract prose")
     monkeypatch.setattr(
         prompts, "EXTRACTOR_FROM_APOLLON_MODEL", "Extract JSON"
     )
@@ -80,13 +84,19 @@ def test_extract_prose_from_cli(
 
     output = capsys.readouterr()
     assert json.loads(output.out)["id"] == "extracted"
-    assert output.err == ""
     assert len(llm_calls) == 1
     model, messages = llm_calls[0]
     assert model == "test-extractor"
-    assert "Extract prose" in messages[0].content
+    system_content = messages[0].content
+    assert isinstance(system_content, str)
+    assert "Extract prose" in system_content
+    for rule in (
+        guardrails.USE_DESCRIPTION_FACTS,
+        guardrails.RESTRICT_TO_STRUCTURED_OUTPUT,
+    ):
+        assert f"- {rule}" in system_content
     assert messages[1].content == (
-        "\nA user logs in.\nAn admin manages users.\n"
+        "# System description\n\nA user logs in.\nAn admin manages users."
     )
 
 
@@ -116,7 +126,6 @@ def test_match_reference_and_candidate_from_cli(
         "missing_links": [],
         "redundant_links": [],
     }
-    assert output.err == ""
     assert len(llm_calls) == 1
     model, messages = llm_calls[0]
     assert model == "test-matcher"
@@ -135,20 +144,25 @@ def test_extract_apollon_from_cli(
     from src.controller.scripts.run_apollon_extractor import main
 
     apollon = tmp_path / "apollon.json"
-    apollon.write_text('{"model": {"elements": {}}}', "utf-8")
+    apollon.write_text(
+        '{"model": {"elements": {}, "relationships": {}}}', "utf-8"
+    )
 
     assert main([str(apollon)]) == 0
 
     output = capsys.readouterr()
     assert json.loads(output.out)["id"] == "extracted"
-    assert output.err == ""
     assert len(llm_calls) == 1
     model, messages = llm_calls[0]
     assert model == "test-extractor"
     assert "Extract JSON" in messages[0].content
+    assert guardrails.RESTRICT_TO_STRUCTURED_OUTPUT in messages[0].content
+    assert guardrails.USE_DESCRIPTION_FACTS not in messages[0].content
     content = messages[1].content
     assert isinstance(content, str)
-    assert json.loads(content) == {"model": {"elements": {}}}
+    assert json.loads(content) == {
+        "model": {"elements": {}, "relationships": {}}
+    }
 
 
 @pytest.mark.parametrize(
@@ -165,7 +179,8 @@ def test_cli_saves_each_result_without_overwriting(
     module = importlib.import_module(f"src.controller.scripts.{script}")
     source = tmp_path / "input.json"
     source.write_text(
-        '{"model": {"elements": {}}, "nodes": [], "relations": []}',
+        '{"model": {"elements": {}, "relationships": {}}, '
+        '"nodes": [], "relations": []}',
         "utf-8",
     )
     args = [str(source)] * (2 if script == "run_mathcer" else 1)
@@ -177,7 +192,6 @@ def test_cli_saves_each_result_without_overwriting(
     for _ in range(2):
         assert module.main(args) == 0
         output = capsys.readouterr()
-        assert output.err == ""
 
     files = list(directory.glob("*.json"))
     assert len(files) == 2
@@ -197,7 +211,8 @@ def test_output_directory_failure_is_cli_error(
     module = importlib.import_module(f"src.controller.scripts.{script}")
     source = tmp_path / "input.json"
     source.write_text(
-        '{"model": {"elements": {}}, "nodes": [], "relations": []}',
+        '{"model": {"elements": {}, "relationships": {}}, '
+        '"nodes": [], "relations": []}',
         "utf-8",
     )
     directory = tmp_path / "occupied"
@@ -290,7 +305,8 @@ def test_model_configuration_failure_is_cli_error(
     main = importlib.import_module(f"src.controller.scripts.{script}").main
     path = tmp_path / "input"
     path.write_text(
-        '{"model": {"elements": {}}, "nodes": [], "relations": []}',
+        '{"model": {"elements": {}, "relationships": {}}, '
+        '"nodes": [], "relations": []}',
         "utf-8",
     )
     args = [str(path)] * (2 if script == "run_mathcer" else 1)

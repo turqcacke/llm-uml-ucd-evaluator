@@ -22,10 +22,15 @@ class ContextBuilder(Protocol):
 
 
 class SimpleContextBuilder(ContextBuilder):
-    _PATTERN = """
-    {system_prompt}
-    {guardrails}
-    """
+    _PATTERN = """\
+# System instructions
+
+{system_prompt}{guardrails_section}"""
+    _GUARDRAILS_PATTERN = """
+
+# Guardrails
+
+{guardrails}"""
 
     def __init__(self, guardrails: list[str], system_prompt: str):
         self._system_context = SystemContext(system_prompt, guardrails)
@@ -43,9 +48,15 @@ class SimpleContextBuilder(ContextBuilder):
         self._user_context.messages.append(element)
 
     def build_context(self) -> list[AnyMessage]:
+        guardrails = self._system_context.guardrails
+        guardrails_section = ""
+        if guardrails:
+            guardrails_section = self._GUARDRAILS_PATTERN.format(
+                guardrails="\n".join(f"- {rule}" for rule in guardrails)
+            )
         system_prompt = self._PATTERN.format(
-            system_prompt=self._system_context.system_prompt,
-            guardrails="\n".join(self._system_context.guardrails),
+            system_prompt=self._system_context.system_prompt.strip(),
+            guardrails_section=guardrails_section,
         )
         user_messages = copy.copy(self._user_context.messages)
         self._user_context.messages.clear()

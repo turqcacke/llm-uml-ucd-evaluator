@@ -1,9 +1,12 @@
-from typing import Any, Protocol, TypeVar, cast
+from typing import Any, Literal, Protocol, TypeVar, cast
 
 from langchain.chat_models import BaseChatModel, init_chat_model
+from langchain.messages import AnyMessage
 from langchain_core.exceptions import OutputParserException
+from openai import BadRequestError, NotFoundError
 from pydantic import BaseModel, ValidationError
 
+from src.logging.logger import logger
 from src.model.llm.context import LlmMessage, LLMRoles
 
 from .exceptions import (
@@ -37,6 +40,7 @@ class LangChainChatModel[TResponse](ChatModel[TResponse]):
     ) -> None:
         self._model = model
         self._provider = model_provider
+        self._base_url = base_url
         try:
             self._chat_model: BaseChatModel = init_chat_model(
                 model=model,
@@ -61,19 +65,67 @@ class LangChainChatModel[TResponse](ChatModel[TResponse]):
             guardrails=guardrails or list(), system_prompt=system_prompt
         )
         self._response_type = response_type
+        logger.info(
+            "LLM configured model={} provider={} base_url={}",
+            model,
+            model_provider or "auto",
+            base_url or "provider default",
+        )
 
     async def invoke(self, prompt: str, role: LLMRoles) -> TResponse:
         try:
             self._context_builder.add(LlmMessage(role, prompt))
             context = self._context_builder.build_context()
-            chat_model = self._chat_model.with_structured_output(
-                self._response_type
-            )
-            return cast(TResponse, await chat_model.ainvoke(context))
+            try:
+                return await self._invoke_structured(context, "json_schema")
+            except (BadRequestError, NotFoundError) as exc:
+                if not _should_use_function_calling(exc):
+                    raise
+                logger.info(
+                    "LLM retry model={} method=function_calling reason={}",
+                    self._model,
+                    type(exc).__name__,
+                )
+                return await self._invoke_structured(
+                    context, "function_calling"
+                )
         except Exception as exc:
             raise _as_llm_exception(
                 exc, provider=self._provider, model=self._model
             ) from exc
+
+    async def _invoke_structured(
+        self,
+        context: list[AnyMessage],
+        method: Literal["function_calling", "json_schema"],
+    ) -> TResponse:
+        logger.info(
+            "LLM request model={} provider={} base_url={} method={} "
+            "messages={}",
+            self._model,
+            self._provider or "auto",
+            self._base_url or "provider default",
+            method,
+            len(context),
+        )
+        chat_model = self._chat_model.with_structured_output(
+            self._response_type,
+            method=method,
+        )
+        response = cast(TResponse, await chat_model.ainvoke(context))
+        logger.info(
+            "LLM response model={} response_type={}",
+            self._model,
+            type(response).__name__,
+        )
+        return response
+
+
+def _should_use_function_calling(
+    exc: BadRequestError | NotFoundError,
+) -> bool:
+    message = str(exc).lower()
+    return "response_format" in message or "model_not_found" in message
 
 
 def _as_llm_exception(
