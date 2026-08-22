@@ -220,6 +220,7 @@ __marimo__/
 .streamlit/secrets.toml
 .zed
 .DS_Store
+scripts_out
 
 # graphify
 graphify-out/

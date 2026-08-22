@@ -7,10 +7,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 BASE_URL = Path(__file__).resolve().parent.parent
 
 
+def get_env_file() -> Path:
+    return BASE_URL / ".env"
+
+
 class LoggingSettings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=BASE_URL / ".env", extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=get_env_file(), extra="ignore")
 
     LOG_LEVEL: str = Field(default="info")
 
@@ -25,10 +27,6 @@ class Settings(LoggingSettings):
     MATCHER_MODEL: str = Field(default=...)
     MATCHER_BASE_URL: str | None = Field(default=None)
     MATCHER_PROVIDER: str | None = Field(default=None)
-
-
-def get_env_file() -> Path:
-    return BASE_URL / ".env"
 
 
 @lru_cache(maxsize=1)

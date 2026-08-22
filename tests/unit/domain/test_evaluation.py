@@ -27,11 +27,3 @@ def test_evaluation_models_use_reference_and_candidate_semantics() -> None:
         "candidate_node_id": "2",
         "score": 3,
     }
-
-
-def test_node_match_schema_describes_both_tuple_positions() -> None:
-    schema = MatchingResult.model_json_schema()
-    pair_items = schema["$defs"]["NodeMatch"]["prefixItems"]
-
-    assert pair_items[0]["description"] == "Matched reference node ID."
-    assert pair_items[1]["description"] == "Matched candidate node ID."

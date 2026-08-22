@@ -9,7 +9,7 @@ tests-run:
 	PYTHONPATH=${PYTHON_PATH} uv run pytest tests
 
 lint:
-	ruff check .
+	ruff check . --fix
 	ty check .
 
 %:
