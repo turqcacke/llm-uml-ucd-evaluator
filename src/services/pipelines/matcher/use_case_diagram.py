@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from src.logging.logger import logger
 from src.model.domain.diagram_presentation import UseCaseDiagramPresentation
 from src.model.domain.evaluation import MatchingResult
 from src.model.llm.context import LLMRoles
@@ -34,10 +35,24 @@ class UseCaseDiagramMatcher(
     async def execute(
         self, data: UseCaseDiagramMatcherInput
     ) -> MatchingResult:
-        return await self._chat_model.invoke(
+        logger.info(
+            "Diagram matching started reference_nodes={} "
+            "candidate_nodes={}",
+            len(data.reference.nodes),
+            len(data.candidate.nodes),
+        )
+        result = await self._chat_model.invoke(
             _MESSAGE_PROMPT.format(
                 reference=data.reference.model_dump_json(),
                 candidate=data.candidate.model_dump_json(),
             ),
             LLMRoles.USER,
         )
+        logger.info(
+            "Diagram matching completed node_matches={} missing_nodes={} "
+            "redundant_nodes={}",
+            len(result.node_matches),
+            len(result.missing_nodes),
+            len(result.redundant_nodes),
+        )
+        return result

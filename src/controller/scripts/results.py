@@ -1,6 +1,8 @@
 from pathlib import Path
 from uuid import uuid4
 
+from src.logging.logger import logger
+
 
 def save_result(output: str, directory: Path) -> None:
     directory.mkdir(parents=True, exist_ok=True)
@@ -8,3 +10,4 @@ def save_result(output: str, directory: Path) -> None:
     with path.open("x", encoding="utf-8") as file:
         file.write(output)
         file.write("\n")
+    logger.info("Result saved path={}", path)

@@ -5,6 +5,7 @@ from pathlib import Path
 from src.config import BASE_URL
 from src.controller.di import container
 from src.controller.scripts.results import save_result
+from src.logging.logger import logger
 from src.model.apollon import ApollonJson
 from src.services.llm_client.exceptions import LlmProviderException
 from src.services.pipelines.extractor.apollon import (
@@ -28,6 +29,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     try:
+        logger.info(
+            "Apollon extractor CLI started input={} results_path={}",
+            args.apollon,
+            args.results_path,
+        )
         data = ApollonExtratorInput(
             ApollonJson.model_validate_json(args.apollon.read_text("utf-8"))
         )

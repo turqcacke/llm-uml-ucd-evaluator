@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from src.logging.logger import logger
 from src.model.apollon import ApollonJson
 from src.model.domain.diagram_presentation import UseCaseDiagramPresentation
 from src.model.llm.context import LLMRoles
@@ -29,9 +30,17 @@ class ApollonExtractor(
     async def execute(
         self, data: ApollonExtratorInput
     ) -> UseCaseDiagramPresentation:
-        return await self._chat_model.invoke(
-            _MESSAGE_PROMPT.format(
-                json_model=data.appolon_model.model_dump_json()
-            ),
+        json_model = data.appolon_model.model_dump_json()
+        logger.info(
+            "Apollon extraction started characters={}", len(json_model)
+        )
+        result = await self._chat_model.invoke(
+            _MESSAGE_PROMPT.format(json_model=json_model),
             LLMRoles.USER,
         )
+        logger.info(
+            "Apollon extraction completed nodes={} relations={}",
+            len(result.nodes),
+            len(result.relations),
+        )
+        return result

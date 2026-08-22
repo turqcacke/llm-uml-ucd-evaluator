@@ -5,6 +5,7 @@ from pathlib import Path
 from src.config import BASE_URL
 from src.controller.di import container
 from src.controller.scripts.results import save_result
+from src.logging.logger import logger
 from src.services.llm_client.exceptions import LlmProviderException
 from src.services.pipelines.extractor.text import (
     DesciptionExtractorInput,
@@ -27,6 +28,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     try:
+        logger.info(
+            "Extractor CLI started input={} results_path={}",
+            args.description,
+            args.results_path,
+        )
         data = DesciptionExtractorInput(args.description.read_text("utf-8"))
         with container:
             pipeline = container.get(DescriptionExtractor)

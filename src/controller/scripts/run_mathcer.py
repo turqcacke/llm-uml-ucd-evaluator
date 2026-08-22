@@ -5,6 +5,7 @@ from pathlib import Path
 from src.config import BASE_URL
 from src.controller.di import container
 from src.controller.scripts.results import save_result
+from src.logging.logger import logger
 from src.model.domain.diagram_presentation import UseCaseDiagramPresentation
 from src.services.llm_client.exceptions import LlmProviderException
 from src.services.pipelines.matcher.use_case_diagram import (
@@ -27,6 +28,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     try:
+        logger.info(
+            "Matcher CLI started reference={} candidate={} "
+            "results_path={}",
+            args.reference,
+            args.candidate,
+            args.results_path,
+        )
         data = UseCaseDiagramMatcherInput(
             reference=UseCaseDiagramPresentation.model_validate_json(
                 args.reference.read_text("utf-8")
