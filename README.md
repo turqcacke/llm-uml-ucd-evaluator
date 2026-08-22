@@ -4,8 +4,10 @@
 
 Run from the repository root with Python 3.14+ and dependencies installed
 (`uv sync`). Configure `EXTRACTOR_MODEL`, `EXTRACTOR_API_KEY`, `MATCHER_MODEL`,
-and `MATCHER_API_KEY` in the environment or in the root `.env` file. The
-existing settings require all four values for pipeline execution.
+and `MATCHER_API_KEY` in the environment or in the root `.env` file. Optional
+`EXTRACTOR_BASE_URL`, `MATCHER_BASE_URL`, `EXTRACTOR_PROVIDER`, and
+`MATCHER_PROVIDER` configure the provider endpoint. Omit either provider to
+let LangChain determine it from the model name.
 
 ```sh
 uv run python -m src.controller.scripts.run_extractor description.txt > reference.json
