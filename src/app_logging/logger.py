@@ -6,8 +6,10 @@ from loguru import logger
 from src.config import LoggingSettings
 
 _LOG_FORMAT = (
-    "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level:<8} | "
-    "{name}:{function}:{line} - {message}"
+    "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
+    "<level>{level:<8}</level> | "
+    "<cyan>{name}:{function}:{line}</cyan> - "
+    "<level>{message}</level>"
 )
 
 
@@ -22,7 +24,7 @@ class _LoguruHandler(logging.Handler):
         except ValueError:
             level = record.levelno
 
-        logger.opt(exception=record.exc_info).log(
+        logger.log(
             level,
             "[{}] {}",
             record.name,
@@ -46,6 +48,7 @@ def _configure_logging(log_level: str) -> None:
         _stderr_sink,
         level=log_level.upper(),
         format=_LOG_FORMAT,
+        colorize=sys.stderr.isatty(),
         backtrace=False,
         diagnose=False,
     )
