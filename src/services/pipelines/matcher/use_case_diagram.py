@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from src.app_logging import logger
 from src.model.domain.diagram_presentation import UseCaseDiagramPresentation
-from src.model.domain.evaluation import MatchingResult
+from src.model.domain.matching import MatchingResult
 from src.model.llm.context import LLMRoles
 from src.services.llm_client import ChatModel
 

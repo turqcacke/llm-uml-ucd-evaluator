@@ -2,7 +2,7 @@ import pytest
 from httpx2 import Request, Response
 from openai import BadRequestError, NotFoundError
 
-from src.model.domain.evaluation import MatchingResult
+from src.model.domain.matching import MatchingResult
 from src.model.llm.context import LLMRoles
 from src.services.llm_client import chat_model
 from src.services.llm_client.exceptions import ConfigError, LlmRequestError

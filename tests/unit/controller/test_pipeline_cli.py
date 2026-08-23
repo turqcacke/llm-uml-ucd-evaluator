@@ -10,7 +10,7 @@ from langchain_core.messages import BaseMessage
 from pydantic import BaseModel
 
 from src.config import get_settings
-from src.model.domain.evaluation import MatchingResult
+from src.model.domain.matching import MatchingResult
 from src.services.llm_client import chat_model
 from src.services.shared import guardrails, prompts
 

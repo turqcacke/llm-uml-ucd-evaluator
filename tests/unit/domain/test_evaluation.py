@@ -1,29 +1,74 @@
+import pytest
+from pydantic import ValidationError
+
 from src.model.domain.evaluation import (
-    MatchingResult,
+    EvaluationResult,
+    EvaluationRule,
     NamingUnderstandabilityScore,
-    NodeMatch,
-    NodeNamingEvaluation,
+    NodeEvaluation,
+    RelationEvaluation,
 )
 
 
-def test_evaluation_models_use_reference_and_candidate_semantics() -> None:
-    result = MatchingResult(
-        node_matches=[NodeMatch(reference_id="1", candidate_id="2")],
-        missing_nodes=["3"],
-        redundant_nodes=["4"],
-        missing_links=["5"],
-        redundant_links=["6"],
-    )
-    evaluation = NodeNamingEvaluation(
-        candidate_node_id="2",
-        score=NamingUnderstandabilityScore.HIGH,
+def test_evaluation_result_serializes_candidate_element_metrics() -> None:
+    result = EvaluationResult(
+        node_evaluations=[
+            NodeEvaluation(
+                id="node-1",
+                syntactic_errors=[2],
+                rules_applied=[1, 2],
+                naming_score=NamingUnderstandabilityScore.HIGH,
+                combined_initiator_effect=1,
+                combined_target_effect=2,
+            )
+        ],
+        relation_evaluations=[
+            RelationEvaluation(
+                id="relation-1",
+                syntactic_errors=[],
+                rules_applied=[1],
+            )
+        ],
+        applied_rules=[
+            EvaluationRule(rule_id=1, content="Actors initiate use cases."),
+            EvaluationRule(
+                rule_id=2, content="Use case names start with verbs."
+            ),
+        ],
     )
 
-    assert result.node_matches[0].reference_id == "1"
-    assert result.node_matches[0].candidate_id == "2"
-    assert result.redundant_nodes == ["4"]
-    assert result.redundant_links == ["6"]
-    assert evaluation.model_dump(mode="json") == {
-        "candidate_node_id": "2",
-        "score": 3,
+    assert result.model_dump(mode="json") == {
+        "node_evaluations": [
+            {
+                "id": "node-1",
+                "syntactic_errors": [2],
+                "rules_applied": [1, 2],
+                "naming_score": 3,
+                "combined_initiator_effect": 1,
+                "combined_target_effect": 2,
+            }
+        ],
+        "relation_evaluations": [
+            {
+                "id": "relation-1",
+                "syntactic_errors": [],
+                "rules_applied": [1],
+            }
+        ],
+        "applied_rules": [
+            [1, "Actors initiate use cases."],
+            [2, "Use case names start with verbs."],
+        ],
     }
+
+
+def test_node_evaluation_rejects_missing_metrics() -> None:
+    with pytest.raises(ValidationError):
+        NodeEvaluation.model_validate(
+            {
+                "id": "node-1",
+                "syntactic_errors": [],
+                "rules_applied": [],
+                "naming_score": NamingUnderstandabilityScore.HIGH,
+            }
+        )

@@ -4,7 +4,7 @@ from dishka import Provider, Scope, provide
 
 from src.config import get_settings
 from src.model.domain.diagram_presentation import UseCaseDiagramPresentation
-from src.model.domain.evaluation import MatchingResult
+from src.model.domain.matching import MatchingResult
 from src.services.llm_client import ChatModel, LangChainChatModel
 from src.services.pipelines.extractor.dependencies import (
     ApollonExtractorChatModel,
