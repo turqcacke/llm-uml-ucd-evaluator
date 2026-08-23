@@ -15,6 +15,18 @@ from src.services.llm_client import chat_model
 from src.services.shared import guardrails, prompts
 
 
+class InMemoryResultStore:
+    def __init__(self) -> None:
+        self.results: list[tuple[dict[str, object], Path]] = []
+
+    def save(self, output: str, directory: Path) -> None:
+        self.results.append((json.loads(output), directory))
+
+    def only_result(self) -> tuple[dict[str, object], Path]:
+        [result] = self.results
+        return result
+
+
 @pytest.fixture
 def llm_calls(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     calls: list[tuple[str, list[BaseMessage]]] = []
@@ -70,20 +82,30 @@ def llm_calls(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     get_settings.cache_clear()
 
 
+@pytest.fixture
+def result_store(monkeypatch: pytest.MonkeyPatch) -> InMemoryResultStore:
+    store = InMemoryResultStore()
+    for script in ("run_extractor", "run_mathcer", "run_apollon_extractor"):
+        module = importlib.import_module(f"src.controller.scripts.{script}")
+        monkeypatch.setattr(module, "save_result", store.save)
+    return store
+
+
 def test_extract_prose_from_cli(
     tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
     llm_calls: list[tuple[str, list[BaseMessage]]],
+    result_store: InMemoryResultStore,
 ) -> None:
-    from src.controller.scripts.run_extractor import main
+    from src.controller.scripts import run_extractor
 
     description = tmp_path / "description with spaces.txt"
     description.write_text("A user logs in.\nAn admin manages users.", "utf-8")
 
-    assert main([str(description)]) == 0
+    assert run_extractor.main([str(description)]) == 0
 
-    output = capsys.readouterr()
-    assert json.loads(output.out)["id"] == "extracted"
+    result, directory = result_store.only_result()
+    assert result["id"] == "extracted"
+    assert directory == run_extractor.RESULTS_PATH
     assert len(llm_calls) == 1
     model, messages = llm_calls[0]
     assert model == "test-extractor"
@@ -102,10 +124,10 @@ def test_extract_prose_from_cli(
 
 def test_match_reference_and_candidate_from_cli(
     tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
     llm_calls: list[tuple[str, list[BaseMessage]]],
+    result_store: InMemoryResultStore,
 ) -> None:
-    from src.controller.scripts.run_mathcer import main
+    from src.controller.scripts import run_mathcer
 
     reference = tmp_path / "reference.json"
     candidate = tmp_path / "candidate.json"
@@ -116,16 +138,17 @@ def test_match_reference_and_candidate_from_cli(
         '{"id": "candidate-id", "nodes": [], "relations": []}', "utf-8"
     )
 
-    assert main([str(reference), str(candidate)]) == 0
+    assert run_mathcer.main([str(reference), str(candidate)]) == 0
 
-    output = capsys.readouterr()
-    assert json.loads(output.out) == {
+    result, directory = result_store.only_result()
+    assert result == {
         "node_matches": [],
         "missing_nodes": ["missing"],
         "redundant_nodes": [],
         "missing_links": [],
         "redundant_links": [],
     }
+    assert directory == run_mathcer.RESULTS_PATH
     assert len(llm_calls) == 1
     model, messages = llm_calls[0]
     assert model == "test-matcher"
@@ -138,20 +161,21 @@ def test_match_reference_and_candidate_from_cli(
 
 def test_extract_apollon_from_cli(
     tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
     llm_calls: list[tuple[str, list[BaseMessage]]],
+    result_store: InMemoryResultStore,
 ) -> None:
-    from src.controller.scripts.run_apollon_extractor import main
+    from src.controller.scripts import run_apollon_extractor
 
     apollon = tmp_path / "apollon.json"
     apollon.write_text(
         '{"model": {"elements": {}, "relationships": {}}}', "utf-8"
     )
 
-    assert main([str(apollon)]) == 0
+    assert run_apollon_extractor.main([str(apollon)]) == 0
 
-    output = capsys.readouterr()
-    assert json.loads(output.out)["id"] == "extracted"
+    result, directory = result_store.only_result()
+    assert result["id"] == "extracted"
+    assert directory == run_apollon_extractor.RESULTS_PATH
     assert len(llm_calls) == 1
     model, messages = llm_calls[0]
     assert model == "test-extractor"
@@ -169,12 +193,12 @@ def test_extract_apollon_from_cli(
     "script", ["run_extractor", "run_mathcer", "run_apollon_extractor"]
 )
 @pytest.mark.parametrize("custom_path", [False, True])
-def test_cli_saves_each_result_without_overwriting(
+def test_cli_sends_each_result_to_storage(
     script: str,
     custom_path: bool,
     tmp_path: Path,
-    capsys: pytest.CaptureFixture[str],
     llm_calls: list[tuple[str, list[BaseMessage]]],
+    result_store: InMemoryResultStore,
 ) -> None:
     module = importlib.import_module(f"src.controller.scripts.{script}")
     source = tmp_path / "input.json"
@@ -191,12 +215,10 @@ def test_cli_saves_each_result_without_overwriting(
 
     for _ in range(2):
         assert module.main(args) == 0
-        output = capsys.readouterr()
 
-    files = list(directory.glob("*.json"))
-    assert len(files) == 2
-    for path in files:
-        assert json.loads(path.read_text("utf-8")) == json.loads(output.out)
+    assert len(result_store.results) == 2
+    assert result_store.results[0][0] == result_store.results[1][0]
+    assert all(path == directory for _, path in result_store.results)
 
 
 @pytest.mark.parametrize(
@@ -220,10 +242,7 @@ def test_output_directory_failure_is_cli_error(
     args = [str(source)] * (2 if script == "run_mathcer" else 1)
     args.extend(["--results-path", str(directory)])
 
-    with pytest.raises(SystemExit) as exc:
-        module.main(args)
-
-    assert exc.value.code == 1
+    assert module.main(args) == 1
     output = capsys.readouterr()
     assert output.out == ""
     assert "error:" in output.err
@@ -250,10 +269,7 @@ def test_unreadable_input_fails_before_llm_request(
         path.write_bytes(b"\xff")
     args = [str(path)] * (2 if script == "run_mathcer" else 1)
 
-    with pytest.raises(SystemExit) as exc:
-        main(args)
-
-    assert exc.value.code == 1
+    assert main(args) == 1
     output = capsys.readouterr()
     assert output.out == ""
     assert "error:" in output.err
@@ -278,10 +294,7 @@ def test_invalid_json_fails_before_llm_request(
         reference.write_text('{"nodes": [], "relations": []}', "utf-8")
         args.insert(0, str(reference))
 
-    with pytest.raises(SystemExit) as exc:
-        main(args)
-
-    assert exc.value.code == 1
+    assert main(args) == 1
     output = capsys.readouterr()
     assert output.out == ""
     assert "error:" in output.err
@@ -311,10 +324,7 @@ def test_model_configuration_failure_is_cli_error(
     )
     args = [str(path)] * (2 if script == "run_mathcer" else 1)
 
-    with pytest.raises(SystemExit) as exc:
-        main(args)
-
-    assert exc.value.code == 1
+    assert main(args) == 1
     output = capsys.readouterr()
     assert output.out == ""
     assert "Model unavailable" in output.err

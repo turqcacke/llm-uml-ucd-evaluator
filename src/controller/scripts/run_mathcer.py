@@ -49,8 +49,9 @@ def main(argv: list[str] | None = None) -> int:
         output = result.model_dump_json(indent=2)
         save_result(output, args.results_path)
     except (OSError, ValueError, LlmProviderException) as exc:
-        parser.exit(1, f"{parser.prog}: error: {exc}\n")
-    print(output)
+        logger.error("{}: error: {}", parser.prog, exc)
+        return 1
+    logger.info("{}", output)
     return 0
 
 
