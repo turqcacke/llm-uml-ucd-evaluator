@@ -1,4 +1,5 @@
 from typing import Any, Literal, Protocol, TypeVar, cast
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from langchain.chat_models import BaseChatModel, init_chat_model
 from langchain.messages import AnyMessage
@@ -19,6 +20,14 @@ from .exceptions import (
 from .llm_context import ContextBuilder, SimpleContextBuilder
 
 TResponse = TypeVar("TResponse", bound=BaseModel)
+
+_SENSITIVE_QUERY_PARAMETERS = {
+    "access_token",
+    "api-key",
+    "api_key",
+    "key",
+    "token",
+}
 
 
 class ChatModel[TResponse](Protocol):
@@ -49,6 +58,7 @@ class LangChainChatModel[TResponse](ChatModel[TResponse]):
                 base_url=base_url,
                 **additional_args,
             )
+            _install_http_request_logging(self._chat_model)
         except Exception as exc:
             raise ConfigError(
                 _error_message(
@@ -119,6 +129,65 @@ class LangChainChatModel[TResponse](ChatModel[TResponse]):
             type(response).__name__,
         )
         return response
+
+
+def _install_http_request_logging(chat_model: BaseChatModel) -> None:
+    clients_and_hooks = (
+        (getattr(chat_model, "root_client", None), _log_http_request),
+        (
+            getattr(chat_model, "root_async_client", None),
+            _log_async_http_request,
+        ),
+    )
+    for sdk_client, hook in clients_and_hooks:
+        http_client = getattr(sdk_client, "_client", None)
+        event_hooks = getattr(http_client, "event_hooks", None)
+        if not isinstance(event_hooks, dict):
+            continue
+        request_hooks = event_hooks.get("request")
+        if isinstance(request_hooks, list) and hook not in request_hooks:
+            request_hooks.append(hook)
+
+
+def _log_http_request(request: Any) -> None:
+    logger.debug(
+        "HTTP request method={} url={} body={}",
+        request.method,
+        _redact_url(str(request.url)),
+        _request_body(request),
+    )
+
+
+async def _log_async_http_request(request: Any) -> None:
+    _log_http_request(request)
+
+
+def _request_body(request: Any) -> str:
+    try:
+        content: bytes = request.content
+    except Exception:
+        return "<streaming body>"
+    return content.decode("utf-8", errors="replace")
+
+
+def _redact_url(url: str) -> str:
+    parts = urlsplit(url)
+    query = urlencode(
+        [
+            (
+                key,
+                "REDACTED"
+                if key.lower() in _SENSITIVE_QUERY_PARAMETERS
+                else value,
+            )
+            for key, value in parse_qsl(
+                parts.query, keep_blank_values=True
+            )
+        ]
+    )
+    return urlunsplit(
+        (parts.scheme, parts.netloc, parts.path, query, parts.fragment)
+    )
 
 
 def _should_use_function_calling(
