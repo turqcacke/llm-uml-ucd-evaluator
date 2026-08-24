@@ -3,7 +3,13 @@ from decimal import Decimal
 import pytest
 
 from src.model.domain.diagram_presentation import UseCaseDiagramPresentation
-from src.model.domain.evaluation import EvaluationResult
+from src.model.domain.evaluation import (
+    EvaluationResult,
+    EvaluationRule,
+    NamingUnderstandabilityScore,
+    NodeEvaluation,
+    RelationEvaluation,
+)
 from src.model.domain.matching import (
     ExtendedMatching,
     NodeMatch,
@@ -12,6 +18,289 @@ from src.model.domain.matching import (
 from src.model.domain.metrics import Metrics
 from src.model.domain.node import Node, NodeType
 from src.model.domain.relation import NodeRelation, NodeRelationType
+
+
+def _evaluation_for(
+    candidate: UseCaseDiagramPresentation,
+) -> EvaluationResult:
+    return EvaluationResult(
+        node_evaluations=[
+            _node_evaluation(node.id)
+            for node in candidate.nodes
+            if node.type not in {NodeType.NOTE, NodeType.OTHER}
+        ],
+        relation_evaluations=[
+            _relation_evaluation(relation.id)
+            for relation in candidate.relations
+        ],
+        applied_rules=[],
+    )
+
+
+def _node_evaluation(
+    element_id: str,
+    *,
+    syntactic_errors: list[int] | None = None,
+    rules_applied: list[int] | None = None,
+    naming_score: NamingUnderstandabilityScore = (
+        NamingUnderstandabilityScore.MEDIUM
+    ),
+) -> NodeEvaluation:
+    return NodeEvaluation(
+        id=element_id,
+        syntactic_errors=syntactic_errors or [],
+        rules_applied=rules_applied or [],
+        naming_score=naming_score,
+        combined_initiator_effect=0,
+        combined_target_effect=0,
+    )
+
+
+def _relation_evaluation(element_id: str) -> RelationEvaluation:
+    return RelationEvaluation(
+        id=element_id, syntactic_errors=[], rules_applied=[]
+    )
+
+
+def _calculate_unmatched(
+    candidate: UseCaseDiagramPresentation,
+    evaluation: EvaluationResult,
+) -> Metrics:
+    reference = UseCaseDiagramPresentation(
+        nodes=[Node(id="reference", name="Reference", type=NodeType.ACTOR)],
+        relations=[],
+    )
+    return Metrics.calculate_metrics(
+        reference,
+        candidate,
+        evaluation,
+        ExtendedMatching(
+            reference=reference,
+            candidate=candidate,
+            node_matches=[],
+            relation_matches=[],
+        ),
+    )
+
+
+def test_syntactic_and_naming_metrics_aggregate_candidate_evaluations() -> None:
+    diagram = UseCaseDiagramPresentation(
+        nodes=[
+            Node(id="actor", name="Customer", type=NodeType.ACTOR),
+            Node(id="usecase", name="Place order", type=NodeType.USECASE),
+        ],
+        relations=[
+            NodeRelation(
+                id="relation",
+                source="actor",
+                target="usecase",
+                type=NodeRelationType.ASSOCIATION,
+            )
+        ],
+    )
+    evaluation = EvaluationResult(
+        node_evaluations=[
+            NodeEvaluation(
+                id="actor",
+                syntactic_errors=[2],
+                rules_applied=[1, 2],
+                naming_score=NamingUnderstandabilityScore.HIGH,
+                combined_initiator_effect=0,
+                combined_target_effect=0,
+            ),
+            NodeEvaluation(
+                id="usecase",
+                syntactic_errors=[],
+                rules_applied=[1],
+                naming_score=NamingUnderstandabilityScore.LOW,
+                combined_initiator_effect=0,
+                combined_target_effect=0,
+            ),
+        ],
+        relation_evaluations=[
+            RelationEvaluation(
+                id="relation", syntactic_errors=[1], rules_applied=[1]
+            )
+        ],
+        applied_rules=[
+            EvaluationRule(rule_id=1, content="Rule one"),
+            EvaluationRule(rule_id=2, content="Rule two"),
+        ],
+    )
+
+    result = Metrics.calculate_metrics(
+        diagram,
+        diagram,
+        evaluation,
+        ExtendedMatching(
+            reference=diagram,
+            candidate=diagram,
+            node_matches=[
+                NodeMatch("actor", "actor"),
+                NodeMatch("usecase", "usecase"),
+            ],
+            relation_matches=[RelationMatch("relation", "relation")],
+        ),
+    )
+
+    assert result.syntactic_error_rate == Decimal("0.5")
+    assert result.naming_understandability_score == Decimal(2)
+
+
+@pytest.mark.parametrize(
+    ("node_ids", "relation_ids"),
+    [
+        ([], ["relation"]),
+        (["actor"], []),
+        (["actor", "actor"], ["relation"]),
+        (["actor"], ["relation", "relation"]),
+        (["actor", "foreign"], ["relation"]),
+        (["actor"], ["relation", "foreign"]),
+    ],
+)
+def test_metrics_reject_incomplete_or_contradictory_element_evaluations(
+    node_ids: list[str], relation_ids: list[str]
+) -> None:
+    from src.model.domain.exceptions import MetricsCalculationError
+
+    candidate = UseCaseDiagramPresentation(
+        nodes=[Node(id="actor", name="Actor", type=NodeType.ACTOR)],
+        relations=[
+            NodeRelation(
+                id="relation",
+                source="actor",
+                target="actor",
+                type=NodeRelationType.ASSOCIATION,
+            )
+        ],
+    )
+
+    with pytest.raises(MetricsCalculationError):
+        _calculate_unmatched(
+            candidate,
+            EvaluationResult(
+                node_evaluations=[
+                    _node_evaluation(element_id) for element_id in node_ids
+                ],
+                relation_evaluations=[
+                    _relation_evaluation(element_id)
+                    for element_id in relation_ids
+                ],
+                applied_rules=[],
+            ),
+        )
+
+
+@pytest.mark.parametrize(
+    ("rules_applied", "syntactic_errors", "catalog_ids"),
+    [
+        ([1, 1], [], [1]),
+        ([1], [1, 1], [1]),
+        ([], [1], [1]),
+        ([2], [], [1]),
+        ([1], [], [1, 1]),
+    ],
+)
+def test_metrics_reject_inconsistent_rule_references(
+    rules_applied: list[int],
+    syntactic_errors: list[int],
+    catalog_ids: list[int],
+) -> None:
+    from src.model.domain.exceptions import MetricsCalculationError
+
+    candidate = UseCaseDiagramPresentation(
+        nodes=[Node(id="actor", name="Actor", type=NodeType.ACTOR)],
+        relations=[],
+    )
+    evaluation = EvaluationResult(
+        node_evaluations=[
+            _node_evaluation(
+                "actor",
+                syntactic_errors=syntactic_errors,
+                rules_applied=rules_applied,
+            )
+        ],
+        relation_evaluations=[],
+        applied_rules=[
+            EvaluationRule(rule_id=rule_id, content="Rule")
+            for rule_id in catalog_ids
+        ],
+    )
+
+    with pytest.raises(MetricsCalculationError):
+        _calculate_unmatched(candidate, evaluation)
+
+
+def test_allowed_candidate_without_rule_checks_has_zero_syntactic_errors() -> (
+    None
+):
+    candidate = UseCaseDiagramPresentation(
+        nodes=[Node(id="actor", name="Actor", type=NodeType.ACTOR)],
+        relations=[],
+    )
+
+    result = _calculate_unmatched(candidate, _evaluation_for(candidate))
+
+    assert result.syntactic_error_rate == Decimal(0)
+
+
+def test_excluded_nodes_do_not_change_syntactic_or_naming_metrics() -> None:
+    candidate = UseCaseDiagramPresentation(
+        nodes=[
+            Node(id="actor", name="Actor", type=NodeType.ACTOR),
+            Node(
+                id="external",
+                name="External",
+                type=NodeType.EXTERNAL_SYSTEM,
+            ),
+            Node(id="usecase", name="Use case", type=NodeType.USECASE),
+            Node(id="system", name="System", type=NodeType.SYSTEM),
+            Node(id="note", name="Note", type=NodeType.NOTE),
+            Node(id="other", name="Other", type=NodeType.OTHER),
+        ],
+        relations=[],
+    )
+    evaluation = EvaluationResult(
+        node_evaluations=[
+            _node_evaluation(
+                "actor",
+                rules_applied=[1],
+                naming_score=NamingUnderstandabilityScore.LOW,
+            ),
+            _node_evaluation(
+                "external", naming_score=NamingUnderstandabilityScore.HIGH
+            ),
+            _node_evaluation(
+                "usecase", naming_score=NamingUnderstandabilityScore.MEDIUM
+            ),
+            _node_evaluation(
+                "system",
+                rules_applied=[1],
+                syntactic_errors=[1],
+                naming_score=NamingUnderstandabilityScore.HIGH,
+            ),
+            _node_evaluation(
+                "note", rules_applied=[1], syntactic_errors=[1]
+            ),
+            _node_evaluation(
+                "other", rules_applied=[1], syntactic_errors=[1]
+            ),
+        ],
+        relation_evaluations=[],
+        applied_rules=[EvaluationRule(rule_id=1, content="Rule")],
+    )
+
+    result = _calculate_unmatched(candidate, evaluation)
+    result_without_excluded_evaluations = _calculate_unmatched(
+        candidate,
+        evaluation.model_copy(
+            update={"node_evaluations": evaluation.node_evaluations[:4]}
+        ),
+    )
+
+    assert result == result_without_excluded_evaluations
+    assert result.syntactic_error_rate == Decimal("0.5")
+    assert result.naming_understandability_score == Decimal(2)
 
 
 def test_semantic_metrics_count_nodes_and_relations_without_annotations() -> (
@@ -66,9 +355,7 @@ def test_semantic_metrics_count_nodes_and_relations_without_annotations() -> (
     result = Metrics.calculate_metrics(
         reference,
         candidate,
-        EvaluationResult(
-            node_evaluations=[], relation_evaluations=[], applied_rules=[]
-        ),
+        _evaluation_for(candidate),
         matching,
     )
 
@@ -95,9 +382,7 @@ def test_semantic_metrics_for_perfect_or_zero_matches(matched: bool) -> None:
     result = Metrics.calculate_metrics(
         diagram,
         diagram,
-        EvaluationResult(
-            node_evaluations=[], relation_evaluations=[], applied_rules=[]
-        ),
+        _evaluation_for(diagram),
         ExtendedMatching(
             reference=diagram,
             candidate=diagram,

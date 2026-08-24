@@ -62,13 +62,14 @@ def test_evaluation_result_serializes_candidate_element_metrics() -> None:
     }
 
 
-def test_node_evaluation_rejects_missing_metrics() -> None:
+def test_node_evaluation_requires_naming_score() -> None:
     with pytest.raises(ValidationError):
         NodeEvaluation.model_validate(
             {
                 "id": "node-1",
                 "syntactic_errors": [],
                 "rules_applied": [],
-                "naming_score": NamingUnderstandabilityScore.HIGH,
+                "combined_initiator_effect": 1,
+                "combined_target_effect": 2,
             }
         )
