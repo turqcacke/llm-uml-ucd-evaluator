@@ -76,3 +76,28 @@ def test_diagram_rejects_duplicate_graph_element_ids(
 ) -> None:
     with pytest.raises(ValidationError, match=error_message):
         UseCaseDiagramPresentation(nodes=nodes, relations=relations)
+
+
+@pytest.mark.parametrize(
+    "node_type, allowed",
+    [(None, False)]
+    + [
+        (
+            kind,
+            kind
+            in {NodeType.ACTOR, NodeType.EXTERNAL_SYSTEM, NodeType.USECASE},
+        )
+        for kind in NodeType
+    ],
+)
+def test_diagram_derives_allowance(
+    node_type: NodeType | None, allowed: bool
+) -> None:
+    diagram = UseCaseDiagramPresentation(
+        nodes=[Node(id="1", name="Element", type=node_type)]
+        if node_type is not None
+        else [],
+        relations=[],
+    )
+
+    assert diagram.is_allowed is allowed

@@ -48,6 +48,14 @@ class UseCaseDiagramPresentation(BaseModel):
         description="External system node IDs; derived during validation.",
     )
 
+    @property
+    def is_allowed(self) -> bool:
+        return any(
+            node.type
+            in {NodeType.ACTOR, NodeType.EXTERNAL_SYSTEM, NodeType.USECASE}
+            for node in self.nodes
+        )
+
     def actor_cnt(self) -> int:
         return len(self.actors)
 
