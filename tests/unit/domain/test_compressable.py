@@ -1,6 +1,6 @@
 from src.model.domain.lib import csv_head
 from src.model.domain.node import Node, NodeType
-from src.model.domain.relation import NodeLinkType, NodeRelation
+from src.model.domain.relation import NodeRelation, NodeRelationType
 
 
 def test_csv_head_returns_csv_header() -> None:
@@ -23,7 +23,7 @@ def test_relation_compress_returns_csv_pattern_and_value() -> None:
         id="relation-1",
         source="source-1",
         target="target-1",
-        type=NodeLinkType.EXTEND,
+        type=NodeRelationType.EXTEND,
     )
 
     assert relation.pattern() == "id,source,target,type"
@@ -35,7 +35,10 @@ def test_relation_compress_escapes_csv_values() -> None:
         id="relation-1",
         source="source,1",
         target='target "1"',
-        type=NodeLinkType.ASSOCIATION,
+        type=NodeRelationType.ASSOCIATION,
     )
 
-    assert relation.compress() == 'relation-1,"source,1","target ""1""",association'
+    assert (
+        relation.compress()
+        == 'relation-1,"source,1","target ""1""",association'
+    )

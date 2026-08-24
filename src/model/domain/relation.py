@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from .interfaces.compressable import Compressable
 
 
-class NodeLinkType(StrEnum):
+class NodeRelationType(StrEnum):
     """Diagram relation kind."""
 
     ASSOCIATION = "association"
@@ -24,7 +24,7 @@ class NodeRelation(BaseModel):
     id: str = Field(description="Unique compact relation ID, such as '1'.")
     source: str = Field(description="Source node ID.")
     target: str = Field(description="Target node ID.")
-    type: NodeLinkType = Field(description="Relation kind.")
+    type: NodeRelationType = Field(description="Relation kind.")
 
     @override
     def __hash__(self) -> int:

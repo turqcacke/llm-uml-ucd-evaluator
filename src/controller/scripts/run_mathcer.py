@@ -7,6 +7,7 @@ from src.config import BASE_URL
 from src.controller.di import container
 from src.controller.scripts.results import save_result
 from src.model.domain.diagram_presentation import UseCaseDiagramPresentation
+from src.model.domain.exceptions import DomainError
 from src.services.llm_client.exceptions import LlmProviderException
 from src.services.pipelines.matcher.use_case_diagram import (
     UseCaseDiagramMatcher,
@@ -48,7 +49,7 @@ def main(argv: list[str] | None = None) -> int:
             result = asyncio.run(pipeline.execute(data))
         output = result.model_dump_json(indent=2)
         save_result(output, args.results_path)
-    except (OSError, ValueError, LlmProviderException) as exc:
+    except (OSError, ValueError, DomainError, LlmProviderException) as exc:
         logger.error("{}: error: {}", parser.prog, exc)
         return 1
     logger.info("{}", output)

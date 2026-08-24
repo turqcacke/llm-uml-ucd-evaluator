@@ -3,7 +3,7 @@ from pydantic import ValidationError
 
 from src.model.domain.diagram_presentation import UseCaseDiagramPresentation
 from src.model.domain.node import Node, NodeType
-from src.model.domain.relation import NodeLinkType, NodeRelation
+from src.model.domain.relation import NodeRelation, NodeRelationType
 
 
 def test_diagram_derives_and_serializes_node_id_groups() -> None:
@@ -23,7 +23,7 @@ def test_diagram_derives_and_serializes_node_id_groups() -> None:
                 id="1",
                 source="1",
                 target="2",
-                type=NodeLinkType.ASSOCIATION,
+                type=NodeRelationType.ASSOCIATION,
             )
         ],
     )
@@ -56,13 +56,13 @@ def test_diagram_derives_and_serializes_node_id_groups() -> None:
                     id="1",
                     source="1",
                     target="2",
-                    type=NodeLinkType.ASSOCIATION,
+                    type=NodeRelationType.ASSOCIATION,
                 ),
                 NodeRelation(
                     id="1",
                     source="2",
                     target="3",
-                    type=NodeLinkType.ASSOCIATION,
+                    type=NodeRelationType.ASSOCIATION,
                 ),
             ],
             "Relation IDs must be unique.",

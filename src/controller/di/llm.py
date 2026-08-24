@@ -4,7 +4,7 @@ from dishka import Provider, Scope, provide
 
 from src.config import get_settings
 from src.model.domain.diagram_presentation import UseCaseDiagramPresentation
-from src.model.domain.matching import MatchingResult
+from src.model.domain.matching import MinMatching
 from src.services.llm_client import ChatModel, LangChainChatModel
 from src.services.pipelines.extractor.dependencies import (
     ApollonExtractorChatModel,
@@ -36,7 +36,7 @@ def get_text_extractor_chat_model(
     return model
 
 
-def get_use_case_diagram_matcher_chat_model() -> ChatModel[MatchingResult]:
+def get_use_case_diagram_matcher_chat_model() -> ChatModel[MinMatching]:
     settings = get_settings()
     model = LangChainChatModel(
         model=settings.MATCHER_MODEL,
@@ -44,7 +44,7 @@ def get_use_case_diagram_matcher_chat_model() -> ChatModel[MatchingResult]:
         base_url=settings.MATCHER_BASE_URL,
         model_provider=settings.MATCHER_PROVIDER,
         system_prompt=prompts.USE_CASE_DIAGRAM_MATCHER,
-        response_type=MatchingResult,
+        response_type=MinMatching,
     )
     return model
 
@@ -63,5 +63,5 @@ class ChatModelProvider(Provider):
         return get_text_extractor_chat_model(type_="apollon")
 
     @provide(scope=Scope.APP)
-    def use_case_diagram_matcher_chat_model(self) -> ChatModel[MatchingResult]:
+    def use_case_diagram_matcher_chat_model(self) -> ChatModel[MinMatching]:
         return get_use_case_diagram_matcher_chat_model()

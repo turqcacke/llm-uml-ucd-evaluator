@@ -2,7 +2,7 @@ import pytest
 from httpx2 import Request, Response
 from openai import BadRequestError, NotFoundError
 
-from src.model.domain.matching import MatchingResult
+from src.model.domain.matching import MinMatching
 from src.model.llm.context import LLMRoles
 from src.services.llm_client import chat_model
 from src.services.llm_client.exceptions import ConfigError, LlmRequestError
@@ -14,7 +14,7 @@ from src.services.llm_client.exceptions import ConfigError, LlmRequestError
     [
         (
             BadRequestError,
-            "Invalid schema for response_format 'MatchingResult'.",
+            "Invalid schema for response_format 'MinMatching'.",
             400,
         ),
         (NotFoundError, "Error code: 404 - {'code': 'model_not_found'}", 404),
@@ -30,7 +30,7 @@ async def test_invocation_falls_back_to_function_calling(
         def __init__(self, method: str) -> None:
             self._method = method
 
-        async def ainvoke(self, _: object) -> MatchingResult:
+        async def ainvoke(self, _: object) -> MinMatching:
             if self._method == "json_schema":
                 raise error_type(
                     message,
@@ -40,18 +40,15 @@ async def test_invocation_falls_back_to_function_calling(
                     ),
                     body=None,
                 )
-            return MatchingResult(
+            return MinMatching(
                 node_matches=[],
-                missing_nodes=[],
-                redundant_nodes=[],
-                missing_links=[],
-                redundant_links=[],
+                relation_matches=[],
             )
 
     class FakeLanguageModel:
         def with_structured_output(
             self,
-            _: type[MatchingResult],
+            _: type[MinMatching],
             *,
             method: str,
         ) -> FakeStructuredModel:
@@ -66,17 +63,14 @@ async def test_invocation_falls_back_to_function_calling(
         "gpt-5.5",
         "test-key",
         system_prompt="",
-        response_type=MatchingResult,
+        response_type=MinMatching,
     )
 
     result = await model.invoke("Evaluate the diagram.", LLMRoles.USER)
 
-    assert result == MatchingResult(
+    assert result == MinMatching(
         node_matches=[],
-        missing_nodes=[],
-        redundant_nodes=[],
-        missing_links=[],
-        redundant_links=[],
+        relation_matches=[],
     )
 
 
@@ -96,12 +90,12 @@ async def test_invocation_reports_provider_failure(
     class FailingLanguageModel:
         def with_structured_output(
             self,
-            _: type[MatchingResult],
+            _: type[MinMatching],
             **__: object,
         ) -> "FailingLanguageModel":
             return self
 
-        async def ainvoke(self, _: object) -> MatchingResult:
+        async def ainvoke(self, _: object) -> MinMatching:
             raise provider_error
 
     monkeypatch.setattr(
@@ -113,7 +107,7 @@ async def test_invocation_reports_provider_failure(
         "gpt-5.5",
         "test-key",
         system_prompt="",
-        response_type=MatchingResult,
+        response_type=MinMatching,
     )
 
     with pytest.raises(LlmRequestError, match="Invalid request"):
@@ -133,7 +127,7 @@ def test_configuration_error_uses_model_as_provider_fallback(
             "gpt-5",
             "test-key",
             system_prompt="",
-            response_type=MatchingResult,
+            response_type=MinMatching,
         )
 
     assert str(error_info.value) == (

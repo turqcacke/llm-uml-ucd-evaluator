@@ -10,7 +10,7 @@ from langchain_core.messages import BaseMessage
 from pydantic import BaseModel
 
 from src.config import get_settings
-from src.model.domain.matching import MatchingResult
+from src.model.domain.matching import MinMatching
 from src.services.llm_client import chat_model
 from src.services.shared import guardrails, prompts
 
@@ -46,13 +46,10 @@ def llm_calls(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
 
         async def ainvoke(self, messages: list[BaseMessage]) -> BaseModel:
             calls.append((self.model, messages))
-            if self.response_type is MatchingResult:
-                return MatchingResult(
+            if self.response_type is MinMatching:
+                return MinMatching(
                     node_matches=[],
-                    missing_nodes=["missing"],
-                    redundant_nodes=[],
-                    missing_links=[],
-                    redundant_links=[],
+                    relation_matches=[],
                 )
             return self.response_type.model_validate(
                 {"id": "extracted", "nodes": [], "relations": []}
@@ -132,7 +129,9 @@ def test_match_reference_and_candidate_from_cli(
     reference = tmp_path / "reference.json"
     candidate = tmp_path / "candidate.json"
     reference.write_text(
-        '{"id": "reference-id", "nodes": [], "relations": []}', "utf-8"
+        '{"id": "reference-id", "nodes": [{"id": "missing", '
+        '"name": "Buyer", "type": "actor"}], "relations": []}',
+        "utf-8",
     )
     candidate.write_text(
         '{"id": "candidate-id", "nodes": [], "relations": []}', "utf-8"
@@ -143,15 +142,19 @@ def test_match_reference_and_candidate_from_cli(
     result, directory = result_store.only_result()
     assert result == {
         "node_matches": [],
+        "relation_matches": [],
         "missing_nodes": ["missing"],
         "redundant_nodes": [],
-        "missing_links": [],
-        "redundant_links": [],
+        "missing_relations": [],
+        "redundant_relations": [],
     }
     assert directory == run_mathcer.RESULTS_PATH
     assert len(llm_calls) == 1
     model, messages = llm_calls[0]
     assert model == "test-matcher"
+    assert "one-to-one Node Matches and Relation Matches only" in (
+        messages[0].content
+    )
     content = messages[1].content
     assert isinstance(content, str)
     reference_prompt, candidate_prompt = content.split("Candidate:", 1)
