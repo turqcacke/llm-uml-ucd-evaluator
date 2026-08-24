@@ -18,7 +18,7 @@ class ApollonExtratorInput:
     appolon_model: ApollonJson
 
 
-class ApollonExtractor(
+class ApollonLlmExtractor(
     BasePipeline[ApollonExtratorInput, UseCaseDiagramPresentation]
 ):
     def __init__(

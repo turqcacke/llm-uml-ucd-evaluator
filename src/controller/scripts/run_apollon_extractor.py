@@ -9,8 +9,8 @@ from src.controller.scripts.results import save_result
 from src.model.apollon import ApollonJson
 from src.services.llm_client.exceptions import LlmProviderException
 from src.services.pipelines.extractor.apollon import (
-    ApollonExtractor,
     ApollonExtratorInput,
+    ApollonLlmExtractor,
 )
 
 RESULTS_PATH = BASE_URL / "scripts_out" / "run_apollon_extractor"
@@ -38,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
             ApollonJson.model_validate_json(args.apollon.read_text("utf-8"))
         )
         with container:
-            pipeline = container.get(ApollonExtractor)
+            pipeline = container.get(ApollonLlmExtractor)
             result = asyncio.run(pipeline.execute(data))
         output = result.model_dump_json(indent=2)
         save_result(output, args.results_path)

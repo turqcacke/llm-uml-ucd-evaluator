@@ -1,7 +1,7 @@
-from .apollon import ApollonExtractor
+from .apollon import ApollonLlmExtractor
 from .text import DescriptionExtractor
 
 __all__ = [
-    "ApollonExtractor",
+    "ApollonLlmExtractor",
     "DescriptionExtractor",
 ]
