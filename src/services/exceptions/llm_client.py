@@ -1,4 +1,7 @@
-class LlmProviderException(Exception):
+from .base import BaseAppException
+
+
+class LlmProviderException(BaseAppException):
     """Base exception for errors raised by an LLM provider or client."""
 
     def __init__(

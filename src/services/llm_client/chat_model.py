@@ -9,14 +9,15 @@ from pydantic import BaseModel, ValidationError
 
 from src.app_logging import logger
 from src.model.llm.context import LlmMessage, LLMRoles
-
-from .exceptions import (
+from src.services.exceptions import BaseAppException
+from src.services.exceptions.llm_client import (
     ConfigError,
     LlmProviderException,
     LlmRequestError,
     LlmResponseError,
     RateLimitError,
 )
+
 from .llm_context import ContextBuilder, SimpleContextBuilder
 
 TResponse = TypeVar("TResponse", bound=BaseModel)
@@ -99,6 +100,8 @@ class LangChainChatModel[TResponse](ChatModel[TResponse]):
                 return await self._invoke_structured(
                     context, "function_calling"
                 )
+        except BaseAppException:
+            raise
         except Exception as exc:
             raise _as_llm_exception(
                 exc, provider=self._provider, model=self._model

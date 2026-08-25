@@ -4,8 +4,31 @@ from openai import BadRequestError, NotFoundError
 
 from src.model.domain.matching import MinMatching
 from src.model.llm.context import LLMRoles
+from src.services.exceptions import BaseAppException
+from src.services.exceptions.llm_client import (
+    ConfigError,
+    LlmProviderException,
+    LlmRequestError,
+    LlmResponseError,
+    RateLimitError,
+)
 from src.services.llm_client import chat_model
-from src.services.llm_client.exceptions import ConfigError, LlmRequestError
+
+
+@pytest.mark.parametrize(
+    "exception_type",
+    [
+        LlmProviderException,
+        ConfigError,
+        RateLimitError,
+        LlmResponseError,
+        LlmRequestError,
+    ],
+)
+def test_llm_exceptions_are_service_exceptions(
+    exception_type: type[BaseAppException],
+) -> None:
+    assert issubclass(exception_type, BaseAppException)
 
 
 @pytest.mark.anyio
@@ -112,6 +135,41 @@ async def test_invocation_reports_provider_failure(
 
     with pytest.raises(LlmRequestError, match="Invalid request"):
         await model.invoke("Evaluate the diagram.", LLMRoles.USER)
+
+
+@pytest.mark.anyio
+async def test_invocation_preserves_service_exception(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    service_error = LlmResponseError("Invalid structured response")
+
+    class FailingLanguageModel:
+        def with_structured_output(
+            self,
+            _: type[MinMatching],
+            **__: object,
+        ) -> "FailingLanguageModel":
+            return self
+
+        async def ainvoke(self, _: object) -> MinMatching:
+            raise service_error
+
+    monkeypatch.setattr(
+        chat_model,
+        "init_chat_model",
+        lambda **_: FailingLanguageModel(),
+    )
+    model = chat_model.LangChainChatModel(
+        "gpt-5.5",
+        "test-key",
+        system_prompt="",
+        response_type=MinMatching,
+    )
+
+    with pytest.raises(LlmResponseError) as error_info:
+        await model.invoke("Evaluate the diagram.", LLMRoles.USER)
+
+    assert error_info.value is service_error
 
 
 def test_configuration_error_uses_model_as_provider_fallback(

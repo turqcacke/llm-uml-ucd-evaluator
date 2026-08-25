@@ -7,7 +7,7 @@ from src.config import BASE_URL
 from src.controller.di import container
 from src.controller.scripts.results import save_result
 from src.model.apollon import ApollonJson
-from src.services.llm_client.exceptions import LlmProviderException
+from src.services.exceptions import BaseAppException
 from src.services.pipelines.extractor.apollon_llm import (
     ApollonLlmExtractor,
     ApollonLlmExtractorInput,
@@ -42,7 +42,7 @@ def main(argv: list[str] | None = None) -> int:
             result = asyncio.run(pipeline.execute(data))
         output = result.model_dump_json(indent=2)
         save_result(output, args.results_path)
-    except (OSError, ValueError, LlmProviderException) as exc:
+    except (OSError, ValueError, BaseAppException) as exc:
         logger.error("{}: error: {}", parser.prog, exc)
         return 1
     logger.info("{}", output)

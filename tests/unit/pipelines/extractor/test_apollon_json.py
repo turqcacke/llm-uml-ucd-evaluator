@@ -4,6 +4,7 @@ from src.model.apollon import ApollonJson
 from src.services.converters.apollon_to_domain import (
     ApollonToDomainConverter,
 )
+from src.services.exceptions.converters import ConversionError
 from src.services.pipelines.extractor.apollon_json import (
     ApollonJsonExtractor,
     ApollonJsonExtractorInput,
@@ -93,7 +94,7 @@ async def test_json_extractor_returns_domain_presentation() -> None:
 async def test_json_extractor_rejects_invalid_diagram() -> None:
     extractor = ApollonJsonExtractor(ApollonToDomainConverter())
 
-    with pytest.raises(ValueError, match="Node IDs must be unique"):
+    with pytest.raises(ConversionError, match="Node IDs must be unique"):
         await extractor.execute(
             ApollonJsonExtractorInput(_source(duplicate_ids=True))
         )

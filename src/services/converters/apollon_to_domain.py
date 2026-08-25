@@ -12,6 +12,8 @@ from src.model.domain import (
     NodeType,
     UseCaseDiagramPresentation,
 )
+from src.services.exceptions import BaseAppException
+from src.services.exceptions.converters import ConversionError
 
 from .base import BaseConverter
 
@@ -61,12 +63,20 @@ class ApollonToDomainConverter(
         self._relation_converter = _NodeRelationConverter()
 
     def convert(self, from_value: ApollonJson) -> UseCaseDiagramPresentation:
-        nodes = [
-            self._node_converter.convert(node)
-            for node in from_value.model.elements.values()
-        ]
-        relations = [
-            self._relation_converter.convert(relation)
-            for relation in from_value.model.relationships.values()
-        ]
-        return UseCaseDiagramPresentation(nodes=nodes, relations=relations)
+        try:
+            nodes = [
+                self._node_converter.convert(node)
+                for node in from_value.model.elements.values()
+            ]
+            relations = [
+                self._relation_converter.convert(relation)
+                for relation in from_value.model.relationships.values()
+            ]
+            return UseCaseDiagramPresentation(
+                nodes=nodes,
+                relations=relations,
+            )
+        except BaseAppException:
+            raise
+        except Exception as exc:
+            raise ConversionError(str(exc), original=exc) from exc

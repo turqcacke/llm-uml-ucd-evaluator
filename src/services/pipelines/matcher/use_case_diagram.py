@@ -6,7 +6,7 @@ from src.model.domain.matching import ExtendedMatching, MinMatching
 from src.model.llm.context import LLMRoles
 from src.services.llm_client import ChatModel
 
-from ..base import BasePipeline
+from ..base import BasePipeline, map_pipeline_exceptions
 
 _MESSAGE_PROMPT = """
 Reference:
@@ -32,6 +32,7 @@ class UseCaseDiagramMatcher(
     ):
         self._chat_model = chat_model
 
+    @map_pipeline_exceptions
     async def execute(
         self, data: UseCaseDiagramMatcherInput
     ) -> ExtendedMatching:

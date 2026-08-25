@@ -5,7 +5,7 @@ from src.model.apollon import ApollonJson
 from src.model.domain.diagram_presentation import UseCaseDiagramPresentation
 from src.model.llm.context import LLMRoles
 
-from ..base import BasePipeline
+from ..base import BasePipeline, map_pipeline_exceptions
 from .dependencies import ApollonExtractorChatModel
 
 _MESSAGE_PROMPT = """
@@ -27,6 +27,7 @@ class ApollonLlmExtractor(
     ):
         self._chat_model = chat_model
 
+    @map_pipeline_exceptions
     async def execute(
         self, data: ApollonLlmExtractorInput
     ) -> UseCaseDiagramPresentation:

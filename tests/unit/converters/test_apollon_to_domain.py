@@ -4,6 +4,7 @@ from src.model.apollon import ApollonJson
 from src.services.converters.apollon_to_domain import (
     ApollonToDomainConverter,
 )
+from src.services.exceptions.converters import ConversionError
 
 
 def _apollon_json() -> ApollonJson:
@@ -100,5 +101,5 @@ def test_apollon_diagram_with_duplicate_node_ids_is_rejected() -> None:
     source = _apollon_json()
     source.model.elements["2"].id = "1"
 
-    with pytest.raises(ValueError, match="Node IDs must be unique"):
+    with pytest.raises(ConversionError, match="Node IDs must be unique"):
         ApollonToDomainConverter().convert(source)

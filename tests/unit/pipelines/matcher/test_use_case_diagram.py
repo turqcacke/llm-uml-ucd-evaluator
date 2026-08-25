@@ -5,6 +5,8 @@ from src.model.domain.matching import MinMatching, NodeMatch, RelationMatch
 from src.model.domain.node import Node, NodeType
 from src.model.domain.relation import NodeRelation, NodeRelationType
 from src.model.llm.context import LLMRoles
+from src.services.exceptions.llm_client import LlmRequestError
+from src.services.exceptions.pipelines import PipelineError
 from src.services.pipelines.matcher.use_case_diagram import (
     UseCaseDiagramMatcher,
     UseCaseDiagramMatcherInput,
@@ -19,6 +21,14 @@ class FakeChatModel:
     async def invoke(self, prompt: str, role: LLMRoles) -> MinMatching:
         self.calls.append((prompt, role))
         return self.result
+
+
+class FailingChatModel:
+    def __init__(self, error: Exception) -> None:
+        self.error = error
+
+    async def invoke(self, prompt: str, role: LLMRoles) -> MinMatching:
+        raise self.error
 
 
 @pytest.mark.anyio
@@ -95,3 +105,35 @@ async def test_matcher_finalizes_semantic_matches(
     assert reference.model_dump_json() in prompt
     assert "Candidate:" in prompt
     assert candidate.model_dump_json() in prompt
+
+
+@pytest.mark.anyio
+async def test_matcher_preserves_service_exception() -> None:
+    error = LlmRequestError("Provider failed")
+    diagram = UseCaseDiagramPresentation(nodes=[], relations=[])
+
+    with pytest.raises(LlmRequestError) as error_info:
+        await UseCaseDiagramMatcher(FailingChatModel(error)).execute(
+            UseCaseDiagramMatcherInput(
+                reference=diagram,
+                candidate=diagram,
+            )
+        )
+
+    assert error_info.value is error
+
+
+@pytest.mark.anyio
+async def test_matcher_maps_unexpected_error_to_pipeline_error() -> None:
+    error = RuntimeError("Broken matcher dependency")
+    diagram = UseCaseDiagramPresentation(nodes=[], relations=[])
+
+    with pytest.raises(PipelineError, match="Broken matcher dependency") as info:
+        await UseCaseDiagramMatcher(FailingChatModel(error)).execute(
+            UseCaseDiagramMatcherInput(
+                reference=diagram,
+                candidate=diagram,
+            )
+        )
+
+    assert info.value.original is error
