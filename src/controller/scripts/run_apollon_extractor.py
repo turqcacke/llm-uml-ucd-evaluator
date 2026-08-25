@@ -8,9 +8,9 @@ from src.controller.di import container
 from src.controller.scripts.results import save_result
 from src.model.apollon import ApollonJson
 from src.services.llm_client.exceptions import LlmProviderException
-from src.services.pipelines.extractor.apollon import (
-    ApollonExtratorInput,
+from src.services.pipelines.extractor.apollon_llm import (
     ApollonLlmExtractor,
+    ApollonLlmExtractorInput,
 )
 
 RESULTS_PATH = BASE_URL / "scripts_out" / "run_apollon_extractor"
@@ -34,7 +34,7 @@ def main(argv: list[str] | None = None) -> int:
             args.apollon,
             args.results_path,
         )
-        data = ApollonExtratorInput(
+        data = ApollonLlmExtractorInput(
             ApollonJson.model_validate_json(args.apollon.read_text("utf-8"))
         )
         with container:

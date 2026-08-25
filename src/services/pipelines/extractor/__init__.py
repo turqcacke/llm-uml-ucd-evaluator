@@ -1,4 +1,4 @@
-from .apollon import ApollonLlmExtractor
+from .apollon_llm import ApollonLlmExtractor
 from .text import DescriptionExtractor
 
 __all__ = [

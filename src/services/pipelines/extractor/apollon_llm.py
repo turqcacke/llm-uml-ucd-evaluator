@@ -14,12 +14,12 @@ _MESSAGE_PROMPT = """
 
 
 @dataclass
-class ApollonExtratorInput:
-    appolon_model: ApollonJson
+class ApollonLlmExtractorInput:
+    apollon_model: ApollonJson
 
 
 class ApollonLlmExtractor(
-    BasePipeline[ApollonExtratorInput, UseCaseDiagramPresentation]
+    BasePipeline[ApollonLlmExtractorInput, UseCaseDiagramPresentation]
 ):
     def __init__(
         self,
@@ -28,9 +28,9 @@ class ApollonLlmExtractor(
         self._chat_model = chat_model
 
     async def execute(
-        self, data: ApollonExtratorInput
+        self, data: ApollonLlmExtractorInput
     ) -> UseCaseDiagramPresentation:
-        json_model = data.appolon_model.model_dump_json()
+        json_model = data.apollon_model.model_dump_json()
         logger.info(
             "Apollon extraction started characters={}", len(json_model)
         )

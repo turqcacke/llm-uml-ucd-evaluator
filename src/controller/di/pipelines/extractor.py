@@ -1,6 +1,6 @@
 from dishka import Provider, Scope, provide
 
-from src.services.pipelines.extractor.apollon import ApollonLlmExtractor
+from src.services.pipelines.extractor.apollon_llm import ApollonLlmExtractor
 from src.services.pipelines.extractor.text import DescriptionExtractor
 
 
