@@ -7,6 +7,7 @@ from src.model.domain import (
     UseCaseDiagramPresentation,
 )
 from src.model.domain.exceptions import MetricsCalculationError
+from src.services.exceptions import BaseAppException
 
 from ..evaluator import PragmaticSyntacticInput, PragmaticSyntacticLlmEvaluator
 from ..matcher.use_case_diagram import (
@@ -40,13 +41,22 @@ async def assess(
             ),
         )
 
-    async with TaskGroup() as tasks:
-        matching_task = tasks.create_task(
-            matcher.execute(UseCaseDiagramMatcherInput(reference, candidate))
-        )
-        evaluation_task = tasks.create_task(
-            evaluator.execute(PragmaticSyntacticInput(candidate))
-        )
+    try:
+        async with TaskGroup() as tasks:
+            matching_task = tasks.create_task(
+                matcher.execute(
+                    UseCaseDiagramMatcherInput(reference, candidate)
+                )
+            )
+            evaluation_task = tasks.create_task(
+                evaluator.execute(PragmaticSyntacticInput(candidate))
+            )
+    except ExceptionGroup as exc:
+        if len(exc.exceptions) == 1 and isinstance(
+            error := exc.exceptions[0], BaseAppException
+        ):
+            raise error from exc
+        raise
 
     evaluation = evaluation_task.result()
     metrics = MetricsWithEvaluation.calculate_metrics(

@@ -17,6 +17,7 @@ from src.model.domain.evaluation import (
     NodeEvaluation,
 )
 from src.model.domain.matching import NodeMatch
+from src.services.exceptions.llm_client import LlmRequestError
 from src.services.exceptions.pipelines import PipelineError
 from src.services.pipelines.diagram_assessment import (
     ApollonReferenceAssessment,
@@ -69,12 +70,13 @@ class BlockingPipeline:
 
 
 class FailingAfterStartPipeline:
-    def __init__(self, started: Event) -> None:
+    def __init__(self, started: Event, error: Exception | None = None) -> None:
         self.started = started
+        self.error = error or RuntimeError("Evaluation failed")
 
     async def execute(self, data: Any) -> Any:
         await self.started.wait()
-        raise RuntimeError("Evaluation failed")
+        raise self.error
 
 
 def _apollon() -> ApollonJson:
@@ -110,7 +112,9 @@ async def test_description_reference_assessment_returns_metrics_and_evaluation(
     matching = ExtendedMatching(
         reference=reference,
         candidate=candidate,
-        node_matches=[NodeMatch("reference", "candidate")],
+        node_matches=[
+            NodeMatch(reference_id="reference", candidate_id="candidate")
+        ],
         relation_matches=[],
     )
     description_extractor = FakePipeline(reference)
@@ -218,7 +222,9 @@ async def test_apollon_reference_assessment_extracts_both_diagrams() -> None:
     matching = ExtendedMatching(
         reference=reference,
         candidate=candidate,
-        node_matches=[NodeMatch("reference", "candidate")],
+        node_matches=[
+            NodeMatch(reference_id="reference", candidate_id="candidate")
+        ],
         relation_matches=[],
     )
     assessment = ApollonReferenceAssessment(
@@ -259,6 +265,27 @@ async def test_analysis_failure_cancels_the_other_task() -> None:
 
     assert matcher.cancelled.is_set()
     assert isinstance(error_info.value.original, BaseExceptionGroup)
+
+
+@pytest.mark.anyio
+async def test_analysis_reraises_single_application_error() -> None:
+    matcher = BlockingPipeline()
+    error = LlmRequestError("Provider rejected the request")
+    evaluator = FailingAfterStartPipeline(matcher.started, error)
+    assessment = DescriptionReferenceAssessment(
+        cast(DescriptionExtractor, FakePipeline(_diagram("reference"))),
+        cast(ApollonJsonExtractor, FakePipeline(_diagram("candidate"))),
+        cast(UseCaseDiagramMatcher, matcher),
+        cast(PragmaticSyntacticLlmEvaluator, evaluator),
+    )
+
+    with pytest.raises(LlmRequestError) as error_info:
+        await assessment.execute(
+            DescriptionReferenceAssessmentInput("Reference", _apollon())
+        )
+
+    assert matcher.cancelled.is_set()
+    assert error_info.value is error
 
 
 @pytest.mark.anyio

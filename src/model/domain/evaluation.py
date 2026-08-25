@@ -1,5 +1,4 @@
 from enum import IntEnum
-from typing import NamedTuple
 
 from pydantic import BaseModel, Field
 
@@ -12,7 +11,7 @@ class NamingUnderstandabilityScore(IntEnum):
     HIGH = 3
 
 
-class EvaluationRule(NamedTuple):
+class EvaluationRule(BaseModel):
     rule_id: int
     content: str
 
@@ -68,5 +67,5 @@ class EvaluationResult(BaseModel):
     )
     relation_evaluations: list[RelationEvaluation]
     applied_rules: list[EvaluationRule] = Field(
-        description="Applied rules: [rule_id, rule_text]."
+        description="Applied rule objects with their IDs and text."
     )

@@ -52,10 +52,21 @@ def test_evaluation_result_serializes_candidate_element_metrics() -> None:
             }
         ],
         "applied_rules": [
-            [1, "Actors initiate use cases."],
-            [2, "Use case names start with verbs."],
+            {"rule_id": 1, "content": "Actors initiate use cases."},
+            {"rule_id": 2, "content": "Use case names start with verbs."},
         ],
     }
+
+
+def test_evaluation_result_rejects_positional_rules() -> None:
+    with pytest.raises(ValidationError):
+        EvaluationResult.model_validate(
+            {
+                "node_evaluations": [],
+                "relation_evaluations": [],
+                "applied_rules": [[1, "Actors initiate use cases."]],
+            }
+        )
 
 
 def test_node_evaluation_requires_naming_score() -> None:

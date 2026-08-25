@@ -43,7 +43,7 @@ async def test_evaluator_returns_structured_candidate_evaluation() -> None:
     assert result.node_evaluations == []
     assert result.relation_evaluations == []
     assert result.applied_rules == [
-        EvaluationRule(rule_id, content)
+        EvaluationRule(rule_id=rule_id, content=content)
         for rule_id, content in SYNTACTIC_RULES.items()
     ]
     assert chat_model.calls == [

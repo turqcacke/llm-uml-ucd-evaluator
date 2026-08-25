@@ -150,10 +150,14 @@ def test_syntactic_and_naming_metrics_aggregate_candidate_evaluations() -> None:
             reference=diagram,
             candidate=diagram,
             node_matches=[
-                NodeMatch("actor", "actor"),
-                NodeMatch("usecase", "usecase"),
+                NodeMatch(reference_id="actor", candidate_id="actor"),
+                NodeMatch(reference_id="usecase", candidate_id="usecase"),
             ],
-            relation_matches=[RelationMatch("relation", "relation")],
+            relation_matches=[
+                RelationMatch(
+                    reference_id="relation", candidate_id="relation"
+                )
+            ],
         ),
     )
 
@@ -349,7 +353,7 @@ def test_semantic_metrics_count_nodes_and_relations_without_annotations() -> (
         reference=reference,
         candidate=candidate,
         node_matches=[
-            NodeMatch(kind.value, kind.value)
+            NodeMatch(reference_id=kind.value, candidate_id=kind.value)
             for kind in (
                 NodeType.ACTOR,
                 NodeType.SYSTEM,
@@ -358,7 +362,7 @@ def test_semantic_metrics_count_nodes_and_relations_without_annotations() -> (
             )
         ],
         relation_matches=[
-            RelationMatch(kind.value, kind.value)
+            RelationMatch(reference_id=kind.value, candidate_id=kind.value)
             for kind in (
                 NodeRelationType.INCLUDE,
                 NodeRelationType.GENERALIZATION,
@@ -400,7 +404,11 @@ def test_semantic_metrics_for_perfect_or_zero_matches(matched: bool) -> None:
         ExtendedMatching(
             reference=diagram,
             candidate=diagram,
-            node_matches=[NodeMatch("actor", "actor")] if matched else [],
+            node_matches=[
+                NodeMatch(reference_id="actor", candidate_id="actor")
+            ]
+            if matched
+            else [],
             relation_matches=[],
         ),
     )

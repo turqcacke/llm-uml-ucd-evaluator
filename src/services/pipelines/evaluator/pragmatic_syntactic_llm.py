@@ -32,7 +32,7 @@ class PragmaticSyntacticLlmEvaluator(
         return result.model_copy(
             update={
                 "applied_rules": [
-                    EvaluationRule(rule_id, content)
+                    EvaluationRule(rule_id=rule_id, content=content)
                     for rule_id, content in SYNTACTIC_RULES.items()
                 ]
             }

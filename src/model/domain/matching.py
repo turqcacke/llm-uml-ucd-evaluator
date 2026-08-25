@@ -1,4 +1,4 @@
-from typing import Annotated, NamedTuple, Self
+from typing import Self
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -7,40 +7,28 @@ from .exceptions import MatchingError
 from .node import NodeType
 
 
-class NodeMatch(NamedTuple):
+class NodeMatch(BaseModel):
     """Semantically matching reference/candidate node pair."""
 
-    reference_id: Annotated[
-        str,
-        Field(description="Matched reference node ID."),
-    ]
-    candidate_id: Annotated[
-        str,
-        Field(description="Matched candidate node ID."),
-    ]
+    reference_id: str = Field(description="Matched reference node ID.")
+    candidate_id: str = Field(description="Matched candidate node ID.")
 
 
-class RelationMatch(NamedTuple):
+class RelationMatch(BaseModel):
     """Semantically matching reference/candidate relation pair."""
 
-    reference_id: Annotated[
-        str,
-        Field(description="Matched reference relation ID."),
-    ]
-    candidate_id: Annotated[
-        str,
-        Field(description="Matched candidate relation ID."),
-    ]
+    reference_id: str = Field(description="Matched reference relation ID.")
+    candidate_id: str = Field(description="Matched candidate relation ID.")
 
 
 class MinMatching(BaseModel):
     """Semantic node and relation pairs returned by the LLM."""
 
     node_matches: list[NodeMatch] = Field(
-        description="Pairs ordered [reference_id, candidate_id]."
+        description="Objects pairing reference and candidate node IDs."
     )
     relation_matches: list[RelationMatch] = Field(
-        description="Pairs ordered [reference_id, candidate_id]."
+        description="Objects pairing reference and candidate relation IDs."
     )
 
 
@@ -150,7 +138,8 @@ def _validated_matches[T: Match](
     seen_candidate: set[str] = set()
     included: list[T] = []
     for match in matches:
-        reference_id, candidate_id = match
+        reference_id = match.reference_id
+        candidate_id = match.candidate_id
         if (
             reference_id not in reference_ids
             or candidate_id not in candidate_ids

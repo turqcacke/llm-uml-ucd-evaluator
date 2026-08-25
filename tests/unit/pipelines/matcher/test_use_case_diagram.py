@@ -39,11 +39,15 @@ async def test_matcher_finalizes_semantic_matches(
 ) -> None:
     result = MinMatching(
         node_matches=[
-            NodeMatch("reference", "candidate"),
-            NodeMatch("note", "candidate"),
-            NodeMatch("reference", "other"),
+            NodeMatch(reference_id="reference", candidate_id="candidate"),
+            NodeMatch(reference_id="note", candidate_id="candidate"),
+            NodeMatch(reference_id="reference", candidate_id="other"),
         ],
-        relation_matches=[RelationMatch("reference-relation", "chosen")]
+        relation_matches=[
+            RelationMatch(
+                reference_id="reference-relation", candidate_id="chosen"
+            )
+        ]
         if match_relation
         else [],
     )
@@ -88,8 +92,15 @@ async def test_matcher_finalizes_semantic_matches(
     )
 
     assert actual.model_dump() == {
-        "node_matches": [("reference", "candidate")],
-        "relation_matches": [("reference-relation", "chosen")]
+        "node_matches": [
+            {"reference_id": "reference", "candidate_id": "candidate"}
+        ],
+        "relation_matches": [
+            {
+                "reference_id": "reference-relation",
+                "candidate_id": "chosen",
+            }
+        ]
         if match_relation
         else [],
         "missing_nodes": ["missing"],
