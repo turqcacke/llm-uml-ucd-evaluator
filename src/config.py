@@ -28,6 +28,11 @@ class Settings(LoggingSettings):
     MATCHER_BASE_URL: str | None = Field(default=None)
     MATCHER_PROVIDER: str | None = Field(default=None)
 
+    EVALUATOR_API_KEY: Secret[str] = Field(default=...)
+    EVALUATOR_MODEL: str = Field(default=...)
+    EVALUATOR_BASE_URL: str | None = Field(default=None)
+    EVALUATOR_PROVIDER: str | None = Field(default=None)
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

@@ -189,3 +189,7 @@ class Metrics(BaseModel):
             complexity_difference=complexity_difference,
             complexity_deviation_rate=complexity_deviation_rate,
         )
+
+
+class MetricsWithEvaluation(Metrics):
+    evaluation: EvaluationResult | None = None

@@ -3,7 +3,7 @@ from typing import Literal
 from dishka import Provider, Scope, provide
 
 from src.config import get_settings
-from src.model.domain.diagram_presentation import UseCaseDiagramPresentation
+from src.model.domain import EvaluationResult, UseCaseDiagramPresentation
 from src.model.domain.matching import MinMatching
 from src.services.llm_client import ChatModel, LangChainChatModel
 from src.services.pipelines.extractor.dependencies import (
@@ -49,6 +49,20 @@ def get_use_case_diagram_matcher_chat_model() -> ChatModel[MinMatching]:
     return model
 
 
+def get_pragmatic_syntactic_evaluator_chat_model(
+) -> ChatModel[EvaluationResult]:
+    settings = get_settings()
+    return LangChainChatModel(
+        model=settings.EVALUATOR_MODEL,
+        api_key=settings.EVALUATOR_API_KEY.get_secret_value(),
+        base_url=settings.EVALUATOR_BASE_URL,
+        model_provider=settings.EVALUATOR_PROVIDER,
+        system_prompt=prompts.PRAGMATIC_SYNTACTIC_EVALUATOR,
+        response_type=EvaluationResult,
+        guardrails=[guardrails.RESTRICT_TO_STRUCTURED_OUTPUT],
+    )
+
+
 class ChatModelProvider(Provider):
     @provide(scope=Scope.APP)
     def text_extractor_chat_model(
@@ -65,3 +79,9 @@ class ChatModelProvider(Provider):
     @provide(scope=Scope.APP)
     def use_case_diagram_matcher_chat_model(self) -> ChatModel[MinMatching]:
         return get_use_case_diagram_matcher_chat_model()
+
+    @provide(scope=Scope.APP)
+    def pragmatic_syntactic_evaluator_chat_model(
+        self,
+    ) -> ChatModel[EvaluationResult]:
+        return get_pragmatic_syntactic_evaluator_chat_model()

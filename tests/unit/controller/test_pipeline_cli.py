@@ -63,6 +63,8 @@ def llm_calls(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     monkeypatch.setenv("EXTRACTOR_API_KEY", "test-key")
     monkeypatch.setenv("MATCHER_MODEL", "test-matcher")
     monkeypatch.setenv("MATCHER_API_KEY", "test-key")
+    monkeypatch.setenv("EVALUATOR_MODEL", "test-evaluator")
+    monkeypatch.setenv("EVALUATOR_API_KEY", "test-key")
     monkeypatch.setattr(prompts, "EXTRACTOR_FROM_DESCRIPTION", "Extract prose")
     monkeypatch.setattr(
         prompts, "EXTRACTOR_FROM_APOLLON_MODEL", "Extract JSON"
@@ -350,6 +352,8 @@ def test_module_cli_usage_without_llm_configuration(
         "EXTRACTOR_API_KEY",
         "MATCHER_MODEL",
         "MATCHER_API_KEY",
+        "EVALUATOR_MODEL",
+        "EVALUATOR_API_KEY",
     ):
         env[name] = ""
     result = subprocess.run(
