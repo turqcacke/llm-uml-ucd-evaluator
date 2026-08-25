@@ -18,8 +18,6 @@ def test_evaluation_result_serializes_candidate_element_metrics() -> None:
                 syntactic_errors=[2],
                 rules_applied=[1, 2],
                 naming_score=NamingUnderstandabilityScore.HIGH,
-                combined_initiator_effect=1,
-                combined_target_effect=2,
             )
         ],
         relation_evaluations=[
@@ -44,8 +42,6 @@ def test_evaluation_result_serializes_candidate_element_metrics() -> None:
                 "syntactic_errors": [2],
                 "rules_applied": [1, 2],
                 "naming_score": 3,
-                "combined_initiator_effect": 1,
-                "combined_target_effect": 2,
             }
         ],
         "relation_evaluations": [
@@ -69,7 +65,5 @@ def test_node_evaluation_requires_naming_score() -> None:
                 "id": "node-1",
                 "syntactic_errors": [],
                 "rules_applied": [],
-                "combined_initiator_effect": 1,
-                "combined_target_effect": 2,
             }
         )

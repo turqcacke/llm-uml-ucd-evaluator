@@ -52,12 +52,6 @@ class NodeEvaluation(BaseEvaluation):
             "protocol-compliant."
         )
     )
-    combined_initiator_effect: int = Field(
-        description="Relations targeting node."
-    )
-    combined_target_effect: int = Field(
-        description="Relations originating from node."
-    )
 
 
 class RelationEvaluation(BaseEvaluation):

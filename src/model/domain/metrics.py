@@ -2,13 +2,14 @@ from collections import Counter
 from decimal import Decimal
 from typing import Self
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .diagram_presentation import UseCaseDiagramPresentation
 from .evaluation import EvaluationResult
 from .exceptions import MetricsCalculationError
 from .matching import ExtendedMatching
 from .node import NodeType
+from .relation import NodeRelationType
 
 
 class Metrics(BaseModel):
@@ -21,10 +22,10 @@ class Metrics(BaseModel):
     syntactic_error_rate: Decimal
     naming_understandability_score: Decimal
 
-    # Calculations supplied by the subsequent complexity ticket.
-    reference_complexity: Decimal | None = None
-    candidate_complexity: Decimal | None = None
-    complexity_deviation_rate: Decimal | None = None
+    reference_complexity: Decimal
+    candidate_complexity: Decimal
+    complexity_difference: Decimal
+    complexity_deviation_rate: Decimal = Field(allow_inf_nan=True)
 
     @classmethod
     def calculate_metrics(
@@ -36,6 +37,34 @@ class Metrics(BaseModel):
     ) -> Self:
         if not reference.is_allowed:
             raise MetricsCalculationError("Reference diagram is not allowed.")
+        relation_weights = {
+            NodeRelationType.ASSOCIATION: 3,
+            NodeRelationType.INCLUDE: 2,
+            NodeRelationType.EXTEND: 1,
+            NodeRelationType.GENERALIZATION: 0,
+        }
+
+        def complexity(diagram: UseCaseDiagramPresentation) -> Decimal:
+            return Decimal(
+                2
+                * sum(
+                    relation_weights[relation.type]
+                    for relation in diagram.relations
+                )
+            )
+
+        reference_complexity = complexity(reference)
+        candidate_complexity = complexity(candidate)
+        complexity_difference = candidate_complexity - reference_complexity
+
+        complexity_deviation_rate = Decimal(0)
+        if reference_complexity:
+            complexity_deviation_rate = (
+                abs(complexity_difference) / reference_complexity
+            )
+        elif candidate_complexity:
+            complexity_deviation_rate = Decimal("Infinity")
+
         if not candidate.is_allowed:
             return cls(
                 candidate_is_allowed=False,
@@ -45,6 +74,10 @@ class Metrics(BaseModel):
                 semantic_f1_score=Decimal(0),
                 redundancy_rate=Decimal(1),
                 syntactic_error_rate=Decimal(1),
+                reference_complexity=reference_complexity,
+                candidate_complexity=candidate_complexity,
+                complexity_difference=complexity_difference,
+                complexity_deviation_rate=complexity_deviation_rate,
             )
         matched = Decimal(
             len(matching.node_matches) + len(matching.relation_matches)
@@ -146,10 +179,13 @@ class Metrics(BaseModel):
                 else Decimal(0)
             ),
             syntactic_error_rate=(
-                Decimal(syntactic_error_count)
-                / max(1, applied_rule_count)
+                Decimal(syntactic_error_count) / max(1, applied_rule_count)
             ),
             naming_understandability_score=(
                 Decimal(sum(naming_scores)) / len(naming_scores)
             ),
+            reference_complexity=reference_complexity,
+            candidate_complexity=candidate_complexity,
+            complexity_difference=complexity_difference,
+            complexity_deviation_rate=complexity_deviation_rate,
         )

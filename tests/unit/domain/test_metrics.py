@@ -51,14 +51,32 @@ def _node_evaluation(
         syntactic_errors=syntactic_errors or [],
         rules_applied=rules_applied or [],
         naming_score=naming_score,
-        combined_initiator_effect=0,
-        combined_target_effect=0,
     )
 
 
 def _relation_evaluation(element_id: str) -> RelationEvaluation:
     return RelationEvaluation(
         id=element_id, syntactic_errors=[], rules_applied=[]
+    )
+
+
+def _diagram_with_relations(
+    *relation_types: NodeRelationType,
+) -> UseCaseDiagramPresentation:
+    return UseCaseDiagramPresentation(
+        nodes=[
+            Node(id="actor", name="Actor", type=NodeType.ACTOR),
+            Node(id="usecase", name="Use case", type=NodeType.USECASE),
+        ],
+        relations=[
+            NodeRelation(
+                id=str(index),
+                source="actor",
+                target="usecase",
+                type=relation_type,
+            )
+            for index, relation_type in enumerate(relation_types)
+        ],
     )
 
 
@@ -105,16 +123,12 @@ def test_syntactic_and_naming_metrics_aggregate_candidate_evaluations() -> None:
                 syntactic_errors=[2],
                 rules_applied=[1, 2],
                 naming_score=NamingUnderstandabilityScore.HIGH,
-                combined_initiator_effect=0,
-                combined_target_effect=0,
             ),
             NodeEvaluation(
                 id="usecase",
                 syntactic_errors=[],
                 rules_applied=[1],
                 naming_score=NamingUnderstandabilityScore.LOW,
-                combined_initiator_effect=0,
-                combined_target_effect=0,
             ),
         ],
         relation_evaluations=[
@@ -367,7 +381,7 @@ def test_semantic_metrics_count_nodes_and_relations_without_annotations() -> (
     assert all(
         isinstance(value, Decimal)
         for name, value in result.model_dump().items()
-        if name != "candidate_is_allowed" and value is not None
+        if name != "candidate_is_allowed"
     )
     assert "redudancy_rate" not in result.model_dump()
     assert "syntatic_error_rate" not in result.model_dump()
@@ -410,7 +424,14 @@ def test_disallowed_candidate_receives_worst_scores(
         nodes=[Node(id="element", name="Element", type=node_type)]
         if node_type
         else [],
-        relations=[],
+        relations=[
+            NodeRelation(
+                id="relation",
+                source="element",
+                target="element",
+                type=NodeRelationType.ASSOCIATION,
+            )
+        ],
     )
     result = Metrics.calculate_metrics(
         reference,
@@ -432,6 +453,10 @@ def test_disallowed_candidate_receives_worst_scores(
     assert result.semantic_f1_score == Decimal(0)
     assert result.redundancy_rate == Decimal(1)
     assert result.syntactic_error_rate == Decimal(1)
+    assert result.reference_complexity == Decimal(0)
+    assert result.candidate_complexity == Decimal(6)
+    assert result.complexity_difference == Decimal(6)
+    assert result.complexity_deviation_rate == Decimal("Infinity")
 
 
 @pytest.mark.parametrize("candidate_allowed", [True, False])
@@ -469,3 +494,119 @@ def test_disallowed_reference_raises_domain_error(
                 relation_matches=[],
             ),
         )
+
+
+@pytest.mark.parametrize(
+    ("relation_type", "expected_complexity"),
+    [
+        (NodeRelationType.ASSOCIATION, Decimal(6)),
+        (NodeRelationType.INCLUDE, Decimal(4)),
+        (NodeRelationType.EXTEND, Decimal(2)),
+        (NodeRelationType.GENERALIZATION, Decimal(0)),
+    ],
+)
+def test_complexity_uses_unit_scenario_relation_weights(
+    relation_type: NodeRelationType, expected_complexity: Decimal
+) -> None:
+    diagram = _diagram_with_relations(relation_type)
+
+    result = Metrics.calculate_metrics(
+        diagram,
+        diagram,
+        _evaluation_for(diagram),
+        ExtendedMatching(
+            reference=diagram,
+            candidate=diagram,
+            node_matches=[],
+            relation_matches=[],
+        ),
+    )
+
+    assert result.reference_complexity == expected_complexity
+    assert result.candidate_complexity == expected_complexity
+
+
+@pytest.mark.parametrize(
+    ("reference_type", "candidate_type", "difference", "deviation"),
+    [
+        (
+            NodeRelationType.ASSOCIATION,
+            NodeRelationType.EXTEND,
+            Decimal(-4),
+            Decimal(2) / Decimal(3),
+        ),
+        (
+            NodeRelationType.EXTEND,
+            NodeRelationType.ASSOCIATION,
+            Decimal(4),
+            Decimal(2),
+        ),
+    ],
+)
+def test_complexity_difference_is_signed_and_deviation_is_absolute(
+    reference_type: NodeRelationType,
+    candidate_type: NodeRelationType,
+    difference: Decimal,
+    deviation: Decimal,
+) -> None:
+    reference = _diagram_with_relations(reference_type)
+    candidate = _diagram_with_relations(candidate_type)
+
+    result = Metrics.calculate_metrics(
+        reference,
+        candidate,
+        _evaluation_for(candidate),
+        ExtendedMatching(
+            reference=reference,
+            candidate=candidate,
+            node_matches=[],
+            relation_matches=[],
+        ),
+    )
+
+    assert result.complexity_difference == difference
+    assert result.complexity_deviation_rate == deviation
+
+
+def test_equal_zero_complexities_have_zero_deviation() -> None:
+    diagram = _diagram_with_relations(NodeRelationType.GENERALIZATION)
+
+    result = Metrics.calculate_metrics(
+        diagram,
+        diagram,
+        _evaluation_for(diagram),
+        ExtendedMatching(
+            reference=diagram,
+            candidate=diagram,
+            node_matches=[],
+            relation_matches=[],
+        ),
+    )
+
+    assert result.complexity_difference == Decimal(0)
+    assert result.complexity_deviation_rate == Decimal(0)
+
+
+def test_positive_complexity_against_zero_reference_has_infinite_deviation() -> (
+    None
+):
+    reference = _diagram_with_relations()
+    candidate = _diagram_with_relations(NodeRelationType.ASSOCIATION)
+
+    result = Metrics.calculate_metrics(
+        reference,
+        candidate,
+        _evaluation_for(candidate),
+        ExtendedMatching(
+            reference=reference,
+            candidate=candidate,
+            node_matches=[],
+            relation_matches=[],
+        ),
+    )
+
+    assert result.complexity_difference == Decimal(6)
+    assert result.complexity_deviation_rate == Decimal("Infinity")
+    assert result.model_dump(mode="json")["complexity_deviation_rate"] == (
+        "Infinity"
+    )
