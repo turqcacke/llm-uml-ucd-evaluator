@@ -4,13 +4,10 @@ from src.app_logging import logger
 from src.model.apollon import ApollonJson
 from src.model.domain.diagram_presentation import UseCaseDiagramPresentation
 from src.model.llm.context import LLMRoles
+from src.services.shared.prompts import EXTRACTOR_FROM_APOLLON_MODEL_REQUEST
 
 from ..base import BasePipeline, map_pipeline_exceptions
 from .dependencies import ApollonExtractorChatModel
-
-_MESSAGE_PROMPT = """
-{json_model}
-"""
 
 
 @dataclass
@@ -36,7 +33,9 @@ class ApollonLlmExtractor(
             "Apollon extraction started characters={}", len(json_model)
         )
         result = await self._chat_model.invoke(
-            _MESSAGE_PROMPT.format(json_model=json_model),
+            EXTRACTOR_FROM_APOLLON_MODEL_REQUEST.format(
+                json_model=json_model
+            ),
             LLMRoles.USER,
         )
         logger.info(

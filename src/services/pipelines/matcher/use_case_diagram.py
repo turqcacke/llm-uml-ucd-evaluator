@@ -5,16 +5,9 @@ from src.model.domain.diagram_presentation import UseCaseDiagramPresentation
 from src.model.domain.matching import ExtendedMatching, MinMatching
 from src.model.llm.context import LLMRoles
 from src.services.llm_client import ChatModel
+from src.services.shared.prompts import USE_CASE_DIAGRAM_MATCHER_REQUEST
 
 from ..base import BasePipeline, map_pipeline_exceptions
-
-_MESSAGE_PROMPT = """
-Reference:
-{reference}
-\n\n
-Candidate:
-{candidate}
-"""
 
 
 @dataclass(frozen=True)
@@ -42,7 +35,7 @@ class UseCaseDiagramMatcher(
             len(data.candidate.nodes),
         )
         llm_result = await self._chat_model.invoke(
-            _MESSAGE_PROMPT.format(
+            USE_CASE_DIAGRAM_MATCHER_REQUEST.format(
                 reference=data.reference.model_dump_json(),
                 candidate=data.candidate.model_dump_json(),
             ),

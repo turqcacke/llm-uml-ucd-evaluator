@@ -115,7 +115,9 @@ def test_extract_prose_from_cli(
     ):
         assert f"- {rule}" in system_content
     assert messages[1].content == (
-        "# System description\n\nA user logs in.\nAn admin manages users."
+        prompts.EXTRACTOR_FROM_DESCRIPTION_REQUEST.format(
+            description_prompt="A user logs in.\nAn admin manages users."
+        ).strip()
     )
 
 
@@ -187,9 +189,9 @@ def test_extract_apollon_from_cli(
     assert guardrails.USE_DESCRIPTION_FACTS not in messages[0].content
     content = messages[1].content
     assert isinstance(content, str)
-    assert json.loads(content) == {
-        "model": {"elements": {}, "relationships": {}}
-    }
+    assert content == prompts.EXTRACTOR_FROM_APOLLON_MODEL_REQUEST.format(
+        json_model='{"model":{"elements":{},"relationships":{}}}'
+    )
 
 
 @pytest.mark.parametrize(

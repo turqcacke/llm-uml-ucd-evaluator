@@ -6,3 +6,15 @@ unclassified (`other`) nodes. For each Reference Relation, choose at most one
 semantically matching Candidate Relation. Do not infer a relation match from
 endpoint or relation-type equality alone.
 """
+
+USE_CASE_DIAGRAM_MATCHER_REQUEST = """
+# Reference:
+<reference>
+{reference}
+</reference>
+
+Candidate:
+<candidate>
+{candidate}
+</candidate>
+"""

@@ -3,15 +3,10 @@ from dataclasses import dataclass
 from src.app_logging import logger
 from src.model.domain.diagram_presentation import UseCaseDiagramPresentation
 from src.model.llm.context import LLMRoles
+from src.services.shared.prompts import EXTRACTOR_FROM_DESCRIPTION_REQUEST
 
 from ..base import BasePipeline, map_pipeline_exceptions
 from .dependencies import TextExtractorChatModel
-
-_MESSAGE_PROMPT = """\
-# System description
-
-{description_prompt}
-"""
 
 
 @dataclass(frozen=True)
@@ -37,7 +32,7 @@ class DescriptionExtractor(
             len(data.description_prompt),
         )
         result = await self._chat_model.invoke(
-            _MESSAGE_PROMPT.format(
+            EXTRACTOR_FROM_DESCRIPTION_REQUEST.format(
                 description_prompt=data.description_prompt.strip()
             ).strip(),
             LLMRoles.USER,

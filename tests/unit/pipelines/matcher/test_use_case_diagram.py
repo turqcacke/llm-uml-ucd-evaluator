@@ -11,6 +11,7 @@ from src.services.pipelines.matcher.use_case_diagram import (
     UseCaseDiagramMatcher,
     UseCaseDiagramMatcherInput,
 )
+from src.services.shared.prompts import USE_CASE_DIAGRAM_MATCHER_REQUEST
 
 
 class FakeChatModel:
@@ -101,10 +102,10 @@ async def test_matcher_finalizes_semantic_matches(
     assert len(chat_model.calls) == 1
     prompt, role = chat_model.calls[0]
     assert role is LLMRoles.USER
-    assert "Reference:" in prompt
-    assert reference.model_dump_json() in prompt
-    assert "Candidate:" in prompt
-    assert candidate.model_dump_json() in prompt
+    assert prompt == USE_CASE_DIAGRAM_MATCHER_REQUEST.format(
+        reference=reference.model_dump_json(),
+        candidate=candidate.model_dump_json(),
+    )
 
 
 @pytest.mark.anyio
