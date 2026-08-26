@@ -58,16 +58,16 @@ async def test_json_extractor_returns_domain_presentation() -> None:
 
     result = await extractor.execute(ApollonJsonExtractorInput(_source()))
 
-    assert result.model_dump(exclude={"id"}) == {
+    assert result.model_dump(exclude={"uid"}) == {
         "nodes": [
             {
-                "id": "actor",
+                "uid": "actor",
                 "name": "Customer",
                 "parent": None,
                 "type": "actor",
             },
             {
-                "id": "usecase",
+                "uid": "usecase",
                 "name": "Place order",
                 "parent": None,
                 "type": "usecase",
@@ -75,7 +75,7 @@ async def test_json_extractor_returns_domain_presentation() -> None:
         ],
         "relations": [
             {
-                "id": "relation",
+                "uid": "relation",
                 "source": "actor",
                 "target": "usecase",
                 "type": "association",
@@ -94,7 +94,7 @@ async def test_json_extractor_returns_domain_presentation() -> None:
 async def test_json_extractor_rejects_invalid_diagram() -> None:
     extractor = ApollonJsonExtractor(ApollonToDomainConverter())
 
-    with pytest.raises(ConversionError, match="Node IDs must be unique"):
+    with pytest.raises(ConversionError, match="Node UIDs must be unique"):
         await extractor.execute(
             ApollonJsonExtractorInput(_source(duplicate_ids=True))
         )

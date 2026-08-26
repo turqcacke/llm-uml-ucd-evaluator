@@ -21,20 +21,20 @@ class NodeRelationType(StrEnum):
 class NodeRelation(BaseModel):
     """Typed relation between two graph nodes."""
 
-    id: str = Field(description="Unique compact relation ID, such as '1'.")
-    source: str = Field(description="Source node ID.")
-    target: str = Field(description="Target node ID.")
+    uid: str = Field(description="Unique compact relation UID, such as '1'.")
+    source: str = Field(description="Source node UID.")
+    target: str = Field(description="Target node UID.")
     type: NodeRelationType = Field(description="Relation kind.")
 
     @override
     def __hash__(self) -> int:
-        return hash(self.id)
+        return hash(self.uid)
 
     def pattern(self) -> str:
-        return csv_head(("id", "source", "target", "type"))
+        return csv_head(("uid", "source", "target", "type"))
 
     def compress(self) -> str:
-        values = (self.id, self.source, self.target, self.type.value)
+        values = (self.uid, self.source, self.target, self.type.value)
         return csv_row(values)
 
 

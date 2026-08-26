@@ -19,7 +19,7 @@ class EvaluationRule(BaseModel):
 class BaseEvaluation(BaseModel):
     """Candidate element evaluation."""
 
-    id: str = Field(description="Candidate element ID.")
+    uid: str = Field(description="Candidate element UID.")
     syntactic_errors: list[int] = Field(description="Violated rule IDs.")
     rules_applied: list[int] = Field(description="Applied rule IDs.")
 

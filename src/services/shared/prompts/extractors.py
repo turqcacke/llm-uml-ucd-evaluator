@@ -143,8 +143,8 @@ Relationship type map:
 # Conversion rules
 
 - Element type come from type. Never name.
-- Match element, resolve ref by id. Same-name element stay separate.
-- Keep id and name. owner become parent.
+- Match element, resolve ref by source id. Same-name element stay separate.
+- Keep source id as uid and keep name. owner become parent.
 - source.element to source, target.element to target. No flip ends.
 - Keep relationship type and ends. Keep weird or invalid one too.
 - Drop bounds, path, directions, editor metadata. Never guess meaning or ownership from layout.

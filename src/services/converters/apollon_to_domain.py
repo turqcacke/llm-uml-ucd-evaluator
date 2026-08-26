@@ -30,7 +30,7 @@ class _NodeConverter(BaseConverter[ApollonNode, Node]):
 
     def convert(self, from_value: ApollonNode) -> Node:
         return Node(
-            id=from_value.id,
+            uid=from_value.id,
             name=from_value.name,
             parent=from_value.owner,
             type=self._TYPES_MAP[from_value.type],
@@ -48,7 +48,7 @@ class _NodeRelationConverter(BaseConverter[ApollonRelation, NodeRelation]):
 
     def convert(self, from_value: ApollonRelation) -> NodeRelation:
         return NodeRelation(
-            id=from_value.id,
+            uid=from_value.id,
             source=from_value.source.element,
             target=from_value.target.element,
             type=self._TYPES_MAP[from_value.type],

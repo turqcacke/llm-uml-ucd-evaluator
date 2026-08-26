@@ -113,26 +113,30 @@ class Metrics(BaseModel):
             node.type not in {NodeType.NOTE, NodeType.OTHER}
             for node in candidate.nodes
         ) + len(candidate.relations)
-        included_node_ids = {
-            node.id
+        included_node_uids = {
+            node.uid
             for node in candidate.nodes
             if node.type not in {NodeType.NOTE, NodeType.OTHER}
         }
-        candidate_node_ids = {node.id for node in candidate.nodes}
+        candidate_node_uids = {node.uid for node in candidate.nodes}
         node_evaluation_counts = Counter(
-            element.id for element in evaluation.node_evaluations
+            element.uid for element in evaluation.node_evaluations
         )
         relation_evaluation_counts = Counter(
-            element.id for element in evaluation.relation_evaluations
+            element.uid for element in evaluation.relation_evaluations
         )
-        evaluated_node_ids = node_evaluation_counts.keys()
-        missing_node_evaluations = not included_node_ids <= evaluated_node_ids
-        unknown_node_evaluations = not evaluated_node_ids <= candidate_node_ids
+        evaluated_node_uids = node_evaluation_counts.keys()
+        missing_node_evaluations = (
+            not included_node_uids <= evaluated_node_uids
+        )
+        unknown_node_evaluations = (
+            not evaluated_node_uids <= candidate_node_uids
+        )
         repeated_node_evaluations = any(
             count != 1 for count in node_evaluation_counts.values()
         )
         invalid_relation_evaluations = relation_evaluation_counts != Counter(
-            relation.id for relation in candidate.relations
+            relation.uid for relation in candidate.relations
         )
         if (
             missing_node_evaluations
@@ -160,8 +164,8 @@ class Metrics(BaseModel):
             raise MetricsCalculationError(
                 "Evaluation rule references must be unique and consistent."
             )
-        naming_node_ids = {
-            node.id
+        naming_node_uids = {
+            node.uid
             for node in candidate.nodes
             if node.type
             in {NodeType.ACTOR, NodeType.EXTERNAL_SYSTEM, NodeType.USECASE}
@@ -169,7 +173,7 @@ class Metrics(BaseModel):
         element_evaluations = [
             element
             for element in evaluation.node_evaluations
-            if element.id in included_node_ids
+            if element.uid in included_node_uids
         ] + evaluation.relation_evaluations
         applied_rule_count = sum(
             len(element.rules_applied) for element in element_evaluations
@@ -180,7 +184,7 @@ class Metrics(BaseModel):
         naming_scores = [
             element.naming_score
             for element in evaluation.node_evaluations
-            if element.id in naming_node_ids
+            if element.uid in naming_node_uids
         ]
         completeness = matched / reference_count
         precision = matched / candidate_count

@@ -16,19 +16,19 @@ from src.model.domain.relation import NodeRelation, NodeRelationType
 def test_min_matching_serializes_matches_as_named_objects() -> None:
     matching = MinMatching(
         node_matches=[
-            NodeMatch(reference_id="reference", candidate_id="candidate")
+            NodeMatch(reference_uid="reference", candidate_uid="candidate")
         ],
         relation_matches=[
-            RelationMatch(reference_id="reference", candidate_id="candidate")
+            RelationMatch(reference_uid="reference", candidate_uid="candidate")
         ],
     )
 
     assert matching.model_dump(mode="json") == {
         "node_matches": [
-            {"reference_id": "reference", "candidate_id": "candidate"}
+            {"reference_uid": "reference", "candidate_uid": "candidate"}
         ],
         "relation_matches": [
-            {"reference_id": "reference", "candidate_id": "candidate"}
+            {"reference_uid": "reference", "candidate_uid": "candidate"}
         ],
     }
 
@@ -47,10 +47,10 @@ def test_min_matching_rejects_positional_match_arrays() -> None:
 @pytest.mark.parametrize(
     "pairs, message",
     [
-        ([("unknown", "one")], "unknown element ID"),
-        ([("one", "unknown")], "unknown element ID"),
-        ([("one", "one"), ("one", "two")], "Reference match IDs"),
-        ([("one", "one"), ("two", "one")], "Candidate match IDs"),
+        ([("unknown", "one")], "unknown element UID"),
+        ([("one", "unknown")], "unknown element UID"),
+        ([("one", "one"), ("one", "two")], "Reference match UIDs"),
+        ([("one", "one"), ("two", "one")], "Candidate match UIDs"),
     ],
 )
 def test_extended_matching_rejects_invalid_pairs(
@@ -58,12 +58,12 @@ def test_extended_matching_rejects_invalid_pairs(
 ) -> None:
     diagram = UseCaseDiagramPresentation(
         nodes=[
-            Node(id=id_, name=id_, type=NodeType.ACTOR)
+            Node(uid=id_, name=id_, type=NodeType.ACTOR)
             for id_ in ("one", "two")
         ],
         relations=[
             NodeRelation(
-                id=id_,
+                uid=id_,
                 source="one",
                 target="two",
                 type=NodeRelationType.ASSOCIATION,
@@ -76,7 +76,7 @@ def test_extended_matching_rejects_invalid_pairs(
             "node_matches": [],
             "relation_matches": [],
             kind: [
-                {"reference_id": reference, "candidate_id": candidate}
+                {"reference_uid": reference, "candidate_uid": candidate}
                 for reference, candidate in pairs
             ],
         }

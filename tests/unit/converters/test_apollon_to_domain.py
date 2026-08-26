@@ -57,32 +57,32 @@ def _apollon_json() -> ApollonJson:
 def test_apollon_diagram_is_converted_to_domain_presentation() -> None:
     result = ApollonToDomainConverter().convert(_apollon_json())
 
-    assert result.model_dump(exclude={"id"}) == {
+    assert result.model_dump(exclude={"uid"}) == {
         "nodes": [
-            {"id": "1", "name": "Node 1", "parent": None, "type": "actor"},
-            {"id": "2", "name": "Node 2", "parent": None, "type": "system"},
-            {"id": "3", "name": "Node 3", "parent": "2", "type": "usecase"},
+            {"uid": "1", "name": "Node 1", "parent": None, "type": "actor"},
+            {"uid": "2", "name": "Node 2", "parent": None, "type": "system"},
+            {"uid": "3", "name": "Node 3", "parent": "2", "type": "usecase"},
             {
-                "id": "4",
+                "uid": "4",
                 "name": "Node 4",
                 "parent": None,
                 "type": "external_system",
             },
-            {"id": "5", "name": "Node 5", "parent": None, "type": "note"},
-            {"id": "6", "name": "Node 6", "parent": None, "type": "other"},
+            {"uid": "5", "name": "Node 5", "parent": None, "type": "note"},
+            {"uid": "6", "name": "Node 6", "parent": None, "type": "other"},
         ],
         "relations": [
-            {"id": "7", "source": "1", "target": "3", "type": "association"},
-            {"id": "8", "source": "1", "target": "3", "type": "extend"},
-            {"id": "9", "source": "1", "target": "3", "type": "include"},
+            {"uid": "7", "source": "1", "target": "3", "type": "association"},
+            {"uid": "8", "source": "1", "target": "3", "type": "extend"},
+            {"uid": "9", "source": "1", "target": "3", "type": "include"},
             {
-                "id": "10",
+                "uid": "10",
                 "source": "1",
                 "target": "3",
                 "type": "generalization",
             },
             {
-                "id": "11",
+                "uid": "11",
                 "source": "1",
                 "target": "3",
                 "type": "association",
@@ -101,5 +101,5 @@ def test_apollon_diagram_with_duplicate_node_ids_is_rejected() -> None:
     source = _apollon_json()
     source.model.elements["2"].id = "1"
 
-    with pytest.raises(ConversionError, match="Node IDs must be unique"):
+    with pytest.raises(ConversionError, match="Node UIDs must be unique"):
         ApollonToDomainConverter().convert(source)

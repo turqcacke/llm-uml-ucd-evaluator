@@ -87,7 +87,7 @@ def _apollon() -> ApollonJson:
 
 def _diagram(node_id: str) -> UseCaseDiagramPresentation:
     return UseCaseDiagramPresentation(
-        nodes=[Node(id=node_id, name="Customer", type=NodeType.ACTOR)],
+        nodes=[Node(uid=node_id, name="Customer", type=NodeType.ACTOR)],
         relations=[],
     )
 
@@ -100,7 +100,7 @@ async def test_description_reference_assessment_returns_metrics_and_evaluation(
     evaluation = EvaluationResult(
         node_evaluations=[
             NodeEvaluation(
-                id="candidate",
+                uid="candidate",
                 syntactic_errors=[],
                 rules_applied=[],
                 naming_score=NamingUnderstandabilityScore.HIGH,
@@ -113,7 +113,7 @@ async def test_description_reference_assessment_returns_metrics_and_evaluation(
         reference=reference,
         candidate=candidate,
         node_matches=[
-            NodeMatch(reference_id="reference", candidate_id="candidate")
+            NodeMatch(reference_uid="reference", candidate_uid="candidate")
         ],
         relation_matches=[],
     )
@@ -210,7 +210,7 @@ async def test_apollon_reference_assessment_extracts_both_diagrams() -> None:
     evaluation = EvaluationResult(
         node_evaluations=[
             NodeEvaluation(
-                id="candidate",
+                uid="candidate",
                 syntactic_errors=[],
                 rules_applied=[],
                 naming_score=NamingUnderstandabilityScore.MEDIUM,
@@ -223,7 +223,7 @@ async def test_apollon_reference_assessment_extracts_both_diagrams() -> None:
         reference=reference,
         candidate=candidate,
         node_matches=[
-            NodeMatch(reference_id="reference", candidate_id="candidate")
+            NodeMatch(reference_uid="reference", candidate_uid="candidate")
         ],
         relation_matches=[],
     )

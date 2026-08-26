@@ -23,11 +23,11 @@ class NodeType(StrEnum):
 class Node(BaseModel):
     """Typed use case diagram node."""
 
-    id: str = Field(description="Unique compact node ID, such as '1'.")
+    uid: str = Field(description="Unique compact node UID, such as '1'.")
     name: str = Field(description="Node label shown on diagram.")
     parent: str | None = Field(
         default=None,
-        description="Containing or owning node ID, if any.",
+        description="Containing or owning node UID, if any.",
     )
     type: NodeType = Field(
         description=(
@@ -37,13 +37,13 @@ class Node(BaseModel):
 
     @override
     def __hash__(self) -> int:
-        return hash(self.id)
+        return hash(self.uid)
 
     def pattern(self) -> str:
-        return csv_head(("id", "name", "parent", "type"))
+        return csv_head(("uid", "name", "parent", "type"))
 
     def compress(self) -> str:
-        values = (self.id, self.name, self.parent, self.type.value)
+        values = (self.uid, self.name, self.parent, self.type.value)
         return csv_row(values)
 
 

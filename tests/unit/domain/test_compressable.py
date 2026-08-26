@@ -9,30 +9,32 @@ def test_csv_head_returns_csv_header() -> None:
 
 def test_node_compress_returns_csv_pattern_and_value() -> None:
     node = Node(
-        id="node-1",
+        uid="node-1",
         name="John, Jr.",
         type=NodeType.ACTOR,
     )
 
-    assert node.pattern() == "id,name,parent,type"
+    assert node.uid == "node-1"
+    assert node.pattern() == "uid,name,parent,type"
     assert node.compress() == 'node-1,"John, Jr.",,actor'
 
 
 def test_relation_compress_returns_csv_pattern_and_value() -> None:
     relation = NodeRelation(
-        id="relation-1",
+        uid="relation-1",
         source="source-1",
         target="target-1",
         type=NodeRelationType.EXTEND,
     )
 
-    assert relation.pattern() == "id,source,target,type"
+    assert relation.uid == "relation-1"
+    assert relation.pattern() == "uid,source,target,type"
     assert relation.compress() == "relation-1,source-1,target-1,extend"
 
 
 def test_relation_compress_escapes_csv_values() -> None:
     relation = NodeRelation(
-        id="relation-1",
+        uid="relation-1",
         source="source,1",
         target='target "1"',
         type=NodeRelationType.ASSOCIATION,

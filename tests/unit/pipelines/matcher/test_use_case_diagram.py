@@ -39,13 +39,13 @@ async def test_matcher_finalizes_semantic_matches(
 ) -> None:
     result = MinMatching(
         node_matches=[
-            NodeMatch(reference_id="reference", candidate_id="candidate"),
-            NodeMatch(reference_id="note", candidate_id="candidate"),
-            NodeMatch(reference_id="reference", candidate_id="other"),
+            NodeMatch(reference_uid="reference", candidate_uid="candidate"),
+            NodeMatch(reference_uid="note", candidate_uid="candidate"),
+            NodeMatch(reference_uid="reference", candidate_uid="other"),
         ],
         relation_matches=[
             RelationMatch(
-                reference_id="reference-relation", candidate_id="chosen"
+                reference_uid="reference-relation", candidate_uid="chosen"
             )
         ]
         if match_relation
@@ -54,13 +54,13 @@ async def test_matcher_finalizes_semantic_matches(
     chat_model = FakeChatModel(result)
     reference = UseCaseDiagramPresentation(
         nodes=[
-            Node(id="reference", name="Buyer", type=NodeType.ACTOR),
-            Node(id="missing", name="Shop", type=NodeType.SYSTEM),
-            Node(id="note", name="Note", type=NodeType.NOTE),
+            Node(uid="reference", name="Buyer", type=NodeType.ACTOR),
+            Node(uid="missing", name="Shop", type=NodeType.SYSTEM),
+            Node(uid="note", name="Note", type=NodeType.NOTE),
         ],
         relations=[
             NodeRelation(
-                id="reference-relation",
+                uid="reference-relation",
                 source="reference",
                 target="reference",
                 type=NodeRelationType.ASSOCIATION,
@@ -69,13 +69,13 @@ async def test_matcher_finalizes_semantic_matches(
     )
     candidate = UseCaseDiagramPresentation(
         nodes=[
-            Node(id="candidate", name="Customer", type=NodeType.ACTOR),
-            Node(id="redundant", name="Buy", type=NodeType.USECASE),
-            Node(id="other", name="Other", type=NodeType.OTHER),
+            Node(uid="candidate", name="Customer", type=NodeType.ACTOR),
+            Node(uid="redundant", name="Buy", type=NodeType.USECASE),
+            Node(uid="other", name="Other", type=NodeType.OTHER),
         ],
         relations=[
             NodeRelation(
-                id=id_,
+                uid=id_,
                 source="candidate",
                 target="candidate",
                 type=relation_type,
@@ -93,12 +93,12 @@ async def test_matcher_finalizes_semantic_matches(
 
     assert actual.model_dump() == {
         "node_matches": [
-            {"reference_id": "reference", "candidate_id": "candidate"}
+            {"reference_uid": "reference", "candidate_uid": "candidate"}
         ],
         "relation_matches": [
             {
-                "reference_id": "reference-relation",
-                "candidate_id": "chosen",
+                "reference_uid": "reference-relation",
+                "candidate_uid": "chosen",
             }
         ]
         if match_relation

@@ -25,12 +25,12 @@ def _evaluation_for(
 ) -> EvaluationResult:
     return EvaluationResult(
         node_evaluations=[
-            _node_evaluation(node.id)
+            _node_evaluation(node.uid)
             for node in candidate.nodes
             if node.type not in {NodeType.NOTE, NodeType.OTHER}
         ],
         relation_evaluations=[
-            _relation_evaluation(relation.id)
+            _relation_evaluation(relation.uid)
             for relation in candidate.relations
         ],
         applied_rules=[],
@@ -38,7 +38,7 @@ def _evaluation_for(
 
 
 def _node_evaluation(
-    element_id: str,
+    element_uid: str,
     *,
     syntactic_errors: list[int] | None = None,
     rules_applied: list[int] | None = None,
@@ -47,16 +47,16 @@ def _node_evaluation(
     ),
 ) -> NodeEvaluation:
     return NodeEvaluation(
-        id=element_id,
+        uid=element_uid,
         syntactic_errors=syntactic_errors or [],
         rules_applied=rules_applied or [],
         naming_score=naming_score,
     )
 
 
-def _relation_evaluation(element_id: str) -> RelationEvaluation:
+def _relation_evaluation(element_uid: str) -> RelationEvaluation:
     return RelationEvaluation(
-        id=element_id, syntactic_errors=[], rules_applied=[]
+        uid=element_uid, syntactic_errors=[], rules_applied=[]
     )
 
 
@@ -65,12 +65,12 @@ def _diagram_with_relations(
 ) -> UseCaseDiagramPresentation:
     return UseCaseDiagramPresentation(
         nodes=[
-            Node(id="actor", name="Actor", type=NodeType.ACTOR),
-            Node(id="usecase", name="Use case", type=NodeType.USECASE),
+            Node(uid="actor", name="Actor", type=NodeType.ACTOR),
+            Node(uid="usecase", name="Use case", type=NodeType.USECASE),
         ],
         relations=[
             NodeRelation(
-                id=str(index),
+                uid=str(index),
                 source="actor",
                 target="usecase",
                 type=relation_type,
@@ -85,7 +85,7 @@ def _calculate_unmatched(
     evaluation: EvaluationResult,
 ) -> Metrics:
     reference = UseCaseDiagramPresentation(
-        nodes=[Node(id="reference", name="Reference", type=NodeType.ACTOR)],
+        nodes=[Node(uid="reference", name="Reference", type=NodeType.ACTOR)],
         relations=[],
     )
     return Metrics.calculate_metrics(
@@ -104,12 +104,12 @@ def _calculate_unmatched(
 def test_syntactic_and_naming_metrics_aggregate_candidate_evaluations() -> None:
     diagram = UseCaseDiagramPresentation(
         nodes=[
-            Node(id="actor", name="Customer", type=NodeType.ACTOR),
-            Node(id="usecase", name="Place order", type=NodeType.USECASE),
+            Node(uid="actor", name="Customer", type=NodeType.ACTOR),
+            Node(uid="usecase", name="Place order", type=NodeType.USECASE),
         ],
         relations=[
             NodeRelation(
-                id="relation",
+                uid="relation",
                 source="actor",
                 target="usecase",
                 type=NodeRelationType.ASSOCIATION,
@@ -119,13 +119,13 @@ def test_syntactic_and_naming_metrics_aggregate_candidate_evaluations() -> None:
     evaluation = EvaluationResult(
         node_evaluations=[
             NodeEvaluation(
-                id="actor",
+                uid="actor",
                 syntactic_errors=[2],
                 rules_applied=[1, 2],
                 naming_score=NamingUnderstandabilityScore.HIGH,
             ),
             NodeEvaluation(
-                id="usecase",
+                uid="usecase",
                 syntactic_errors=[],
                 rules_applied=[1],
                 naming_score=NamingUnderstandabilityScore.LOW,
@@ -133,7 +133,7 @@ def test_syntactic_and_naming_metrics_aggregate_candidate_evaluations() -> None:
         ],
         relation_evaluations=[
             RelationEvaluation(
-                id="relation", syntactic_errors=[1], rules_applied=[1]
+                uid="relation", syntactic_errors=[1], rules_applied=[1]
             )
         ],
         applied_rules=[
@@ -150,12 +150,12 @@ def test_syntactic_and_naming_metrics_aggregate_candidate_evaluations() -> None:
             reference=diagram,
             candidate=diagram,
             node_matches=[
-                NodeMatch(reference_id="actor", candidate_id="actor"),
-                NodeMatch(reference_id="usecase", candidate_id="usecase"),
+                NodeMatch(reference_uid="actor", candidate_uid="actor"),
+                NodeMatch(reference_uid="usecase", candidate_uid="usecase"),
             ],
             relation_matches=[
                 RelationMatch(
-                    reference_id="relation", candidate_id="relation"
+                    reference_uid="relation", candidate_uid="relation"
                 )
             ],
         ),
@@ -166,7 +166,7 @@ def test_syntactic_and_naming_metrics_aggregate_candidate_evaluations() -> None:
 
 
 @pytest.mark.parametrize(
-    ("node_ids", "relation_ids"),
+    ("node_uids", "relation_uids"),
     [
         ([], ["relation"]),
         (["actor"], []),
@@ -177,15 +177,15 @@ def test_syntactic_and_naming_metrics_aggregate_candidate_evaluations() -> None:
     ],
 )
 def test_metrics_reject_incomplete_or_contradictory_element_evaluations(
-    node_ids: list[str], relation_ids: list[str]
+    node_uids: list[str], relation_uids: list[str]
 ) -> None:
     from src.model.domain.exceptions import MetricsCalculationError
 
     candidate = UseCaseDiagramPresentation(
-        nodes=[Node(id="actor", name="Actor", type=NodeType.ACTOR)],
+        nodes=[Node(uid="actor", name="Actor", type=NodeType.ACTOR)],
         relations=[
             NodeRelation(
-                id="relation",
+                uid="relation",
                 source="actor",
                 target="actor",
                 type=NodeRelationType.ASSOCIATION,
@@ -198,11 +198,11 @@ def test_metrics_reject_incomplete_or_contradictory_element_evaluations(
             candidate,
             EvaluationResult(
                 node_evaluations=[
-                    _node_evaluation(element_id) for element_id in node_ids
+                    _node_evaluation(element_uid) for element_uid in node_uids
                 ],
                 relation_evaluations=[
-                    _relation_evaluation(element_id)
-                    for element_id in relation_ids
+                    _relation_evaluation(element_uid)
+                    for element_uid in relation_uids
                 ],
                 applied_rules=[],
             ),
@@ -227,7 +227,7 @@ def test_metrics_reject_inconsistent_rule_references(
     from src.model.domain.exceptions import MetricsCalculationError
 
     candidate = UseCaseDiagramPresentation(
-        nodes=[Node(id="actor", name="Actor", type=NodeType.ACTOR)],
+        nodes=[Node(uid="actor", name="Actor", type=NodeType.ACTOR)],
         relations=[],
     )
     evaluation = EvaluationResult(
@@ -253,7 +253,7 @@ def test_allowed_candidate_without_rule_checks_has_zero_syntactic_errors() -> (
     None
 ):
     candidate = UseCaseDiagramPresentation(
-        nodes=[Node(id="actor", name="Actor", type=NodeType.ACTOR)],
+        nodes=[Node(uid="actor", name="Actor", type=NodeType.ACTOR)],
         relations=[],
     )
 
@@ -265,16 +265,16 @@ def test_allowed_candidate_without_rule_checks_has_zero_syntactic_errors() -> (
 def test_excluded_nodes_do_not_change_syntactic_or_naming_metrics() -> None:
     candidate = UseCaseDiagramPresentation(
         nodes=[
-            Node(id="actor", name="Actor", type=NodeType.ACTOR),
+            Node(uid="actor", name="Actor", type=NodeType.ACTOR),
             Node(
-                id="external",
+                uid="external",
                 name="External",
                 type=NodeType.EXTERNAL_SYSTEM,
             ),
-            Node(id="usecase", name="Use case", type=NodeType.USECASE),
-            Node(id="system", name="System", type=NodeType.SYSTEM),
-            Node(id="note", name="Note", type=NodeType.NOTE),
-            Node(id="other", name="Other", type=NodeType.OTHER),
+            Node(uid="usecase", name="Use case", type=NodeType.USECASE),
+            Node(uid="system", name="System", type=NodeType.SYSTEM),
+            Node(uid="note", name="Note", type=NodeType.NOTE),
+            Node(uid="other", name="Other", type=NodeType.OTHER),
         ],
         relations=[],
     )
@@ -326,23 +326,23 @@ def test_semantic_metrics_count_nodes_and_relations_without_annotations() -> (
 ):
     reference = UseCaseDiagramPresentation(
         nodes=[
-            Node(id=kind.value, name=kind.value, type=kind)
+            Node(uid=kind.value, name=kind.value, type=kind)
             for kind in NodeType
         ],
         relations=[
             NodeRelation(
-                id=kind.value, source="actor", target="usecase", type=kind
+                uid=kind.value, source="actor", target="usecase", type=kind
             )
             for kind in NodeRelationType
         ],
     )
     candidate = UseCaseDiagramPresentation(
         nodes=reference.nodes
-        + [Node(id="extra", name="Extra", type=NodeType.ACTOR)],
+        + [Node(uid="extra", name="Extra", type=NodeType.ACTOR)],
         relations=reference.relations
         + [
             NodeRelation(
-                id="extra",
+                uid="extra",
                 source="extra",
                 target="usecase",
                 type=NodeRelationType.ASSOCIATION,
@@ -353,7 +353,7 @@ def test_semantic_metrics_count_nodes_and_relations_without_annotations() -> (
         reference=reference,
         candidate=candidate,
         node_matches=[
-            NodeMatch(reference_id=kind.value, candidate_id=kind.value)
+            NodeMatch(reference_uid=kind.value, candidate_uid=kind.value)
             for kind in (
                 NodeType.ACTOR,
                 NodeType.SYSTEM,
@@ -362,7 +362,7 @@ def test_semantic_metrics_count_nodes_and_relations_without_annotations() -> (
             )
         ],
         relation_matches=[
-            RelationMatch(reference_id=kind.value, candidate_id=kind.value)
+            RelationMatch(reference_uid=kind.value, candidate_uid=kind.value)
             for kind in (
                 NodeRelationType.INCLUDE,
                 NodeRelationType.GENERALIZATION,
@@ -394,14 +394,14 @@ def test_semantic_metrics_count_nodes_and_relations_without_annotations() -> (
 def test_semantic_f1_avoids_intermediate_decimal_rounding() -> None:
     reference = UseCaseDiagramPresentation(
         nodes=[
-            Node(id=f"reference-{index}", name="Actor", type=NodeType.ACTOR)
+            Node(uid=f"reference-{index}", name="Actor", type=NodeType.ACTOR)
             for index in range(17)
         ],
         relations=[],
     )
     candidate = UseCaseDiagramPresentation(
         nodes=[
-            Node(id=f"candidate-{index}", name="Actor", type=NodeType.ACTOR)
+            Node(uid=f"candidate-{index}", name="Actor", type=NodeType.ACTOR)
             for index in range(11)
         ],
         relations=[],
@@ -415,8 +415,8 @@ def test_semantic_f1_avoids_intermediate_decimal_rounding() -> None:
             candidate=candidate,
             node_matches=[
                 NodeMatch(
-                    reference_id=f"reference-{index}",
-                    candidate_id=f"candidate-{index}",
+                    reference_uid=f"reference-{index}",
+                    candidate_uid=f"candidate-{index}",
                 )
                 for index in range(7)
             ],
@@ -443,7 +443,7 @@ def test_semantic_f1_avoids_intermediate_decimal_rounding() -> None:
 @pytest.mark.parametrize("matched", [True, False])
 def test_semantic_metrics_for_perfect_or_zero_matches(matched: bool) -> None:
     diagram = UseCaseDiagramPresentation(
-        nodes=[Node(id="actor", name="Actor", type=NodeType.ACTOR)],
+        nodes=[Node(uid="actor", name="Actor", type=NodeType.ACTOR)],
         relations=[],
     )
     result = Metrics.calculate_metrics(
@@ -454,7 +454,7 @@ def test_semantic_metrics_for_perfect_or_zero_matches(matched: bool) -> None:
             reference=diagram,
             candidate=diagram,
             node_matches=[
-                NodeMatch(reference_id="actor", candidate_id="actor")
+                NodeMatch(reference_uid="actor", candidate_uid="actor")
             ]
             if matched
             else [],
@@ -474,16 +474,16 @@ def test_disallowed_candidate_receives_worst_scores(
     node_type: NodeType | None,
 ) -> None:
     reference = UseCaseDiagramPresentation(
-        nodes=[Node(id="actor", name="Actor", type=NodeType.ACTOR)],
+        nodes=[Node(uid="actor", name="Actor", type=NodeType.ACTOR)],
         relations=[],
     )
     candidate = UseCaseDiagramPresentation(
-        nodes=[Node(id="element", name="Element", type=node_type)]
+        nodes=[Node(uid="element", name="Element", type=node_type)]
         if node_type
         else [],
         relations=[
             NodeRelation(
-                id="relation",
+                uid="relation",
                 source="element",
                 target="element",
                 type=NodeRelationType.ASSOCIATION,
@@ -526,13 +526,13 @@ def test_disallowed_reference_raises_domain_error(
     from src.model.domain.exceptions import MetricsCalculationError
 
     reference = UseCaseDiagramPresentation(
-        nodes=[Node(id="element", name="Element", type=node_type)]
+        nodes=[Node(uid="element", name="Element", type=node_type)]
         if node_type
         else [],
         relations=[],
     )
     candidate = UseCaseDiagramPresentation(
-        nodes=[Node(id="actor", name="Actor", type=NodeType.ACTOR)]
+        nodes=[Node(uid="actor", name="Actor", type=NodeType.ACTOR)]
         if candidate_allowed
         else [],
         relations=[],

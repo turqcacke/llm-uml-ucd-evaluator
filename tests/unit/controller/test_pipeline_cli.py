@@ -52,7 +52,7 @@ def llm_calls(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
                     relation_matches=[],
                 )
             return self.response_type.model_validate(
-                {"id": "extracted", "nodes": [], "relations": []}
+                {"uid": "extracted", "nodes": [], "relations": []}
             )
 
     def init_model(*, model: str, **kwargs: object):
@@ -103,7 +103,7 @@ def test_extract_prose_from_cli(
     assert run_extractor.main([str(description)]) == 0
 
     result, directory = result_store.only_result()
-    assert result["id"] == "extracted"
+    assert result["uid"] == "extracted"
     assert directory == run_extractor.RESULTS_PATH
     assert len(llm_calls) == 1
     model, messages = llm_calls[0]
@@ -133,12 +133,12 @@ def test_match_reference_and_candidate_from_cli(
     reference = tmp_path / "reference.json"
     candidate = tmp_path / "candidate.json"
     reference.write_text(
-        '{"id": "reference-id", "nodes": [{"id": "missing", '
+        '{"uid": "reference-id", "nodes": [{"uid": "missing", '
         '"name": "Buyer", "type": "actor"}], "relations": []}',
         "utf-8",
     )
     candidate.write_text(
-        '{"id": "candidate-id", "nodes": [], "relations": []}', "utf-8"
+        '{"uid": "candidate-id", "nodes": [], "relations": []}', "utf-8"
     )
 
     assert run_mathcer.main([str(reference), str(candidate)]) == 0
@@ -162,8 +162,8 @@ def test_match_reference_and_candidate_from_cli(
     content = messages[1].content
     assert isinstance(content, str)
     reference_prompt, candidate_prompt = content.split("Candidate:", 1)
-    assert '"id":"reference-id"' in reference_prompt
-    assert '"id":"candidate-id"' in candidate_prompt
+    assert '"uid":"reference-id"' in reference_prompt
+    assert '"uid":"candidate-id"' in candidate_prompt
 
 
 def test_extract_apollon_from_cli(
@@ -181,7 +181,7 @@ def test_extract_apollon_from_cli(
     assert run_apollon_extractor.main([str(apollon)]) == 0
 
     result, directory = result_store.only_result()
-    assert result["id"] == "extracted"
+    assert result["uid"] == "extracted"
     assert directory == run_apollon_extractor.RESULTS_PATH
     assert len(llm_calls) == 1
     model, messages = llm_calls[0]

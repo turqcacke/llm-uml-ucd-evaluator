@@ -11,41 +11,41 @@ from .relation import NodeRelation
 class UseCaseDiagramPresentation(BaseModel):
     """Use case diagram graph with derived node groups."""
 
-    id: SkipJsonSchema[str] = Field(
+    uid: SkipJsonSchema[str] = Field(
         default_factory=lambda: uuid4().hex,
-        description="App-generated diagram ID.",
+        description="App-generated diagram UID.",
     )
 
     nodes: list[Node] = Field(
-        description="All nodes; IDs must be unique compact strings."
+        description="All nodes; UIDs must be unique compact strings."
     )
     relations: list[NodeRelation] = Field(
-        description="All relations; IDs must be unique compact strings."
+        description="All relations; UIDs must be unique compact strings."
     )
 
     actors: SkipJsonSchema[list[str]] = Field(
         default_factory=list,
-        description="Actor node IDs; derived during validation.",
+        description="Actor node UIDs; derived during validation.",
     )
     usecases: SkipJsonSchema[list[str]] = Field(
         default_factory=list,
-        description="Use case node IDs; derived during validation.",
+        description="Use case node UIDs; derived during validation.",
     )
     notes: SkipJsonSchema[list[str]] = Field(
         default_factory=list,
-        description="Note node IDs; derived during validation.",
+        description="Note node UIDs; derived during validation.",
     )
     others: SkipJsonSchema[list[str]] = Field(
         default_factory=list,
-        description="Other node IDs; derived during validation.",
+        description="Other node UIDs; derived during validation.",
     )
     systems: SkipJsonSchema[list[str]] = Field(
         default_factory=list,
-        description="System node IDs; derived during validation.",
+        description="System node UIDs; derived during validation.",
     )
     external_systems: SkipJsonSchema[list[str]] = Field(
         default_factory=list,
-        description="External system node IDs; derived during validation.",
+        description="External system node UIDs; derived during validation.",
     )
 
     @property
@@ -76,12 +76,12 @@ class UseCaseDiagramPresentation(BaseModel):
 
     @model_validator(mode="after")
     def distribute_nodes(self) -> Self:
-        if len({node.id for node in self.nodes}) != len(self.nodes):
-            raise ValueError("Node IDs must be unique.")
-        if len({relation.id for relation in self.relations}) != len(
+        if len({node.uid for node in self.nodes}) != len(self.nodes):
+            raise ValueError("Node UIDs must be unique.")
+        if len({relation.uid for relation in self.relations}) != len(
             self.relations
         ):
-            raise ValueError("Relation IDs must be unique.")
+            raise ValueError("Relation UIDs must be unique.")
 
         stores = {
             NodeType.ACTOR: self.actors,
@@ -95,5 +95,5 @@ class UseCaseDiagramPresentation(BaseModel):
             store.clear()
 
         for node in self.nodes:
-            stores.get(node.type, self.others).append(node.id)
+            stores.get(node.type, self.others).append(node.uid)
         return self
