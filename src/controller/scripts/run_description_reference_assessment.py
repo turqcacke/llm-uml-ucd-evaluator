@@ -4,9 +4,10 @@ from pathlib import Path
 
 from src.app_logging import logger
 from src.config import BASE_URL
-from src.controller.di import container
+from src.controller.di import assessment_container as app_container
 from src.controller.scripts.results import save_result
 from src.model.apollon import ApollonJson
+from src.model.domain import MetricsWithEvaluation
 from src.services.diagram_assessment import (
     DescriptionReferenceAssessment,
     DescriptionReferenceAssessmentInput,
@@ -45,16 +46,25 @@ def main(argv: list[str] | None = None) -> int:
                 args.candidate.read_text("utf-8")
             ),
         )
-        with container:
-            use_case = container.get(DescriptionReferenceAssessment)
-            result = asyncio.run(use_case.execute(data))
-        output = result.model_dump_json(indent=2)
+        result = asyncio.run(_execute(data))
+        output = result.model_dump_json(indent=2, exclude={"matching"})
         save_result(output, args.results_path)
     except (OSError, ValueError, BaseAppException) as exc:
         logger.error("{}: error: {}", parser.prog, exc)
         return 1
     logger.info("{}", output)
     return 0
+
+
+async def _execute(
+    data: DescriptionReferenceAssessmentInput,
+) -> MetricsWithEvaluation:
+    async with app_container:
+        async with app_container() as request_container:
+            use_case = await request_container.get(
+                DescriptionReferenceAssessment
+            )
+            return await use_case.execute(data)
 
 
 if __name__ == "__main__":

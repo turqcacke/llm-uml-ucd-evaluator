@@ -1,5 +1,31 @@
 # LLM UML Evaluator
 
+## Development MongoDB
+
+Start the locally bound single-node replica set used by Diagram Assessment:
+
+```sh
+docker compose -f docker-compose-infra.yml up -d --wait mongodb
+```
+
+The default connection is
+`mongodb://127.0.0.1:27017/llm_uml_evaluator?replicaSet=rs0`. Set
+`MONGODB_URI` to override it; the URI must include the database name, and
+credentials belong in the untracked `.env` file. The named Docker volume keeps
+data through ordinary restarts. Running
+`docker compose -f docker-compose-infra.yml down -v` intentionally deletes it.
+
+Fresh databases create `use_case_diagram_presentations` and
+`diagram_assessments` with unique UID indexes. Startup refuses to initialize
+when the old draft collections `usecase_digarm_presentations` or
+`metrics_presentations` contain data; migrating that data is separate work.
+
+Integration tests start an isolated MongoDB replica set with Testcontainers:
+
+```sh
+PYTHONPATH=. uv run pytest tests/integration
+```
+
 ## Workflow CLI
 
 Run from the repository root with Python 3.14+ and dependencies installed
@@ -41,6 +67,6 @@ Dishka chat model registrations. Workflow modules live directly under
 `src/infrastructure/`. Shared outbound contracts live in `src/services/ports/`;
 feature-local contracts stay with their owning workflow module.
 
-MongoDB metadata and the `UnitOfWork` and Diagram Assessment repository
-contracts are present for the persistence work. Runtime repository,
-transaction, and DI wiring remain intentionally unfinished until ticket 02.
+Diagram Assessment commands persist both diagrams and each distinct result in
+one MongoDB transaction. The returned result `uid` identifies the stored
+assessment.

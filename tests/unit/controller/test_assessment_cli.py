@@ -15,6 +15,9 @@ class FakeUseCase:
     async def execute(self, data: Any) -> MetricsWithEvaluation:
         self.calls.append(data)
         return MetricsWithEvaluation(
+            uid="result-1",
+            reference_uid="reference-1",
+            candidate_uid="candidate-1",
             candidate_is_allowed=False,
             redundancy_rate=Decimal(1),
             completeness_rate=Decimal(0),
@@ -34,13 +37,16 @@ class FakeContainer:
     def __init__(self, use_case: FakeUseCase) -> None:
         self.use_case = use_case
 
-    def __enter__(self) -> "FakeContainer":
+    def __call__(self) -> "FakeContainer":
         return self
 
-    def __exit__(self, *args: object) -> None:
+    async def __aenter__(self) -> "FakeContainer":
+        return self
+
+    async def __aexit__(self, *args: object) -> None:
         return None
 
-    def get(self, dependency: type[object]) -> FakeUseCase:
+    async def get(self, dependency: type[object]) -> FakeUseCase:
         return self.use_case
 
 
@@ -73,12 +79,24 @@ def test_assessment_cli_reads_inputs_and_saves_result(
     )
     use_case = FakeUseCase()
     saved: list[tuple[str, Path]] = []
-    monkeypatch.setattr(module, "container", FakeContainer(use_case))
-    monkeypatch.setattr(module, "save_result", lambda value, path: saved.append((value, path)))
+    monkeypatch.setattr(
+        module, "app_container", FakeContainer(use_case)
+    )
+    monkeypatch.setattr(
+        module, "save_result", lambda value, path: saved.append((value, path))
+    )
 
-    assert module.main(
-        [str(reference), str(candidate), "--results-path", str(results_path)]
-    ) == 0
+    assert (
+        module.main(
+            [
+                str(reference),
+                str(candidate),
+                "--results-path",
+                str(results_path),
+            ]
+        )
+        == 0
+    )
 
     assert len(use_case.calls) == 1
     [data] = use_case.calls
@@ -106,7 +124,9 @@ def test_assessment_cli_reports_unreadable_input(
 ) -> None:
     module = importlib.import_module(f"src.controller.scripts.{script}")
     use_case = FakeUseCase()
-    monkeypatch.setattr(module, "container", FakeContainer(use_case))
+    monkeypatch.setattr(
+        module, "app_container", FakeContainer(use_case)
+    )
 
     assert module.main([str(tmp_path / "missing"), "candidate.json"]) == 1
     assert "error:" in capsys.readouterr().err

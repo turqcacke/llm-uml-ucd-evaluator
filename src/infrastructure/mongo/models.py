@@ -18,10 +18,20 @@ class MongoModel:
 
 
 class UseCaseDiagramPresentationModel(MongoModel):
-    collection_name = "usecase_digarm_presentations"
-    indexes = []
+    collection_name = "use_case_diagram_presentations"
+    indexes = [IndexModel("uid", unique=True)]
 
 
 class MetricsWithEvaluationModel(MongoModel):
-    collection_name = "metrics_presentations"
-    indexes = []
+    collection_name = "diagram_assessments"
+    indexes = [
+        IndexModel("uid", unique=True),
+        IndexModel("reference_uid"),
+        IndexModel("candidate_uid"),
+    ]
+
+
+MONGO_MODELS = (
+    UseCaseDiagramPresentationModel,
+    MetricsWithEvaluationModel,
+)

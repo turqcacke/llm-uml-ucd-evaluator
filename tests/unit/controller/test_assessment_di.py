@@ -1,5 +1,7 @@
+from typing import cast
+
 import pytest
-from dishka import make_container
+from dishka import Provider, Scope, make_async_container, provide
 from pydantic import BaseModel
 
 from src.config import get_settings
@@ -13,8 +15,10 @@ from src.controller.di.llm import ChatModelProvider
 from src.infrastructure.langchain import chat_model
 from src.services.diagram_assessment import (
     ApollonReferenceAssessment,
+    AssessmentWriteRepository,
     DescriptionReferenceAssessment,
 )
+from src.services.ports import UnitOfWork
 
 
 class FakeLanguageModel:
@@ -24,7 +28,18 @@ class FakeLanguageModel:
         return self
 
 
-def test_container_resolves_assessment_use_cases(
+class PersistenceProvider(Provider):
+    @provide(scope=Scope.REQUEST)
+    def repository(self) -> AssessmentWriteRepository:
+        return cast(AssessmentWriteRepository, object())
+
+    @provide(scope=Scope.REQUEST)
+    def unit_of_work(self) -> UnitOfWork:
+        return cast(UnitOfWork, object())
+
+
+@pytest.mark.anyio
+async def test_container_resolves_assessment_use_cases(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     for prefix in ("EXTRACTOR", "MATCHER", "EVALUATOR"):
@@ -37,21 +52,23 @@ def test_container_resolves_assessment_use_cases(
     )
     get_settings.cache_clear()
 
-    local_container = make_container(
+    local_container = make_async_container(
         ChatModelProvider(),
         ExtractorProvider(),
         MatcherProvider(),
         EvaluatorProvider(),
+        PersistenceProvider(),
         DiagramAssessmentProvider(),
     )
-    with local_container:
+    async with local_container() as request_container:
         assert isinstance(
-            local_container.get(DescriptionReferenceAssessment),
+            await request_container.get(DescriptionReferenceAssessment),
             DescriptionReferenceAssessment,
         )
         assert isinstance(
-            local_container.get(ApollonReferenceAssessment),
+            await request_container.get(ApollonReferenceAssessment),
             ApollonReferenceAssessment,
         )
+    await local_container.close()
 
     get_settings.cache_clear()

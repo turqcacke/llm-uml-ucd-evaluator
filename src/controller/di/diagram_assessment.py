@@ -9,9 +9,9 @@ from src.services.diagram_assessment import (
 class DiagramAssessmentProvider(Provider):
     description_reference_assessment = provide(
         DescriptionReferenceAssessment,
-        scope=Scope.APP,
+        scope=Scope.REQUEST,
     )
     apollon_reference_assessment = provide(
         ApollonReferenceAssessment,
-        scope=Scope.APP,
+        scope=Scope.REQUEST,
     )

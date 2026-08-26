@@ -4,7 +4,7 @@ from pathlib import Path
 
 from src.app_logging import logger
 from src.config import BASE_URL
-from src.controller.di import container
+from src.controller.di import container as app_container
 from src.controller.scripts.results import save_result
 from src.services.exceptions import BaseAppException
 from src.services.extractor import (
@@ -34,9 +34,10 @@ def main(argv: list[str] | None = None) -> int:
             args.results_path,
         )
         data = DescriptionExtractorInput(args.description.read_text("utf-8"))
-        with container:
-            use_case = container.get(DescriptionExtractor)
-            result = asyncio.run(use_case.execute(data))
+        with app_container:
+            with app_container() as request_container:
+                use_case = request_container.get(DescriptionExtractor)
+                result = asyncio.run(use_case.execute(data))
         output = result.model_dump_json(indent=2)
         save_result(output, args.results_path)
     except (OSError, ValueError, BaseAppException) as exc:

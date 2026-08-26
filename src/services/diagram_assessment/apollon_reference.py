@@ -8,9 +8,11 @@ from src.services.extractor import (
     ApollonJsonExtractorInput,
 )
 from src.services.matcher import UseCaseDiagramMatcher
+from src.services.ports import UnitOfWork
 from src.services.use_case import UseCase, map_use_case_exceptions
 
 from .assessment import assess_diagrams
+from .repository import AssessmentWriteRepository
 
 
 @dataclass(frozen=True)
@@ -27,10 +29,14 @@ class ApollonReferenceAssessment(
         extractor: ApollonJsonExtractor,
         matcher: UseCaseDiagramMatcher,
         evaluator: PragmaticSyntacticLlmEvaluator,
+        repository: AssessmentWriteRepository,
+        unit_of_work: UnitOfWork,
     ) -> None:
         self._extractor = extractor
         self._matcher = matcher
         self._evaluator = evaluator
+        self._repository = repository
+        self._unit_of_work = unit_of_work
 
     @map_use_case_exceptions
     async def execute(
@@ -47,4 +53,6 @@ class ApollonReferenceAssessment(
             candidate,
             self._matcher,
             self._evaluator,
+            self._repository,
+            self._unit_of_work,
         )

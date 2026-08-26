@@ -39,6 +39,42 @@ class FakeUseCase:
         return self.result
 
 
+class FakeRepository:
+    def __init__(self) -> None:
+        self.diagrams: list[UseCaseDiagramPresentation] = []
+        self.results: list[Any] = []
+
+    async def save_diagram_presentation(
+        self, data: UseCaseDiagramPresentation
+    ) -> None:
+        self.diagrams.append(data)
+
+    async def save_metrics(self, data: Any) -> None:
+        self.results.append(data)
+
+
+class FakeUnitOfWork:
+    def __init__(self, commit_error: Exception | None = None) -> None:
+        self.commit_error = commit_error
+        self.commits = 0
+        self.rollbacks = 0
+
+    async def __aenter__(self) -> "FakeUnitOfWork":
+        return self
+
+    async def __aexit__(self, *args: object) -> None:
+        if args[0] is not None:
+            await self.rollback()
+
+    async def commit(self) -> None:
+        if self.commit_error:
+            raise self.commit_error
+        self.commits += 1
+
+    async def rollback(self) -> None:
+        self.rollbacks += 1
+
+
 class SequenceUseCase:
     def __init__(self, *results: Any) -> None:
         self.results = iter(results)
@@ -89,8 +125,9 @@ def _diagram(node_id: str) -> UseCaseDiagramPresentation:
 
 
 @pytest.mark.anyio
-async def test_description_reference_assessment_returns_metrics_and_evaluation(
-) -> None:
+async def test_description_reference_assessment_returns_metrics_and_evaluation() -> (
+    None
+):
     reference = _diagram("reference")
     candidate = _diagram("candidate")
     evaluation = EvaluationResult(
@@ -117,11 +154,15 @@ async def test_description_reference_assessment_returns_metrics_and_evaluation(
     candidate_extractor = FakeUseCase(candidate)
     matcher = FakeUseCase(matching)
     evaluator = FakeUseCase(evaluation)
+    repository = FakeRepository()
+    unit_of_work = FakeUnitOfWork()
     assessment = DescriptionReferenceAssessment(
         cast(DescriptionExtractor, description_extractor),
         cast(ApollonJsonExtractor, candidate_extractor),
         cast(UseCaseDiagramMatcher, matcher),
         cast(PragmaticSyntacticLlmEvaluator, evaluator),
+        repository,
+        unit_of_work,
     )
 
     result = await assessment.execute(
@@ -131,7 +172,7 @@ async def test_description_reference_assessment_returns_metrics_and_evaluation(
         )
     )
 
-    assert result.model_dump() == {
+    assert result.model_dump(exclude={"uid"}) == {
         "candidate_is_allowed": True,
         "redundancy_rate": Decimal(0),
         "completeness_rate": Decimal(1),
@@ -144,23 +185,48 @@ async def test_description_reference_assessment_returns_metrics_and_evaluation(
         "complexity_difference": Decimal(0),
         "complexity_deviation_rate": Decimal(0),
         "evaluation": evaluation.model_dump(),
+        "reference_uid": reference.uid,
+        "candidate_uid": candidate.uid,
+        "matching": {
+            "node_matches": [
+                {
+                    "reference_uid": "reference",
+                    "candidate_uid": "candidate",
+                }
+            ],
+            "relation_matches": [],
+            "missing_nodes": [],
+            "redundant_nodes": [],
+            "missing_relations": [],
+            "redundant_relations": [],
+        },
     }
+    assert result.uid
+    assert repository.diagrams == [reference, candidate]
+    assert result.matching == matching
+    assert repository.results == [result]
+    assert unit_of_work.commits == 1
 
 
 @pytest.mark.anyio
-async def test_disallowed_candidate_returns_fixed_metrics_without_analysis(
-) -> None:
+async def test_disallowed_candidate_returns_fixed_metrics_without_analysis() -> (
+    None
+):
     reference = _diagram("reference")
     candidate = UseCaseDiagramPresentation(nodes=[], relations=[])
     description_extractor = FakeUseCase(reference)
     candidate_extractor = FakeUseCase(candidate)
     matcher = FakeUseCase(None)
     evaluator = FakeUseCase(None)
+    repository = FakeRepository()
+    unit_of_work = FakeUnitOfWork()
     assessment = DescriptionReferenceAssessment(
         cast(DescriptionExtractor, description_extractor),
         cast(ApollonJsonExtractor, candidate_extractor),
         cast(UseCaseDiagramMatcher, matcher),
         cast(PragmaticSyntacticLlmEvaluator, evaluator),
+        repository,
+        unit_of_work,
     )
 
     result = await assessment.execute(
@@ -172,6 +238,10 @@ async def test_disallowed_candidate_returns_fixed_metrics_without_analysis(
     assert result.redundancy_rate == Decimal(1)
     assert result.syntactic_error_rate == Decimal(1)
     assert result.evaluation is None
+    assert repository.diagrams == [reference, candidate]
+    assert result.matching is None
+    assert repository.results == [result]
+    assert unit_of_work.commits == 1
     assert matcher.calls == []
     assert evaluator.calls == []
 
@@ -182,11 +252,15 @@ async def test_disallowed_reference_fails_without_analysis() -> None:
     candidate = _diagram("candidate")
     matcher = FakeUseCase(None)
     evaluator = FakeUseCase(None)
+    repository = FakeRepository()
+    unit_of_work = FakeUnitOfWork()
     assessment = DescriptionReferenceAssessment(
         cast(DescriptionExtractor, FakeUseCase(reference)),
         cast(ApollonJsonExtractor, FakeUseCase(candidate)),
         cast(UseCaseDiagramMatcher, matcher),
         cast(PragmaticSyntacticLlmEvaluator, evaluator),
+        repository,
+        unit_of_work,
     )
 
     with pytest.raises(UseCaseError, match="Reference diagram"):
@@ -196,6 +270,61 @@ async def test_disallowed_reference_fails_without_analysis() -> None:
 
     assert matcher.calls == []
     assert evaluator.calls == []
+    assert repository.diagrams == []
+    assert unit_of_work.commits == 0
+
+
+@pytest.mark.anyio
+async def test_repeated_assessments_return_distinct_result_uids() -> None:
+    reference = _diagram("reference")
+    candidate = UseCaseDiagramPresentation(nodes=[], relations=[])
+    repository = FakeRepository()
+    unit_of_work = FakeUnitOfWork()
+    assessment = DescriptionReferenceAssessment(
+        cast(DescriptionExtractor, FakeUseCase(reference)),
+        cast(ApollonJsonExtractor, FakeUseCase(candidate)),
+        cast(UseCaseDiagramMatcher, FakeUseCase(None)),
+        cast(PragmaticSyntacticLlmEvaluator, FakeUseCase(None)),
+        repository,
+        unit_of_work,
+    )
+
+    first = await assessment.execute(
+        DescriptionReferenceAssessmentInput("Reference", _apollon())
+    )
+    second = await assessment.execute(
+        DescriptionReferenceAssessmentInput("Reference", _apollon())
+    )
+
+    assert first.uid != second.uid
+    assert [result.uid for result in repository.results] == [
+        first.uid,
+        second.uid,
+    ]
+
+
+@pytest.mark.anyio
+async def test_storage_failure_fails_execution_and_rolls_back() -> None:
+    repository = FakeRepository()
+    unit_of_work = FakeUnitOfWork(RuntimeError("Commit failed"))
+    assessment = DescriptionReferenceAssessment(
+        cast(DescriptionExtractor, FakeUseCase(_diagram("reference"))),
+        cast(
+            ApollonJsonExtractor,
+            FakeUseCase(UseCaseDiagramPresentation(nodes=[], relations=[])),
+        ),
+        cast(UseCaseDiagramMatcher, FakeUseCase(None)),
+        cast(PragmaticSyntacticLlmEvaluator, FakeUseCase(None)),
+        repository,
+        unit_of_work,
+    )
+
+    with pytest.raises(UseCaseError, match="Commit failed"):
+        await assessment.execute(
+            DescriptionReferenceAssessmentInput("Reference", _apollon())
+        )
+
+    assert unit_of_work.rollbacks == 1
 
 
 @pytest.mark.anyio
@@ -227,6 +356,8 @@ async def test_apollon_reference_assessment_extracts_both_diagrams() -> None:
         cast(ApollonJsonExtractor, extraction),
         cast(UseCaseDiagramMatcher, FakeUseCase(matching)),
         cast(PragmaticSyntacticLlmEvaluator, FakeUseCase(evaluation)),
+        FakeRepository(),
+        FakeUnitOfWork(),
     )
     reference_source = _apollon()
     candidate_source = _apollon()
@@ -252,6 +383,8 @@ async def test_analysis_failure_cancels_the_other_task() -> None:
         cast(ApollonJsonExtractor, FakeUseCase(_diagram("candidate"))),
         cast(UseCaseDiagramMatcher, matcher),
         cast(PragmaticSyntacticLlmEvaluator, evaluator),
+        FakeRepository(),
+        FakeUnitOfWork(),
     )
 
     with pytest.raises(UseCaseError) as error_info:
@@ -273,6 +406,8 @@ async def test_analysis_reraises_single_application_error() -> None:
         cast(ApollonJsonExtractor, FakeUseCase(_diagram("candidate"))),
         cast(UseCaseDiagramMatcher, matcher),
         cast(PragmaticSyntacticLlmEvaluator, evaluator),
+        FakeRepository(),
+        FakeUnitOfWork(),
     )
 
     with pytest.raises(LlmRequestError) as error_info:
@@ -296,6 +431,8 @@ async def test_apollon_reference_assessment_maps_extraction_failure() -> None:
         ),
         cast(UseCaseDiagramMatcher, matcher),
         cast(PragmaticSyntacticLlmEvaluator, evaluator),
+        FakeRepository(),
+        FakeUnitOfWork(),
     )
 
     with pytest.raises(

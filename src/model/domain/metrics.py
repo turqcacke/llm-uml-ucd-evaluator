@@ -217,4 +217,8 @@ class Metrics(BaseModel):
 
 
 class MetricsWithEvaluation(Metrics):
+    uid: str
+    reference_uid: str
+    candidate_uid: str
     evaluation: EvaluationResult | None = None
+    matching: ExtendedMatching | None = None

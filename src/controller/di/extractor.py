@@ -20,15 +20,15 @@ class ExtractorProvider(Provider):
     ) -> BaseConverter[ApollonJson, UseCaseDiagramPresentation]:
         return ApollonToDomainConverter()
 
-    apollon_json_extractor = provide(ApollonJsonExtractor, scope=Scope.APP)
+    apollon_json_extractor = provide(ApollonJsonExtractor, scope=Scope.REQUEST)
 
-    @provide(scope=Scope.APP)
+    @provide(scope=Scope.REQUEST)
     def description_extractor(
         self, chat_model: TextExtractorChatModel
     ) -> DescriptionExtractor:
         return DescriptionExtractor(chat_model)
 
-    @provide(scope=Scope.APP)
+    @provide(scope=Scope.REQUEST)
     def apollon_extractor(
         self, chat_model: ApollonExtractorChatModel
     ) -> ApollonLlmExtractor:

@@ -18,6 +18,12 @@ class LoggingSettings(BaseSettings):
 
 
 class Settings(LoggingSettings):
+    MONGODB_URI: str = Field(
+        default=(
+            "mongodb://127.0.0.1:27017/llm_uml_evaluator?replicaSet=rs0"
+        )
+    )
+
     EXTRACTOR_API_KEY: Secret[str] = Field(default=...)
     EXTRACTOR_MODEL: str = Field(default=...)
     EXTRACTOR_BASE_URL: str | None = Field(default=None)

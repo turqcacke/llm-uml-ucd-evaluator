@@ -340,7 +340,14 @@ def test_model_configuration_failure_is_cli_error(
 
 
 @pytest.mark.parametrize(
-    "script", ["run_extractor", "run_mathcer", "run_apollon_extractor"]
+    "script",
+    [
+        "run_extractor",
+        "run_mathcer",
+        "run_apollon_extractor",
+        "run_description_reference_assessment",
+        "run_apollon_reference_assessment",
+    ],
 )
 @pytest.mark.parametrize("args, code", [(["--help"], 0), ([], 2)])
 def test_module_cli_usage_without_llm_configuration(

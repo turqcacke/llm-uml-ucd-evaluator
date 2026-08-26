@@ -14,6 +14,9 @@ dependencies = [
     "pytest>=9.1.1",
 ]
 
+[dependency-groups]
+dev = ["testcontainers>=4.15,<5"]
+
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I"]
 

@@ -1,8 +1,10 @@
 from asyncio import TaskGroup
+from uuid import uuid4
 
 from src.model.domain import (
     EvaluationResult,
     ExtendedMatching,
+    Metrics,
     MetricsWithEvaluation,
     UseCaseDiagramPresentation,
 )
@@ -16,6 +18,9 @@ from src.services.matcher import (
     UseCaseDiagramMatcher,
     UseCaseDiagramMatcherInput,
 )
+from src.services.ports import UnitOfWork
+
+from .repository import AssessmentWriteRepository
 
 
 async def assess_diagrams(
@@ -23,11 +28,13 @@ async def assess_diagrams(
     candidate: UseCaseDiagramPresentation,
     matcher: UseCaseDiagramMatcher,
     evaluator: PragmaticSyntacticLlmEvaluator,
+    repository: AssessmentWriteRepository,
+    unit_of_work: UnitOfWork,
 ) -> MetricsWithEvaluation:
     if not reference.is_allowed:
         raise MetricsCalculationError("Reference diagram is not allowed.")
     if not candidate.is_allowed:
-        return MetricsWithEvaluation.calculate_metrics(
+        metrics = Metrics.calculate_metrics(
             reference,
             candidate,
             EvaluationResult(
@@ -42,29 +49,52 @@ async def assess_diagrams(
                 relation_matches=[],
             ),
         )
-
-    try:
-        async with TaskGroup() as tasks:
-            matching_task = tasks.create_task(
-                matcher.execute(
-                    UseCaseDiagramMatcherInput(reference, candidate)
+        result = MetricsWithEvaluation(
+            **metrics.model_dump(),
+            uid=uuid4().hex,
+            reference_uid=reference.uid,
+            candidate_uid=candidate.uid,
+            evaluation=None,
+            matching=None,
+        )
+    else:
+        try:
+            async with TaskGroup() as tasks:
+                matching_task = tasks.create_task(
+                    matcher.execute(
+                        UseCaseDiagramMatcherInput(reference, candidate)
+                    )
                 )
-            )
-            evaluation_task = tasks.create_task(
-                evaluator.execute(PragmaticSyntacticInput(candidate))
-            )
-    except ExceptionGroup as exc:
-        if len(exc.exceptions) == 1 and isinstance(
-            error := exc.exceptions[0], BaseAppException
-        ):
-            raise error from exc
-        raise
+                evaluation_task = tasks.create_task(
+                    evaluator.execute(PragmaticSyntacticInput(candidate))
+                )
+        except ExceptionGroup as exc:
+            if len(exc.exceptions) == 1 and isinstance(
+                error := exc.exceptions[0], BaseAppException
+            ):
+                raise error from exc
+            raise
 
-    evaluation = evaluation_task.result()
-    metrics = MetricsWithEvaluation.calculate_metrics(
-        reference,
-        candidate,
-        evaluation,
-        matching_task.result(),
-    )
-    return metrics.model_copy(update={"evaluation": evaluation})
+        evaluation = evaluation_task.result()
+        matching = matching_task.result()
+        metrics = Metrics.calculate_metrics(
+            reference,
+            candidate,
+            evaluation,
+            matching,
+        )
+        result = MetricsWithEvaluation(
+            **metrics.model_dump(),
+            uid=uuid4().hex,
+            reference_uid=reference.uid,
+            candidate_uid=candidate.uid,
+            evaluation=evaluation,
+            matching=matching,
+        )
+
+    async with unit_of_work:
+        await repository.save_diagram_presentation(reference)
+        await repository.save_diagram_presentation(candidate)
+        await repository.save_metrics(result)
+        await unit_of_work.commit()
+    return result
