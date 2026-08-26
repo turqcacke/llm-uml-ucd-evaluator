@@ -24,7 +24,8 @@ relation combinations is forbidden. Keep these rule IDs and texts unchanged.
 - Put only rules relevant to an element in its `rules_applied`.
 - `syntactic_errors` must be a subset of `rules_applied`.
 - Treat actor and external_system nodes as actor-like.
-- Association direction does not affect rule 5.
+- Association direction does not affect whether an association connects only
+  an actor-like node and a use case.
 - Score node naming understandability as 1 for unclear, 2 for clear but
   protocol-violating, or 3 for clear and protocol-compliant.
 - Return only the supplied structured output schema.
