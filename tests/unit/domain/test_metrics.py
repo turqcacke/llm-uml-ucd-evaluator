@@ -391,6 +391,55 @@ def test_semantic_metrics_count_nodes_and_relations_without_annotations() -> (
     assert "syntatic_error_rate" not in result.model_dump()
 
 
+def test_semantic_f1_avoids_intermediate_decimal_rounding() -> None:
+    reference = UseCaseDiagramPresentation(
+        nodes=[
+            Node(id=f"reference-{index}", name="Actor", type=NodeType.ACTOR)
+            for index in range(17)
+        ],
+        relations=[],
+    )
+    candidate = UseCaseDiagramPresentation(
+        nodes=[
+            Node(id=f"candidate-{index}", name="Actor", type=NodeType.ACTOR)
+            for index in range(11)
+        ],
+        relations=[],
+    )
+    result = Metrics.calculate_metrics(
+        reference,
+        candidate,
+        _evaluation_for(candidate),
+        ExtendedMatching(
+            reference=reference,
+            candidate=candidate,
+            node_matches=[
+                NodeMatch(
+                    reference_id=f"reference-{index}",
+                    candidate_id=f"candidate-{index}",
+                )
+                for index in range(7)
+            ],
+            relation_matches=[],
+        ),
+    )
+
+    assert result.semantic_f1_score == Decimal("0.5")
+    assert result.model_dump(mode="json") == {
+        "candidate_is_allowed": True,
+        "redundancy_rate": 0.363636,
+        "completeness_rate": 0.411765,
+        "semantic_precision": 0.636364,
+        "semantic_f1_score": 0.5,
+        "syntactic_error_rate": 0,
+        "naming_understandability_score": 2,
+        "reference_complexity": 0,
+        "candidate_complexity": 0,
+        "complexity_difference": 0,
+        "complexity_deviation_rate": 0,
+    }
+
+
 @pytest.mark.parametrize("matched", [True, False])
 def test_semantic_metrics_for_perfect_or_zero_matches(matched: bool) -> None:
     diagram = UseCaseDiagramPresentation(

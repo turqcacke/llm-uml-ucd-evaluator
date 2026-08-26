@@ -1,8 +1,8 @@
 from collections import Counter
-from decimal import Decimal
+from decimal import ROUND_HALF_EVEN, Decimal
 from typing import Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 
 from .diagram_presentation import UseCaseDiagramPresentation
 from .evaluation import EvaluationResult
@@ -26,6 +26,29 @@ class Metrics(BaseModel):
     candidate_complexity: Decimal
     complexity_difference: Decimal
     complexity_deviation_rate: Decimal = Field(allow_inf_nan=True)
+
+    @field_serializer(
+        "redundancy_rate",
+        "completeness_rate",
+        "semantic_precision",
+        "semantic_f1_score",
+        "syntactic_error_rate",
+        "naming_understandability_score",
+        "reference_complexity",
+        "candidate_complexity",
+        "complexity_difference",
+        "complexity_deviation_rate",
+        when_used="json",
+    )
+    def serialize_metric(self, value: Decimal) -> int | float | str:
+        if not value.is_finite():
+            return str(value)
+        rounded = value.quantize(
+            Decimal("0.000001"), rounding=ROUND_HALF_EVEN
+        )
+        if rounded == rounded.to_integral():
+            return int(rounded)
+        return float(rounded)
 
     @classmethod
     def calculate_metrics(
@@ -174,8 +197,8 @@ class Metrics(BaseModel):
             redundancy_rate=redundancy,
             semantic_precision=precision,
             semantic_f1_score=(
-                2 * completeness * precision / (completeness + precision)
-                if completeness + precision
+                2 * matched / (reference_count + candidate_count)
+                if matched
                 else Decimal(0)
             ),
             syntactic_error_rate=(
