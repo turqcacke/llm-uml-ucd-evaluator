@@ -1,6 +1,6 @@
 # LLM UML Evaluator
 
-## Pipeline CLI
+## Workflow CLI
 
 Run from the repository root with Python 3.14+ and dependencies installed
 (`uv sync`). Configure `EXTRACTOR_MODEL`, `EXTRACTOR_API_KEY`, `MATCHER_MODEL`,
@@ -35,6 +35,12 @@ Each command also saves a UTF-8 JSON file with a unique UUID filename. Its
 Directories are created automatically, and repeated runs keep earlier
 results. Override the output directory with `--results-path /path/to/results`.
 
-Pipeline providers live in `src/controller/di/pipelines/` and use the existing
-Dishka chat model registrations. The pragmatic/syntactic evaluator uses the
-stable allow-list in `src/services/shared/evaluation_rules.py`.
+Workflow providers live directly in `src/controller/di/` and use the existing
+Dishka chat model registrations. Workflow modules live directly under
+`src/services/`; LangChain, Apollon conversion, and MongoDB metadata live under
+`src/infrastructure/`. Shared outbound contracts live in `src/services/ports/`;
+feature-local contracts stay with their owning workflow module.
+
+MongoDB metadata and the `UnitOfWork` and Diagram Assessment repository
+contracts are present for the persistence work. Runtime repository,
+transaction, and DI wiring remain intentionally unfinished until ticket 02.

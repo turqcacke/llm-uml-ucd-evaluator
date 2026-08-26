@@ -1,12 +1,10 @@
 from dishka import make_container
 
+from .diagram_assessment import DiagramAssessmentProvider
+from .evaluator import EvaluatorProvider
+from .extractor import ExtractorProvider
 from .llm import ChatModelProvider
-from .pipelines import (
-    DiagramAssessmentProvider,
-    EvaluatorProvider,
-    ExtractorProvider,
-    MatcherProvider,
-)
+from .matcher import MatcherProvider
 
 container = make_container(
     ChatModelProvider(),
@@ -15,3 +13,12 @@ container = make_container(
     EvaluatorProvider(),
     DiagramAssessmentProvider(),
 )
+
+__all__ = [
+    "ChatModelProvider",
+    "DiagramAssessmentProvider",
+    "EvaluatorProvider",
+    "ExtractorProvider",
+    "MatcherProvider",
+    "container",
+]

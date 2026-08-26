@@ -7,11 +7,11 @@ from src.config import BASE_URL
 from src.controller.di import container
 from src.controller.scripts.results import save_result
 from src.model.apollon import ApollonJson
-from src.services.exceptions import BaseAppException
-from src.services.pipelines.diagram_assessment import (
+from src.services.diagram_assessment import (
     DescriptionReferenceAssessment,
     DescriptionReferenceAssessmentInput,
 )
+from src.services.exceptions import BaseAppException
 
 RESULTS_PATH = (
     BASE_URL / "scripts_out" / "run_description_reference_assessment"
@@ -46,8 +46,8 @@ def main(argv: list[str] | None = None) -> int:
             ),
         )
         with container:
-            pipeline = container.get(DescriptionReferenceAssessment)
-            result = asyncio.run(pipeline.execute(data))
+            use_case = container.get(DescriptionReferenceAssessment)
+            result = asyncio.run(use_case.execute(data))
         output = result.model_dump_json(indent=2)
         save_result(output, args.results_path)
     except (OSError, ValueError, BaseAppException) as exc:

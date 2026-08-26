@@ -7,9 +7,9 @@ from src.config import BASE_URL
 from src.controller.di import container
 from src.controller.scripts.results import save_result
 from src.services.exceptions import BaseAppException
-from src.services.pipelines.extractor.text import (
-    DesciptionExtractorInput,
+from src.services.extractor import (
     DescriptionExtractor,
+    DescriptionExtractorInput,
 )
 
 RESULTS_PATH = BASE_URL / "scripts_out" / "run_extractor"
@@ -33,10 +33,10 @@ def main(argv: list[str] | None = None) -> int:
             args.description,
             args.results_path,
         )
-        data = DesciptionExtractorInput(args.description.read_text("utf-8"))
+        data = DescriptionExtractorInput(args.description.read_text("utf-8"))
         with container:
-            pipeline = container.get(DescriptionExtractor)
-            result = asyncio.run(pipeline.execute(data))
+            use_case = container.get(DescriptionExtractor)
+            result = asyncio.run(use_case.execute(data))
         output = result.model_dump_json(indent=2)
         save_result(output, args.results_path)
     except (OSError, ValueError, BaseAppException) as exc:

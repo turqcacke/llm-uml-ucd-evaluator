@@ -8,7 +8,7 @@ import pytest
 from src.model.domain import MetricsWithEvaluation
 
 
-class FakePipeline:
+class FakeUseCase:
     def __init__(self) -> None:
         self.calls: list[Any] = []
 
@@ -31,8 +31,8 @@ class FakePipeline:
 
 
 class FakeContainer:
-    def __init__(self, pipeline: FakePipeline) -> None:
-        self.pipeline = pipeline
+    def __init__(self, use_case: FakeUseCase) -> None:
+        self.use_case = use_case
 
     def __enter__(self) -> "FakeContainer":
         return self
@@ -40,8 +40,8 @@ class FakeContainer:
     def __exit__(self, *args: object) -> None:
         return None
 
-    def get(self, dependency: type[object]) -> FakePipeline:
-        return self.pipeline
+    def get(self, dependency: type[object]) -> FakeUseCase:
+        return self.use_case
 
 
 @pytest.mark.parametrize(
@@ -71,17 +71,17 @@ def test_assessment_cli_reads_inputs_and_saves_result(
     candidate.write_text(
         '{"model": {"elements": {}, "relationships": {}}}', "utf-8"
     )
-    pipeline = FakePipeline()
+    use_case = FakeUseCase()
     saved: list[tuple[str, Path]] = []
-    monkeypatch.setattr(module, "container", FakeContainer(pipeline))
+    monkeypatch.setattr(module, "container", FakeContainer(use_case))
     monkeypatch.setattr(module, "save_result", lambda value, path: saved.append((value, path)))
 
     assert module.main(
         [str(reference), str(candidate), "--results-path", str(results_path)]
     ) == 0
 
-    assert len(pipeline.calls) == 1
-    [data] = pipeline.calls
+    assert len(use_case.calls) == 1
+    [data] = use_case.calls
     if script == "run_description_reference_assessment":
         assert data.reference_description == reference_content
     else:
@@ -105,9 +105,9 @@ def test_assessment_cli_reports_unreadable_input(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     module = importlib.import_module(f"src.controller.scripts.{script}")
-    pipeline = FakePipeline()
-    monkeypatch.setattr(module, "container", FakeContainer(pipeline))
+    use_case = FakeUseCase()
+    monkeypatch.setattr(module, "container", FakeContainer(use_case))
 
     assert module.main([str(tmp_path / "missing"), "candidate.json"]) == 1
     assert "error:" in capsys.readouterr().err
-    assert pipeline.calls == []
+    assert use_case.calls == []

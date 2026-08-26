@@ -9,7 +9,7 @@ from src.controller.scripts.results import save_result
 from src.model.domain.diagram_presentation import UseCaseDiagramPresentation
 from src.model.domain.exceptions import DomainError
 from src.services.exceptions import BaseAppException
-from src.services.pipelines.matcher.use_case_diagram import (
+from src.services.matcher import (
     UseCaseDiagramMatcher,
     UseCaseDiagramMatcherInput,
 )
@@ -45,8 +45,8 @@ def main(argv: list[str] | None = None) -> int:
             ),
         )
         with container:
-            pipeline = container.get(UseCaseDiagramMatcher)
-            result = asyncio.run(pipeline.execute(data))
+            use_case = container.get(UseCaseDiagramMatcher)
+            result = asyncio.run(use_case.execute(data))
         output = result.model_dump_json(indent=2)
         save_result(output, args.results_path)
     except (OSError, ValueError, DomainError, BaseAppException) as exc:

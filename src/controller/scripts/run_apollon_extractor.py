@@ -8,7 +8,7 @@ from src.controller.di import container
 from src.controller.scripts.results import save_result
 from src.model.apollon import ApollonJson
 from src.services.exceptions import BaseAppException
-from src.services.pipelines.extractor.apollon_llm import (
+from src.services.extractor import (
     ApollonLlmExtractor,
     ApollonLlmExtractorInput,
 )
@@ -38,8 +38,8 @@ def main(argv: list[str] | None = None) -> int:
             ApollonJson.model_validate_json(args.apollon.read_text("utf-8"))
         )
         with container:
-            pipeline = container.get(ApollonLlmExtractor)
-            result = asyncio.run(pipeline.execute(data))
+            use_case = container.get(ApollonLlmExtractor)
+            result = asyncio.run(use_case.execute(data))
         output = result.model_dump_json(indent=2)
         save_result(output, args.results_path)
     except (OSError, ValueError, BaseAppException) as exc:

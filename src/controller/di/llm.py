@@ -1,16 +1,20 @@
-from typing import Literal
+from typing import Annotated, Literal
 
-from dishka import Provider, Scope, provide
+from dishka import FromComponent, Provider, Scope, provide
 
 from src.config import get_settings
+from src.infrastructure.langchain import LangChainChatModel
 from src.model.domain import EvaluationResult, UseCaseDiagramPresentation
 from src.model.domain.matching import MinMatching
-from src.services.llm_client import ChatModel, LangChainChatModel
-from src.services.pipelines.extractor.dependencies import (
-    ApollonExtractorChatModel,
-    TextExtractorChatModel,
-)
+from src.services.ports import ChatModel
 from src.services.shared import guardrails, prompts
+
+type TextExtractorChatModel = Annotated[
+    ChatModel[UseCaseDiagramPresentation], FromComponent("text")
+]
+type ApollonExtractorChatModel = Annotated[
+    ChatModel[UseCaseDiagramPresentation], FromComponent("apollon")
+]
 
 
 def get_text_extractor_chat_model(

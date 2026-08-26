@@ -43,9 +43,7 @@ class Metrics(BaseModel):
     def serialize_metric(self, value: Decimal) -> int | float | str:
         if not value.is_finite():
             return str(value)
-        rounded = value.quantize(
-            Decimal("0.000001"), rounding=ROUND_HALF_EVEN
-        )
+        rounded = value.quantize(Decimal("0.000001"), rounding=ROUND_HALF_EVEN)
         if rounded == rounded.to_integral():
             return int(rounded)
         return float(rounded)

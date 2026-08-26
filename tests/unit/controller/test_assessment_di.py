@@ -3,15 +3,15 @@ from dishka import make_container
 from pydantic import BaseModel
 
 from src.config import get_settings
-from src.controller.di.llm import ChatModelProvider
-from src.controller.di.pipelines import (
+from src.controller.di import (
     DiagramAssessmentProvider,
     EvaluatorProvider,
     ExtractorProvider,
     MatcherProvider,
 )
-from src.services.llm_client import chat_model
-from src.services.pipelines.diagram_assessment import (
+from src.controller.di.llm import ChatModelProvider
+from src.infrastructure.langchain import chat_model
+from src.services.diagram_assessment import (
     ApollonReferenceAssessment,
     DescriptionReferenceAssessment,
 )
@@ -24,7 +24,7 @@ class FakeLanguageModel:
         return self
 
 
-def test_container_resolves_assessment_pipelines(
+def test_container_resolves_assessment_use_cases(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     for prefix in ("EXTRACTOR", "MATCHER", "EVALUATOR"):
