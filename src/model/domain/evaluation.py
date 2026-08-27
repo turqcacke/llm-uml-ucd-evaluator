@@ -47,7 +47,9 @@ class BaseEvaluation(BaseModel):
 class NodeEvaluation(BaseEvaluation):
     naming_score: NamingUnderstandabilityScore = Field(
         description=(
-            "Naming clarity: 1 unclear; 2 clear, protocol-violating; 3 clear, "
+            f"Naming clarity: {NamingUnderstandabilityScore.LOW} unclear; "
+            f"{NamingUnderstandabilityScore.MEDIUM} clear, protocol-violating; "
+            f"{NamingUnderstandabilityScore.HIGH} clear, "
             "protocol-compliant."
         )
     )

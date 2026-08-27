@@ -21,10 +21,10 @@ def get_text_extractor_chat_model(
     type_: Literal["text", "apollon"],
 ) -> ChatModel[UseCaseDiagramPresentation]:
     settings = get_settings()
-    apollon_guardrails = [guardrails.RESTRICT_TO_STRUCTURED_OUTPUT]
+    apollon_guardrails = list(guardrails.COMMON_GUARDRAILS)
     text_guard_rails = [
         guardrails.USE_DESCRIPTION_FACTS,
-        guardrails.RESTRICT_TO_STRUCTURED_OUTPUT,
+        *guardrails.COMMON_GUARDRAILS,
     ]
     model = LangChainChatModel(
         model=settings.EXTRACTOR_MODEL,
@@ -49,12 +49,14 @@ def get_use_case_diagram_matcher_chat_model() -> ChatModel[MinMatching]:
         model_provider=settings.MATCHER_PROVIDER,
         system_prompt=prompts.USE_CASE_DIAGRAM_MATCHER,
         response_type=MinMatching,
+        guardrails=list(guardrails.COMMON_GUARDRAILS),
     )
     return model
 
 
-def get_pragmatic_syntactic_evaluator_chat_model(
-) -> ChatModel[EvaluationResult]:
+def get_pragmatic_syntactic_evaluator_chat_model() -> ChatModel[
+    EvaluationResult
+]:
     settings = get_settings()
     return LangChainChatModel(
         model=settings.EVALUATOR_MODEL,
@@ -63,7 +65,7 @@ def get_pragmatic_syntactic_evaluator_chat_model(
         model_provider=settings.EVALUATOR_PROVIDER,
         system_prompt=prompts.PRAGMATIC_SYNTACTIC_EVALUATOR,
         response_type=EvaluationResult,
-        guardrails=[guardrails.RESTRICT_TO_STRUCTURED_OUTPUT],
+        guardrails=list(guardrails.COMMON_GUARDRAILS),
     )
 
 
