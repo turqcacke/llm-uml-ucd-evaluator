@@ -221,6 +221,7 @@ __marimo__/
 .zed
 .DS_Store
 scripts_out
+experiments_out/
 
 # graphify
 graphify-out/

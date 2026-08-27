@@ -70,3 +70,19 @@ feature-local contracts stay with their owning workflow module.
 Diagram Assessment commands persist both diagrams and each distinct result in
 one MongoDB transaction. The returned result `uid` identifies the stored
 assessment.
+
+## Calibration Experiment
+
+Run from the repository root with the current local date in the experiment name:
+
+```sh
+uv run python -m experiments.calibration.collect_metrics --experiment-name "calibration_$(date +%Y-%m-%d)"
+```
+
+To resume, use the original experiment date and add `--resume`:
+
+```sh
+uv run python -m experiments.calibration.collect_metrics --experiment-name calibration_2026-09-13 --resume
+```
+
+The resume position is stored in `experiments_out/<experiment_name>.json`.
