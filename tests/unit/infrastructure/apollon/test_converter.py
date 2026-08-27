@@ -1,4 +1,7 @@
+from typing import cast
+
 import pytest
+from pydantic import ValidationError
 
 from src.infrastructure.apollon import (
     ApollonToDomainConverter,
@@ -101,5 +104,25 @@ def test_apollon_diagram_with_duplicate_node_ids_is_rejected() -> None:
     source = _apollon_json()
     source.model.elements["2"].id = "1"
 
-    with pytest.raises(ConversionError, match="Node UIDs must be unique"):
+    with pytest.raises(
+        ConversionError, match="Node UIDs must be unique"
+    ) as error_info:
         ApollonToDomainConverter().convert(source)
+
+    assert isinstance(error_info.value.original, ValidationError)
+
+
+def test_converter_does_not_classify_programming_errors_as_invalid_input() -> (
+    None
+):
+    error = RuntimeError("Converter defect")
+
+    class BrokenApollon:
+        @property
+        def model(self) -> None:
+            raise error
+
+    with pytest.raises(RuntimeError) as error_info:
+        ApollonToDomainConverter().convert(cast(ApollonJson, BrokenApollon()))
+
+    assert error_info.value is error

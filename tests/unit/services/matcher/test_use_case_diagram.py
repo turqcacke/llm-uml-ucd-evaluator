@@ -1,10 +1,15 @@
 import pytest
 
 from src.model.domain.diagram_presentation import UseCaseDiagramPresentation
+from src.model.domain.exceptions import MatchingError
 from src.model.domain.matching import MinMatching, NodeMatch, RelationMatch
 from src.model.domain.node import Node, NodeType
 from src.model.domain.relation import NodeRelation, NodeRelationType
-from src.services.exceptions import LlmRequestError, UseCaseError
+from src.services.exceptions import (
+    LlmRequestError,
+    LlmResponseError,
+    UseCaseError,
+)
 from src.services.matcher import (
     UseCaseDiagramMatcher,
     UseCaseDiagramMatcherInput,
@@ -132,6 +137,30 @@ async def test_matcher_preserves_service_exception() -> None:
         )
 
     assert error_info.value is error
+
+
+@pytest.mark.anyio
+async def test_matcher_reports_invalid_llm_matches_as_response_error() -> None:
+    diagram = UseCaseDiagramPresentation(
+        nodes=[Node(uid="known", name="Actor", type=NodeType.ACTOR)],
+        relations=[],
+    )
+    llm_result = MinMatching(
+        node_matches=[
+            NodeMatch(reference_uid="unknown", candidate_uid="known")
+        ],
+        relation_matches=[],
+    )
+
+    with pytest.raises(LlmResponseError) as error_info:
+        await UseCaseDiagramMatcher(FakeChatModel(llm_result)).execute(
+            UseCaseDiagramMatcherInput(
+                reference=diagram,
+                candidate=diagram,
+            )
+        )
+
+    assert isinstance(error_info.value.original, MatchingError)
 
 
 @pytest.mark.anyio

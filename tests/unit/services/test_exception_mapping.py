@@ -5,7 +5,16 @@ import pytest
 
 from src.model.apollon import ApollonJson
 from src.model.domain import UseCaseDiagramPresentation
-from src.services.exceptions import UseCaseError
+from src.services.exceptions import (
+    BaseAppException,
+    ConfigError,
+    ConversionError,
+    LlmRequestError,
+    LlmResponseError,
+    RateLimitError,
+    ReferenceNotAllowedError,
+    UseCaseError,
+)
 from src.services.extractor import (
     ApollonJsonExtractor,
     ApollonJsonExtractorInput,
@@ -35,6 +44,29 @@ class FailingConverter:
 
     def convert(self, from_value: ApollonJson) -> Never:
         raise self.error
+
+
+@pytest.mark.parametrize(
+    ("exception", "error_code"),
+    [
+        (ConversionError("Invalid input", original=ValueError()), "CONVERSION_ERROR"),
+        (
+            ReferenceNotAllowedError(
+                "Reference diagram is not allowed", original=ValueError()
+            ),
+            "REFERENCE_NOT_ALLOWED",
+        ),
+        (LlmRequestError("Request failed"), "LLM_REQUEST_ERROR"),
+        (LlmResponseError("Response failed"), "LLM_RESPONSE_ERROR"),
+        (RateLimitError("Rate limited"), "LLM_RATE_LIMIT_ERROR"),
+        (ConfigError("Invalid config"), "CONFIG_ERROR"),
+        (UseCaseError("Execution failed", original=ValueError()), "USE_CASE_ERROR"),
+    ],
+)
+def test_service_exceptions_expose_stable_error_codes(
+    exception: BaseAppException, error_code: str
+) -> None:
+    assert exception.error_code == error_code
 
 
 def _apollon_json() -> ApollonJson:

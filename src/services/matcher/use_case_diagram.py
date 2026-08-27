@@ -2,7 +2,9 @@ from dataclasses import dataclass
 
 from src.app_logging import logger
 from src.model.domain.diagram_presentation import UseCaseDiagramPresentation
+from src.model.domain.exceptions import MatchingError
 from src.model.domain.matching import ExtendedMatching, MinMatching
+from src.services.exceptions import LlmResponseError
 from src.services.ports import ChatModel, LLMRoles
 from src.services.shared.prompts import USE_CASE_DIAGRAM_MATCHER_REQUEST
 from src.services.use_case import UseCase, map_use_case_exceptions
@@ -39,12 +41,15 @@ class UseCaseDiagramMatcher(
             ),
             LLMRoles.USER,
         )
-        result = ExtendedMatching(
-            node_matches=llm_result.node_matches,
-            relation_matches=llm_result.relation_matches,
-            reference=data.reference,
-            candidate=data.candidate,
-        )
+        try:
+            result = ExtendedMatching(
+                node_matches=llm_result.node_matches,
+                relation_matches=llm_result.relation_matches,
+                reference=data.reference,
+                candidate=data.candidate,
+            )
+        except MatchingError as exc:
+            raise LlmResponseError(str(exc), original=exc) from exc
         logger.info(
             "Diagram matching completed node_matches={} relation_matches={} "
             "missing_nodes={} redundant_nodes={}",

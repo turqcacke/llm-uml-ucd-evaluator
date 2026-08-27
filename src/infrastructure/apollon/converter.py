@@ -1,3 +1,5 @@
+from pydantic import ValidationError
+
 from src.model.apollon import (
     ApollonJson,
     ApollonNode,
@@ -12,7 +14,7 @@ from src.model.domain import (
     NodeType,
     UseCaseDiagramPresentation,
 )
-from src.services.exceptions import BaseAppException, ConversionError
+from src.services.exceptions import ConversionError
 from src.services.extractor import BaseConverter
 
 
@@ -74,7 +76,5 @@ class ApollonToDomainConverter(
                 nodes=nodes,
                 relations=relations,
             )
-        except BaseAppException:
-            raise
-        except Exception as exc:
+        except ValidationError as exc:
             raise ConversionError(str(exc), original=exc) from exc

@@ -7,7 +7,7 @@ from .llm_client import (
     LlmResponseError,
     RateLimitError,
 )
-from .use_cases import UseCaseError
+from .use_cases import ReferenceNotAllowedError, UseCaseError
 
 __all__ = [
     "BaseAppException",
@@ -17,5 +17,6 @@ __all__ = [
     "LlmRequestError",
     "LlmResponseError",
     "RateLimitError",
+    "ReferenceNotAllowedError",
     "UseCaseError",
 ]

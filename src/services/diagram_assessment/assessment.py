@@ -13,7 +13,11 @@ from src.services.evaluator import (
     PragmaticSyntacticInput,
     PragmaticSyntacticLlmEvaluator,
 )
-from src.services.exceptions import BaseAppException
+from src.services.exceptions import (
+    BaseAppException,
+    LlmResponseError,
+    ReferenceNotAllowedError,
+)
 from src.services.matcher import (
     UseCaseDiagramMatcher,
     UseCaseDiagramMatcherInput,
@@ -32,7 +36,8 @@ async def assess_diagrams(
     unit_of_work: UnitOfWork,
 ) -> MetricsWithEvaluation:
     if not reference.is_allowed:
-        raise MetricsCalculationError("Reference diagram is not allowed.")
+        error = MetricsCalculationError("Reference diagram is not allowed.")
+        raise ReferenceNotAllowedError(str(error), original=error) from error
     if not candidate.is_allowed:
         metrics = Metrics.calculate_metrics(
             reference,
@@ -77,12 +82,15 @@ async def assess_diagrams(
 
         evaluation = evaluation_task.result()
         matching = matching_task.result()
-        metrics = Metrics.calculate_metrics(
-            reference,
-            candidate,
-            evaluation,
-            matching,
-        )
+        try:
+            metrics = Metrics.calculate_metrics(
+                reference,
+                candidate,
+                evaluation,
+                matching,
+            )
+        except MetricsCalculationError as exc:
+            raise LlmResponseError(str(exc), original=exc) from exc
         result = MetricsWithEvaluation(
             **metrics.model_dump(),
             uid=uuid4().hex,
