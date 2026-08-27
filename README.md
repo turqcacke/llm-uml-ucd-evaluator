@@ -1,5 +1,25 @@
 # LLM UML Evaluator
 
+## HTTP API
+
+Set a nonempty `API_SECRET` in `.env`, then start the development API:
+
+```sh
+uv run uvicorn src.controller.api.app:app
+```
+
+Development is the default environment. Open `/docs`, authorize with the
+configured secret as `X-API-Key`, and submit a description assessment to
+`POST /v1/assessments`. API configuration is loaded only when the API starts,
+so the CLI commands do not require `API_SECRET`.
+
+```sh
+curl -X POST http://127.0.0.1:8000/v1/assessments \
+  -H 'Content-Type: application/json' \
+  -H 'X-API-Key: replace-with-a-nonempty-secret' \
+  --data @assessment.json
+```
+
 ## Development MongoDB
 
 Start the locally bound single-node replica set used by Diagram Assessment:

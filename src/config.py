@@ -1,3 +1,4 @@
+from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
 
@@ -15,6 +16,18 @@ class LoggingSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=get_env_file(), extra="ignore")
 
     LOG_LEVEL: str = Field(default="info")
+
+
+class Environment(StrEnum):
+    DEV = "DEV"
+    PROD = "PROD"
+
+
+class ApiSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=get_env_file(), extra="ignore")
+
+    API_SECRET: str = Field(min_length=1)
+    ENVIRONMENT: Environment = Environment.DEV
 
 
 class Settings(LoggingSettings):

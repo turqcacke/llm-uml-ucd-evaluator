@@ -1,0 +1,483 @@
+import asyncio
+from collections.abc import AsyncIterator
+from decimal import Decimal
+from typing import Any, cast
+
+import pytest
+from dishka import Provider, Scope, make_async_container, provide
+from httpx import ASGITransport, AsyncClient
+from pydantic import ValidationError
+
+from src.config import ApiSettings, Environment, Settings
+from src.controller.api.app import create_app
+from src.model.domain import (
+    MetricsWithEvaluation,
+    Node,
+    NodeType,
+    UseCaseDiagramPresentation,
+)
+from src.services.diagram_assessment import (
+    AssessmentWriteRepository,
+    DescriptionReferenceAssessment,
+    DescriptionReferenceAssessmentInput,
+)
+from src.services.evaluator import PragmaticSyntacticLlmEvaluator
+from src.services.extractor import ApollonJsonExtractor, DescriptionExtractor
+from src.services.matcher import UseCaseDiagramMatcher
+from src.services.ports import UnitOfWork
+
+
+def _candidate() -> dict[str, object]:
+    return {
+        "model": {
+            "elements": {
+                "actor": {
+                    "id": "actor",
+                    "name": "Customer",
+                    "type": "UseCaseActor",
+                    "owner": None,
+                    "bounds": {"x": 0, "y": 0},
+                    "editorField": True,
+                }
+            },
+            "relationships": {},
+            "editorField": True,
+        },
+        "editorField": True,
+    }
+
+
+class FakeAssessment:
+    def __init__(self) -> None:
+        self.calls: list[DescriptionReferenceAssessmentInput] = []
+
+    async def execute(
+        self, data: DescriptionReferenceAssessmentInput
+    ) -> MetricsWithEvaluation:
+        self.calls.append(data)
+        return MetricsWithEvaluation(
+            uid="assessment-1",
+            reference_uid="reference-1",
+            candidate_uid="candidate-1",
+            candidate_is_allowed=True,
+            redundancy_rate=Decimal("0.1234565"),
+            completeness_rate=Decimal(1),
+            semantic_precision=Decimal(1),
+            semantic_f1_score=Decimal(1),
+            syntactic_error_rate=Decimal(0),
+            naming_understandability_score=Decimal(3),
+            reference_complexity=Decimal(0),
+            candidate_complexity=Decimal(2),
+            complexity_difference=Decimal(2),
+            complexity_deviation_rate=Decimal("Infinity"),
+            evaluation=None,
+            matching=None,
+        )
+
+
+def _request(reference: object = "x" * 100) -> dict[str, object]:
+    return {
+        "type": "description",
+        "reference": reference,
+        "candidate": _candidate(),
+    }
+
+
+def test_api_configuration_defaults_to_dev_and_rejects_invalid_values() -> None:
+    assert ApiSettings(API_SECRET="secret").ENVIRONMENT is Environment.DEV
+
+    with pytest.raises(ValidationError):
+        ApiSettings.model_validate(
+            {"API_SECRET": "secret", "ENVIRONMENT": "staging"}
+        )
+
+
+def test_cli_configuration_does_not_require_api_secret() -> None:
+    values = {
+        f"{role}_{setting}": f"test-{setting.lower()}"
+        for role in ("EXTRACTOR", "MATCHER", "EVALUATOR")
+        for setting in ("MODEL", "API_KEY")
+    }
+
+    settings = Settings.model_validate(values)
+
+    assert not hasattr(settings, "API_SECRET")
+
+
+class FakeProvider(Provider):
+    def __init__(self, assessment: object) -> None:
+        super().__init__()
+        self.assessment = assessment
+
+    @provide(scope=Scope.REQUEST)
+    def description_assessment(self) -> DescriptionReferenceAssessment:
+        return cast(DescriptionReferenceAssessment, self.assessment)
+
+
+@pytest.mark.anyio
+async def test_description_assessment_returns_reduced_persisted_result() -> None:
+    assessment = FakeAssessment()
+    container = make_async_container(FakeProvider(assessment))
+    app = create_app(
+        settings=ApiSettings(
+            API_SECRET="secret", ENVIRONMENT=Environment.DEV
+        ),
+        container=container,
+    )
+
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.post(
+                "/v1/assessments",
+                headers={"X-API-Key": "secret"},
+                json={
+                    "type": "description",
+                    "reference": "x" * 100,
+                    "candidate": _candidate(),
+                },
+            )
+
+    assert response.status_code == 201
+    assert response.json() == {
+        "ok": True,
+        "data": {
+            "uid": "assessment-1",
+            "candidate_is_allowed": True,
+            "redundancy_rate": 0.123456,
+            "completeness_rate": 1,
+            "semantic_precision": 1,
+            "semantic_f1_score": 1,
+            "syntactic_error_rate": 0,
+            "naming_understandability_score": 3,
+            "reference_complexity": 0,
+            "candidate_complexity": 2,
+            "complexity_difference": 2,
+            "complexity_deviation_rate": "Infinity",
+        },
+    }
+    assert len(assessment.calls) == 1
+
+
+@pytest.mark.anyio
+async def test_authentication_rejects_request_before_assessment() -> None:
+    assessment = FakeAssessment()
+    container = make_async_container(FakeProvider(assessment))
+    app = create_app(
+        settings=ApiSettings(API_SECRET="secret"), container=container
+    )
+
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            missing = await client.post("/v1/assessments", json=_request())
+            incorrect = await client.post(
+                "/v1/assessments",
+                headers={"X-API-Key": "incorrect"},
+                json=_request(),
+            )
+
+    expected = {
+        "ok": False,
+        "error_code": "UNAUTHORIZED",
+        "error_message": "Authentication is required.",
+    }
+    assert missing.status_code == incorrect.status_code == 401
+    assert missing.json() == incorrect.json() == expected
+    assert assessment.calls == []
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    ("changes", "field"),
+    [
+        ({"reference": "x" * 99 + " "}, "reference"),
+        ({"reference": "x" * 5001}, "reference"),
+        ({"reference": " " * 100}, "reference"),
+        ({"reference": 123}, "reference"),
+        ({"type": "unknown"}, "type"),
+        ({"extra": True}, "extra"),
+    ],
+)
+async def test_invalid_request_does_not_run_assessment(
+    changes: dict[str, object], field: str
+) -> None:
+    assessment = FakeAssessment()
+    container = make_async_container(FakeProvider(assessment))
+    app = create_app(
+        settings=ApiSettings(API_SECRET="secret"), container=container
+    )
+    request = _request()
+    request.update(changes)
+
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.post(
+                "/v1/assessments",
+                headers={"X-API-Key": "secret"},
+                json=request,
+            )
+
+    assert response.status_code == 422
+    assert response.json()["ok"] is False
+    assert response.json()["error_code"] == "VALIDATION_ERROR"
+    assert field in response.json()["error_message"]
+    assert assessment.calls == []
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("length", [100, 5000])
+async def test_reference_accepts_non_whitespace_boundaries(length: int) -> None:
+    assessment = FakeAssessment()
+    container = make_async_container(FakeProvider(assessment))
+    app = create_app(
+        settings=ApiSettings(API_SECRET="secret"), container=container
+    )
+
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.post(
+                "/v1/assessments",
+                headers={"X-API-Key": "secret"},
+                json=_request(" " + "x" * length + " "),
+            )
+
+    assert response.status_code == 201
+
+
+@pytest.mark.anyio
+async def test_missing_reference_and_malformed_json_are_validation_errors() -> None:
+    assessment = FakeAssessment()
+    container = make_async_container(FakeProvider(assessment))
+    app = create_app(
+        settings=ApiSettings(API_SECRET="secret"), container=container
+    )
+    headers = {"X-API-Key": "secret", "Content-Type": "application/json"}
+
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            missing = await client.post(
+                "/v1/assessments",
+                headers=headers,
+                json={"type": "description", "candidate": _candidate()},
+            )
+            malformed = await client.post(
+                "/v1/assessments", headers=headers, content="{"
+            )
+
+    assert missing.status_code == malformed.status_code == 422
+    assert missing.json()["error_code"] == "VALIDATION_ERROR"
+    assert malformed.json()["error_code"] == "VALIDATION_ERROR"
+    assert assessment.calls == []
+
+
+@pytest.mark.anyio
+async def test_response_waits_for_assessment_completion() -> None:
+    assessment = FakeAssessment()
+    release = asyncio.Event()
+    original_execute = assessment.execute
+
+    async def execute(
+        data: DescriptionReferenceAssessmentInput,
+    ) -> MetricsWithEvaluation:
+        await release.wait()
+        return await original_execute(data)
+
+    assessment.execute = execute  # type: ignore[method-assign]
+    container = make_async_container(FakeProvider(assessment))
+    app = create_app(
+        settings=ApiSettings(API_SECRET="secret"), container=container
+    )
+
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            pending = asyncio.create_task(
+                client.post(
+                    "/v1/assessments",
+                    headers={"X-API-Key": "secret"},
+                    json=_request(),
+                )
+            )
+            await asyncio.sleep(0)
+            assert not pending.done()
+            release.set()
+            response = await pending
+
+    assert response.status_code == 201
+    assert len(assessment.calls) == 1
+
+
+class FakeUseCase:
+    def __init__(self, result: Any) -> None:
+        self.result = result
+
+    async def execute(self, _: object) -> Any:
+        return self.result
+
+
+class FakeRepository:
+    def __init__(self) -> None:
+        self.results: list[MetricsWithEvaluation] = []
+
+    async def save_diagram_presentation(
+        self, _: UseCaseDiagramPresentation
+    ) -> None:
+        pass
+
+    async def save_metrics(self, data: MetricsWithEvaluation) -> None:
+        self.results.append(data)
+
+
+class FakeUnitOfWork:
+    def __init__(self) -> None:
+        self.commits = 0
+
+    async def __aenter__(self) -> "FakeUnitOfWork":
+        return self
+
+    async def __aexit__(self, *_: object) -> None:
+        pass
+
+    async def commit(self) -> None:
+        self.commits += 1
+
+    async def rollback(self) -> None:
+        pass
+
+
+@pytest.mark.anyio
+async def test_http_success_observes_persisted_assessment() -> None:
+    reference = UseCaseDiagramPresentation(
+        nodes=[Node(uid="actor", name="Customer", type=NodeType.ACTOR)],
+        relations=[],
+    )
+    candidate = UseCaseDiagramPresentation(nodes=[], relations=[])
+    repository = FakeRepository()
+    unit_of_work = FakeUnitOfWork()
+    assessment = DescriptionReferenceAssessment(
+        cast(DescriptionExtractor, FakeUseCase(reference)),
+        cast(ApollonJsonExtractor, FakeUseCase(candidate)),
+        cast(UseCaseDiagramMatcher, FakeUseCase(None)),
+        cast(PragmaticSyntacticLlmEvaluator, FakeUseCase(None)),
+        cast(AssessmentWriteRepository, repository),
+        cast(UnitOfWork, unit_of_work),
+    )
+    container = make_async_container(FakeProvider(assessment))
+    app = create_app(
+        settings=ApiSettings(API_SECRET="secret"), container=container
+    )
+
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.post(
+                "/v1/assessments",
+                headers={"X-API-Key": "secret"},
+                json=_request(),
+            )
+
+    assert response.status_code == 201
+    assert unit_of_work.commits == 1
+    assert len(repository.results) == 1
+    assert repository.results[0].uid == response.json()["data"]["uid"]
+
+
+class LifecycleProvider(Provider):
+    def __init__(self) -> None:
+        super().__init__()
+        self.created: list[FakeAssessment] = []
+        self.request_cleanups = 0
+        self.app_cleanups = 0
+
+    @provide(scope=Scope.APP)
+    async def app_resource(self) -> AsyncIterator[str]:
+        yield "resource"
+        self.app_cleanups += 1
+
+    @provide(scope=Scope.REQUEST)
+    async def description_assessment(
+        self, app_resource: str
+    ) -> AsyncIterator[DescriptionReferenceAssessment]:
+        assessment = FakeAssessment()
+        self.created.append(assessment)
+        yield assessment
+        self.request_cleanups += 1
+
+
+@pytest.mark.anyio
+async def test_dependencies_are_request_scoped_and_cleaned_up() -> None:
+    provider = LifecycleProvider()
+    container = make_async_container(provider)
+    app = create_app(
+        settings=ApiSettings(API_SECRET="secret"), container=container
+    )
+
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            for _ in range(2):
+                response = await client.post(
+                    "/v1/assessments",
+                    headers={"X-API-Key": "secret"},
+                    json=_request(),
+                )
+                assert response.status_code == 201
+        assert len(provider.created) == 2
+        assert provider.request_cleanups == 2
+        assert provider.app_cleanups == 0
+
+    assert provider.app_cleanups == 1
+
+
+@pytest.mark.anyio
+async def test_api_requires_secret_at_startup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("API_SECRET", "")
+    container = make_async_container(FakeProvider(FakeAssessment()))
+    original_close = type(container).close
+    close_calls = 0
+
+    async def close(target: object) -> None:
+        nonlocal close_calls
+        close_calls += 1
+        await original_close(target)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(type(container), "close", close)
+    app = create_app(container=container)
+
+    with pytest.raises(ValueError):
+        async with app.router.lifespan_context(app):
+            pass
+    assert close_calls == 1
+
+
+@pytest.mark.anyio
+async def test_development_documentation_is_public() -> None:
+    container = make_async_container(FakeProvider(FakeAssessment()))
+    app = create_app(
+        settings=ApiSettings(
+            API_SECRET="secret", ENVIRONMENT=Environment.DEV
+        ),
+        container=container,
+    )
+
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.get("/openapi.json")
+
+    assert response.status_code == 200
