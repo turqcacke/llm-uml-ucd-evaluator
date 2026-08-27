@@ -1,7 +1,7 @@
 from dishka.integrations.fastapi import FromDishka, inject
 from fastapi import APIRouter, Security, status
-from fastapi.security import APIKeyHeader
 
+from src.controller.api.security import api_key
 from src.services.diagram_assessment import (
     DescriptionReferenceAssessment,
     DescriptionReferenceAssessmentInput,
@@ -13,7 +13,6 @@ from src.view.responses import (
 )
 
 router = APIRouter(prefix="/v1")
-api_key = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
 @router.post(
