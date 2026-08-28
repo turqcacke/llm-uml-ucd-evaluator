@@ -5,6 +5,7 @@ from typing import Any, cast
 
 import pytest
 from dishka import Provider, Scope, make_async_container, provide
+from fastapi import HTTPException
 from httpx import ASGITransport, AsyncClient
 from pydantic import ValidationError
 
@@ -24,6 +25,16 @@ from src.services.diagram_assessment import (
     DescriptionReferenceAssessmentInput,
 )
 from src.services.evaluator import PragmaticSyntacticLlmEvaluator
+from src.services.exceptions import (
+    BaseAppException,
+    ConfigError,
+    ConversionError,
+    LlmRequestError,
+    LlmResponseError,
+    RateLimitError,
+    ReferenceNotAllowedError,
+    UseCaseError,
+)
 from src.services.extractor import ApollonJsonExtractor, DescriptionExtractor
 from src.services.matcher import UseCaseDiagramMatcher
 from src.services.ports import UnitOfWork
@@ -81,6 +92,18 @@ class FakeAssessment:
             evaluation=None,
             matching=None,
         )
+
+
+class FailingAssessment:
+    def __init__(self, error: Exception) -> None:
+        self.error = error
+
+    async def execute(self, _: object) -> Any:
+        raise self.error
+
+
+class SpecializedUseCaseError(UseCaseError):
+    pass
 
 
 def _request(reference: object = "x" * 100) -> dict[str, object]:
@@ -417,6 +440,116 @@ async def test_authentication_rejects_request_before_assessment() -> None:
 
 @pytest.mark.anyio
 @pytest.mark.parametrize(
+    ("error", "status_code", "error_code"),
+    [
+        (
+            ConversionError("secret input", original=ValueError()),
+            422,
+            "CONVERSION_ERROR",
+        ),
+        (
+            ReferenceNotAllowedError(
+                "secret input", original=ValueError()
+            ),
+            422,
+            "REFERENCE_NOT_ALLOWED",
+        ),
+        (LlmRequestError("secret provider payload"), 502, "LLM_REQUEST_ERROR"),
+        (LlmResponseError("secret provider payload"), 502, "LLM_RESPONSE_ERROR"),
+        (RateLimitError("secret credentials"), 503, "LLM_RATE_LIMIT_ERROR"),
+        (ConfigError("secret configuration"), 500, "CONFIG_ERROR"),
+        (
+            SpecializedUseCaseError(
+                "secret stored details", original=ValueError()
+            ),
+            500,
+            "USE_CASE_ERROR",
+        ),
+    ],
+)
+async def test_service_failures_use_safe_error_contract(
+    error: BaseAppException, status_code: int, error_code: str
+) -> None:
+    container = make_async_container(FakeProvider(FailingAssessment(error)))
+    app = create_app(
+        settings=ApiSettings(API_SECRET="secret"), container=container
+    )
+
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.post(
+                "/v1/assessments",
+                headers={"X-API-Key": "secret"},
+                json=_request(),
+            )
+
+    assert response.status_code == status_code
+    assert response.json() == {
+        "ok": False,
+        "error_code": error_code,
+        "error_message": "The assessment could not be completed.",
+    }
+    assert "secret" not in response.text
+
+
+@pytest.mark.anyio
+async def test_framework_and_internal_failures_use_error_contract() -> None:
+    container = make_async_container(
+        FakeProvider(FailingAssessment(RuntimeError("secret traceback")))
+    )
+    app = create_app(
+        settings=ApiSettings(API_SECRET="secret"), container=container
+    )
+
+    @app.get("/invalid-response", response_model=int)
+    async def invalid_response() -> str:
+        return "secret response"
+
+    @app.get("/custom-http-error")
+    async def custom_http_error() -> None:
+        raise HTTPException(
+            499, "secret framework detail", headers={"X-Retry": "never"}
+        )
+
+    transport = ASGITransport(app=app, raise_app_exceptions=False)
+    headers = {"X-API-Key": "secret"}
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(
+            transport=transport, base_url="http://test"
+        ) as client:
+            missing = await client.get("/missing", headers=headers)
+            wrong_method = await client.get(
+                "/v1/assessments", headers=headers
+            )
+            invalid = await client.get("/invalid-response", headers=headers)
+            custom = await client.get("/custom-http-error", headers=headers)
+            unexpected = await client.post(
+                "/v1/assessments", headers=headers, json=_request()
+            )
+
+    assert missing.status_code == 404
+    assert missing.json()["error_code"] == "NOT_FOUND"
+    assert wrong_method.status_code == 405
+    assert wrong_method.headers["allow"] == "POST"
+    assert wrong_method.json()["error_code"] == "METHOD_NOT_ALLOWED"
+    assert custom.status_code == 499
+    assert custom.headers["x-retry"] == "never"
+    assert custom.json()["error_code"] == "HTTP_ERROR"
+    assert "secret" not in custom.text
+    for response in (invalid, unexpected):
+        assert response.status_code == 500
+        assert response.json() == {
+            "ok": False,
+            "error_code": "INTERNAL_ERROR",
+            "error_message": "An internal error occurred.",
+        }
+        assert "secret" not in response.text
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
     ("changes", "field"),
     [
         ({"reference": "x" * 99 + " "}, "reference"),
@@ -496,12 +629,19 @@ async def test_missing_reference_and_malformed_json_are_validation_errors() -> N
                 json={"type": "description", "candidate": _candidate()},
             )
             malformed = await client.post(
-                "/v1/assessments", headers=headers, content="{"
+                "/v1/assessments",
+                headers=headers,
+                content='{"secret-input-value":',
             )
 
     assert missing.status_code == malformed.status_code == 422
     assert missing.json()["error_code"] == "VALIDATION_ERROR"
     assert malformed.json()["error_code"] == "VALIDATION_ERROR"
+    assert "reference" in missing.json()["error_message"]
+    assert "JSON decode error" in malformed.json()["error_message"]
+    assert "secret-input-value" not in malformed.text
+    assert "https://errors.pydantic.dev" not in missing.text + malformed.text
+    assert "detail" not in missing.json() | malformed.json()
     assert assessment.calls == []
 
 
@@ -697,11 +837,38 @@ async def test_api_requires_secret_at_startup(
 
 
 @pytest.mark.anyio
-async def test_development_documentation_is_public() -> None:
+@pytest.mark.parametrize("environment", [None, Environment.DEV])
+async def test_development_documentation_is_public(
+    environment: Environment | None,
+) -> None:
     container = make_async_container(FakeProvider(FakeAssessment()))
+    values = {"API_SECRET": "secret"}
+    if environment is not None:
+        values["ENVIRONMENT"] = environment
+    app = create_app(
+        settings=ApiSettings.model_validate(values),
+        container=container,
+    )
+
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            responses = [
+                await client.get(path)
+                for path in ("/docs", "/redoc", "/openapi.json")
+            ]
+
+    assert all(response.status_code == 200 for response in responses)
+
+
+@pytest.mark.anyio
+async def test_production_disables_docs_and_keeps_assessment_protected() -> None:
+    assessment = FakeAssessment()
+    container = make_async_container(FakeProvider(assessment))
     app = create_app(
         settings=ApiSettings(
-            API_SECRET="secret", ENVIRONMENT=Environment.DEV
+            API_SECRET="secret", ENVIRONMENT=Environment.PROD
         ),
         container=container,
     )
@@ -710,6 +877,20 @@ async def test_development_documentation_is_public() -> None:
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
-            response = await client.get("/openapi.json")
+            docs = [
+                await client.get(path)
+                for path in ("/docs", "/redoc", "/openapi.json")
+            ]
+            unauthorized = await client.post(
+                "/v1/assessments", json=_request()
+            )
+            success = await client.post(
+                "/v1/assessments",
+                headers={"X-API-Key": "secret"},
+                json=_request(),
+            )
 
-    assert response.status_code == 200
+    assert all(response.status_code == 404 for response in docs)
+    assert all(response.json()["error_code"] == "NOT_FOUND" for response in docs)
+    assert unauthorized.status_code == 401
+    assert success.status_code == 201
