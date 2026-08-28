@@ -17,6 +17,8 @@ from src.model.domain import (
     UseCaseDiagramPresentation,
 )
 from src.services.diagram_assessment import (
+    ApollonReferenceAssessment,
+    ApollonReferenceAssessmentInput,
     AssessmentWriteRepository,
     DescriptionReferenceAssessment,
     DescriptionReferenceAssessmentInput,
@@ -27,7 +29,7 @@ from src.services.matcher import UseCaseDiagramMatcher
 from src.services.ports import UnitOfWork
 
 
-def _candidate() -> dict[str, object]:
+def _candidate() -> dict[str, Any]:
     return {
         "model": {
             "elements": {
@@ -48,18 +50,24 @@ def _candidate() -> dict[str, object]:
 
 
 class FakeAssessment:
-    def __init__(self) -> None:
-        self.calls: list[DescriptionReferenceAssessmentInput] = []
+    def __init__(self, *, candidate_is_allowed: bool = True) -> None:
+        self.calls: list[
+            DescriptionReferenceAssessmentInput
+            | ApollonReferenceAssessmentInput
+        ] = []
+        self.candidate_is_allowed = candidate_is_allowed
 
     async def execute(
-        self, data: DescriptionReferenceAssessmentInput
+        self,
+        data: DescriptionReferenceAssessmentInput
+        | ApollonReferenceAssessmentInput,
     ) -> MetricsWithEvaluation:
         self.calls.append(data)
         return MetricsWithEvaluation(
-            uid="assessment-1",
+            uid=f"assessment-{len(self.calls)}",
             reference_uid="reference-1",
             candidate_uid="candidate-1",
-            candidate_is_allowed=True,
+            candidate_is_allowed=self.candidate_is_allowed,
             redundancy_rate=Decimal("0.1234565"),
             completeness_rate=Decimal(1),
             semantic_precision=Decimal(1),
@@ -81,6 +89,26 @@ def _request(reference: object = "x" * 100) -> dict[str, object]:
         "reference": reference,
         "candidate": _candidate(),
     }
+
+
+def _apollon_export() -> dict[str, Any]:
+    export = _candidate()
+    export["id"] = "editor-export"
+    export["model"]["version"] = "3.0.0"
+    export["model"]["relationships"] = {
+        "relation": {
+            "id": "relation",
+            "name": "",
+            "type": "UseCaseAssociation",
+            "owner": None,
+            "bounds": {"x": 0, "y": 0, "width": 10, "height": 10},
+            "source": {"direction": "Right", "element": "actor"},
+            "target": {"direction": "Left", "element": "actor"},
+            "path": [{"x": 0, "y": 0}],
+            "isManuallyLayouted": False,
+        }
+    }
+    return export
 
 
 def test_api_configuration_defaults_to_dev_and_rejects_invalid_values() -> None:
@@ -105,13 +133,211 @@ def test_cli_configuration_does_not_require_api_secret() -> None:
 
 
 class FakeProvider(Provider):
-    def __init__(self, assessment: object) -> None:
+    def __init__(
+        self,
+        assessment: object,
+        apollon_assessment: object | None = None,
+    ) -> None:
         super().__init__()
         self.assessment = assessment
+        self.apollon = apollon_assessment or assessment
 
     @provide(scope=Scope.REQUEST)
     def description_assessment(self) -> DescriptionReferenceAssessment:
         return cast(DescriptionReferenceAssessment, self.assessment)
+
+    @provide(scope=Scope.REQUEST)
+    def apollon_assessment(self) -> ApollonReferenceAssessment:
+        return cast(ApollonReferenceAssessment, self.apollon)
+
+
+@pytest.mark.anyio
+async def test_apollon_assessment_accepts_editor_export_and_dispatches() -> None:
+    description_assessment = FakeAssessment()
+    apollon_assessment = FakeAssessment()
+    container = make_async_container(
+        FakeProvider(description_assessment, apollon_assessment)
+    )
+    app = create_app(
+        settings=ApiSettings(API_SECRET="secret"), container=container
+    )
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.post(
+                "/v1/assessments",
+                headers={"X-API-Key": "secret"},
+                json={
+                    "type": "apollon",
+                    "reference": _apollon_export(),
+                    "candidate": _candidate(),
+                },
+            )
+
+    assert response.status_code == 201
+    assert response.json()["data"]["uid"] == "assessment-1"
+    assert len(apollon_assessment.calls) == 1
+    assert description_assessment.calls == []
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"reference": _apollon_export(), "candidate": _candidate()},
+        {
+            "type": "unknown",
+            "reference": _apollon_export(),
+            "candidate": _candidate(),
+        },
+        {
+            "type": "apollon",
+            "reference": "x" * 100,
+            "candidate": _candidate(),
+        },
+        {
+            "type": "description",
+            "reference": _apollon_export(),
+            "candidate": _candidate(),
+        },
+        {
+            "type": "apollon",
+            "reference": _apollon_export()["model"],
+            "candidate": _candidate(),
+        },
+        {
+            "type": "apollon",
+            "reference": _apollon_export(),
+            "candidate": _candidate(),
+            "extra": True,
+        },
+    ],
+)
+async def test_discriminator_and_variant_mismatches_are_rejected(
+    payload: dict[str, object],
+) -> None:
+    assessment = FakeAssessment()
+    container = make_async_container(FakeProvider(assessment))
+    app = create_app(
+        settings=ApiSettings(API_SECRET="secret"), container=container
+    )
+
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.post(
+                "/v1/assessments",
+                headers={"X-API-Key": "secret"},
+                json=payload,
+            )
+
+    assert response.status_code == 422
+    assert assessment.calls == []
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("node_id", ""),
+        ("node_id", "x" * 257),
+        ("node_name", "x" * 513),
+        ("node_owner", ""),
+        ("relation_id", ""),
+        ("relation_name", "x" * 513),
+        ("relation_owner", "x" * 257),
+        ("source_direction", ""),
+        ("source_direction", "x" * 65),
+        ("source_element", ""),
+        ("source_element", "x" * 257),
+    ],
+)
+async def test_apollon_string_values_outside_boundaries_are_rejected(
+    field: str, value: str
+) -> None:
+    assessment = FakeAssessment()
+    container = make_async_container(FakeProvider(assessment))
+    app = create_app(
+        settings=ApiSettings(API_SECRET="secret"), container=container
+    )
+    reference = _apollon_export()
+    node = reference["model"]["elements"]["actor"]
+    relation = reference["model"]["relationships"]["relation"]
+    targets = {
+        "node_id": (node, "id"),
+        "node_name": (node, "name"),
+        "node_owner": (node, "owner"),
+        "relation_id": (relation, "id"),
+        "relation_name": (relation, "name"),
+        "relation_owner": (relation, "owner"),
+        "source_direction": (relation["source"], "direction"),
+        "source_element": (relation["source"], "element"),
+    }
+    target, key = targets[field]
+    target[key] = value
+
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.post(
+                "/v1/assessments",
+                headers={"X-API-Key": "secret"},
+                json={
+                    "type": "apollon",
+                    "reference": reference,
+                    "candidate": _candidate(),
+                },
+            )
+
+    assert response.status_code == 422
+    assert assessment.calls == []
+
+
+@pytest.mark.anyio
+async def test_apollon_string_boundaries_and_disallowed_result_succeed() -> None:
+    assessment = FakeAssessment(candidate_is_allowed=False)
+    container = make_async_container(FakeProvider(assessment))
+    app = create_app(
+        settings=ApiSettings(API_SECRET="secret"), container=container
+    )
+    reference = _apollon_export()
+    node = reference["model"]["elements"]["actor"]
+    relation = reference["model"]["relationships"]["relation"]
+    node.update(id="x" * 256, name="x" * 512, owner="y")
+    relation.update(id="x", name="", owner="x" * 256)
+    relation["source"].update(direction="x" * 64, element="x" * 256)
+
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            responses = [
+                await client.post(
+                    "/v1/assessments",
+                    headers={"X-API-Key": "secret"},
+                    json={
+                        "type": "apollon",
+                        "reference": reference,
+                        "candidate": _candidate(),
+                    },
+                )
+                for _ in range(2)
+            ]
+
+    assert [response.status_code for response in responses] == [201, 201]
+    results = [response.json()["data"] for response in responses]
+    assert [result["uid"] for result in results] == [
+        "assessment-1",
+        "assessment-2",
+    ]
+    assert all(result["candidate_is_allowed"] is False for result in results)
+    assert all("reference_uid" not in result for result in results)
+    assert all("candidate_uid" not in result for result in results)
+    assert all("evaluation" not in result for result in results)
+    assert all("matching" not in result for result in results)
 
 
 @pytest.mark.anyio
@@ -413,6 +639,12 @@ class LifecycleProvider(Provider):
         self.created.append(assessment)
         yield assessment
         self.request_cleanups += 1
+
+    @provide(scope=Scope.REQUEST)
+    def apollon_assessment(
+        self, description_assessment: DescriptionReferenceAssessment
+    ) -> ApollonReferenceAssessment:
+        return cast(ApollonReferenceAssessment, description_assessment)
 
 
 @pytest.mark.anyio

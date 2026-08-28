@@ -88,6 +88,20 @@ class DescriptionAssessmentInput(BaseModel):
         return value
 
 
+class ApollonAssessmentInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["apollon"]
+    reference: ApollonInput
+    candidate: ApollonInput
+
+
+AssessmentInput = Annotated[
+    DescriptionAssessmentInput | ApollonAssessmentInput,
+    Field(discriminator="type"),
+]
+
+
 class AssessmentResult(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
