@@ -1,7 +1,10 @@
 from asyncio import TaskGroup
+from collections.abc import AsyncGenerator
+from dataclasses import dataclass
 from uuid import uuid4
 
 from src.model.domain import (
+    AssessmentState,
     EvaluationResult,
     ExtendedMatching,
     Metrics,
@@ -26,15 +29,23 @@ from src.services.ports import UnitOfWork
 
 from .repository import AssessmentWriteRepository
 
+type AssessmentProgress = tuple[AssessmentState, MetricsWithEvaluation | None]
 
-async def assess_diagrams(
+
+@dataclass(frozen=True)
+class AssessmentDependencies:
+    matcher: UseCaseDiagramMatcher
+    evaluator: PragmaticSyntacticLlmEvaluator
+    repository: AssessmentWriteRepository
+    unit_of_work: UnitOfWork
+
+
+async def stream_assess_diagrams(
     reference: UseCaseDiagramPresentation,
     candidate: UseCaseDiagramPresentation,
-    matcher: UseCaseDiagramMatcher,
-    evaluator: PragmaticSyntacticLlmEvaluator,
-    repository: AssessmentWriteRepository,
-    unit_of_work: UnitOfWork,
-) -> MetricsWithEvaluation:
+    dependencies: AssessmentDependencies,
+) -> AsyncGenerator[AssessmentProgress]:
+    yield AssessmentState.ANALYZING, None
     if not reference.is_allowed:
         error = MetricsCalculationError("Reference diagram is not allowed.")
         raise ReferenceNotAllowedError(str(error), original=error) from error
@@ -66,12 +77,14 @@ async def assess_diagrams(
         try:
             async with TaskGroup() as tasks:
                 matching_task = tasks.create_task(
-                    matcher.execute(
+                    dependencies.matcher.execute(
                         UseCaseDiagramMatcherInput(reference, candidate)
                     )
                 )
                 evaluation_task = tasks.create_task(
-                    evaluator.execute(PragmaticSyntacticInput(candidate))
+                    dependencies.evaluator.execute(
+                        PragmaticSyntacticInput(candidate)
+                    )
                 )
         except ExceptionGroup as exc:
             if len(exc.exceptions) == 1 and isinstance(
@@ -100,9 +113,10 @@ async def assess_diagrams(
             matching=matching,
         )
 
-    async with unit_of_work:
-        await repository.save_diagram_presentation(reference)
-        await repository.save_diagram_presentation(candidate)
-        await repository.save_metrics(result)
-        await unit_of_work.commit()
-    return result
+    yield AssessmentState.SAVING, None
+    async with dependencies.unit_of_work:
+        await dependencies.repository.save_diagram_presentation(reference)
+        await dependencies.repository.save_diagram_presentation(candidate)
+        await dependencies.repository.save_metrics(result)
+        await dependencies.unit_of_work.commit()
+    yield AssessmentState.COMPLETED, result

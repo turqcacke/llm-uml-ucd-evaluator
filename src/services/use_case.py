@@ -1,4 +1,4 @@
-from collections.abc import Callable, Coroutine
+from collections.abc import AsyncGenerator, AsyncIterator, Callable, Coroutine
 from functools import wraps
 from typing import Any, Protocol, TypeVar
 
@@ -6,10 +6,15 @@ from .exceptions import BaseAppException, UseCaseError
 
 DataT = TypeVar("DataT", default=Any)
 ResponseT = TypeVar("ResponseT", default=Any)
+EventT = TypeVar("EventT", default=Any)
 
 
 class UseCase[DataT, ResponseT](Protocol):
     async def execute(self, data: DataT) -> ResponseT: ...
+
+
+class StreamingUseCase[DataT, EventT](Protocol):
+    def stream(self, data: DataT) -> AsyncIterator[EventT]: ...
 
 
 def map_use_case_exceptions[**P, ResultT](
@@ -25,3 +30,15 @@ def map_use_case_exceptions[**P, ResultT](
             raise UseCaseError(str(exc), original=exc) from exc
 
     return wrapped
+
+
+async def map_stream_exceptions[ResultT](
+    stream: AsyncGenerator[ResultT],
+) -> AsyncGenerator[ResultT]:
+    try:
+        async for item in stream:
+            yield item
+    except BaseAppException:
+        raise
+    except Exception as exc:
+        raise UseCaseError(str(exc), original=exc) from exc

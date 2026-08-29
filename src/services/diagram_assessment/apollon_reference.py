@@ -1,7 +1,8 @@
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 
 from src.model.apollon import ApollonJson
-from src.model.domain import MetricsWithEvaluation
+from src.model.domain import AssessmentState, MetricsWithEvaluation
 from src.services.evaluator import PragmaticSyntacticLlmEvaluator
 from src.services.extractor import (
     ApollonJsonExtractor,
@@ -9,9 +10,17 @@ from src.services.extractor import (
 )
 from src.services.matcher import UseCaseDiagramMatcher
 from src.services.ports import UnitOfWork
-from src.services.use_case import UseCase, map_use_case_exceptions
+from src.services.use_case import (
+    StreamingUseCase,
+    UseCase,
+    map_stream_exceptions,
+)
 
-from .assessment import assess_diagrams
+from .assessment import (
+    AssessmentDependencies,
+    AssessmentProgress,
+    stream_assess_diagrams,
+)
 from .repository import AssessmentWriteRepository
 
 
@@ -22,7 +31,8 @@ class ApollonReferenceAssessmentInput:
 
 
 class ApollonReferenceAssessment(
-    UseCase[ApollonReferenceAssessmentInput, MetricsWithEvaluation]
+    UseCase[ApollonReferenceAssessmentInput, MetricsWithEvaluation],
+    StreamingUseCase[ApollonReferenceAssessmentInput, AssessmentProgress],
 ):
     def __init__(
         self,
@@ -33,26 +43,41 @@ class ApollonReferenceAssessment(
         unit_of_work: UnitOfWork,
     ) -> None:
         self._extractor = extractor
-        self._matcher = matcher
-        self._evaluator = evaluator
-        self._repository = repository
-        self._unit_of_work = unit_of_work
+        self._dependencies = AssessmentDependencies(
+            matcher,
+            evaluator,
+            repository,
+            unit_of_work,
+        )
 
-    @map_use_case_exceptions
     async def execute(
         self, data: ApollonReferenceAssessmentInput
     ) -> MetricsWithEvaluation:
+        result = None
+        async for _, result in self.stream(data):
+            pass
+        assert result is not None
+        return result
+
+    async def stream(
+        self, data: ApollonReferenceAssessmentInput
+    ) -> AsyncGenerator[AssessmentProgress]:
+        async for progress in map_stream_exceptions(self._stream(data)):
+            yield progress
+
+    async def _stream(
+        self, data: ApollonReferenceAssessmentInput
+    ) -> AsyncGenerator[AssessmentProgress]:
+        yield AssessmentState.EXTRACTING, None
         reference = await self._extractor.execute(
             ApollonJsonExtractorInput(data.reference)
         )
         candidate = await self._extractor.execute(
             ApollonJsonExtractorInput(data.candidate)
         )
-        return await assess_diagrams(
+        async for progress in stream_assess_diagrams(
             reference,
             candidate,
-            self._matcher,
-            self._evaluator,
-            self._repository,
-            self._unit_of_work,
-        )
+            self._dependencies,
+        ):
+            yield progress

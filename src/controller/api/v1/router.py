@@ -1,5 +1,8 @@
+from collections.abc import AsyncGenerator
+
 from dishka.integrations.fastapi import FromDishka, inject
 from fastapi import APIRouter, Security, status
+from fastapi.sse import EventSourceResponse, ServerSentEvent
 
 from src.controller.api.security import api_key
 from src.services.diagram_assessment import (
@@ -45,3 +48,45 @@ async def create_assessment(
             )
         )
     return SuccessResponse(data=AssessmentResult.model_validate(result))
+
+
+@router.post(
+    "/assessments/streams",
+    response_class=EventSourceResponse,
+    dependencies=[Security(api_key)],
+)
+@inject
+async def stream_assessment(
+    data: AssessmentInput,
+    description_assessment: FromDishka[DescriptionReferenceAssessment],
+    apollon_assessment: FromDishka[ApollonReferenceAssessment],
+) -> AsyncGenerator[ServerSentEvent]:
+    if isinstance(data, ApollonAssessmentInput):
+        progress = apollon_assessment.stream(
+            ApollonReferenceAssessmentInput(
+                reference=data.reference.to_service(),
+                candidate=data.candidate.to_service(),
+            )
+        )
+    else:
+        progress = description_assessment.stream(
+            DescriptionReferenceAssessmentInput(
+                reference_description=data.reference,
+                candidate=data.candidate.to_service(),
+            )
+        )
+
+    async for state, result in progress:
+        if result is None:
+            yield ServerSentEvent(
+                event="progress",
+                data={"state": state},
+            )
+        else:
+            yield ServerSentEvent(
+                event="result",
+                data={
+                    "state": state,
+                    "data": AssessmentResult.model_validate(result),
+                },
+            )

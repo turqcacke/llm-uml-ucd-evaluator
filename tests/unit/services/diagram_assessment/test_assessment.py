@@ -6,6 +6,7 @@ import pytest
 
 from src.model.apollon import ApollonJson
 from src.model.domain import (
+    AssessmentState,
     EvaluationResult,
     ExtendedMatching,
     Node,
@@ -212,6 +213,39 @@ async def test_description_reference_assessment_returns_metrics_and_evaluation()
     assert repository.diagrams == [reference, candidate]
     assert result.matching == matching
     assert repository.results == [result]
+    assert unit_of_work.commits == 1
+
+
+@pytest.mark.anyio
+async def test_assessment_stream_yields_each_stage_and_final_result() -> None:
+    reference = _diagram("reference")
+    candidate = UseCaseDiagramPresentation(nodes=[], relations=[])
+    repository = FakeRepository()
+    unit_of_work = FakeUnitOfWork()
+    assessment = DescriptionReferenceAssessment(
+        cast(DescriptionExtractor, FakeUseCase(reference)),
+        cast(ApollonJsonExtractor, FakeUseCase(candidate)),
+        cast(UseCaseDiagramMatcher, FakeUseCase(None)),
+        cast(PragmaticSyntacticLlmEvaluator, FakeUseCase(None)),
+        repository,
+        unit_of_work,
+    )
+
+    progress = [
+        item
+        async for item in assessment.stream(
+            DescriptionReferenceAssessmentInput("Reference", _apollon())
+        )
+    ]
+
+    assert [state for state, _ in progress] == [
+        AssessmentState.EXTRACTING,
+        AssessmentState.ANALYZING,
+        AssessmentState.SAVING,
+        AssessmentState.COMPLETED,
+    ]
+    assert [result for _, result in progress[:-1]] == [None, None, None]
+    assert progress[-1][1] is repository.results[0]
     assert unit_of_work.commits == 1
 
 
