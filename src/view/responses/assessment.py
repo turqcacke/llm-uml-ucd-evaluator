@@ -11,6 +11,7 @@ from pydantic import (
 )
 
 from src.model.apollon import ApollonJson
+from src.model.domain import AssessmentState
 
 Identifier = Annotated[StrictStr, Field(min_length=1, max_length=256)]
 Name = Annotated[StrictStr, Field(max_length=512)]
@@ -138,3 +139,12 @@ class AssessmentResult(BaseModel):
         if rounded == rounded.to_integral():
             return int(rounded)
         return float(rounded)
+
+
+class AssessmentProgress(BaseModel):
+    state: AssessmentState
+
+
+class AssessmentStreamResult(BaseModel):
+    state: AssessmentState
+    data: AssessmentResult

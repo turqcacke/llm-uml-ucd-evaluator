@@ -19,6 +19,9 @@ from src.services.exceptions import (
 
 from .validation import validation_error
 
+INTERNAL_ERROR_MESSAGE = "An internal error occurred."
+SERVICE_ERROR_MESSAGE = "The assessment could not be completed."
+
 _SERVICE_ERROR_STATUSES: dict[type[BaseAppException], int] = {
     ConversionError: 422,
     ReferenceNotAllowedError: 422,
@@ -43,7 +46,7 @@ async def service_error(_: Request, exc: Exception) -> JSONResponse:
     return failure(
         status,
         exc.error_code,
-        "The assessment could not be completed.",
+        SERVICE_ERROR_MESSAGE,
     )
 
 
@@ -62,7 +65,7 @@ async def http_error(_: Request, exc: Exception) -> JSONResponse:
 
 
 async def internal_error(_: Request, __: Exception) -> JSONResponse:
-    return failure(500, "INTERNAL_ERROR", "An internal error occurred.")
+    return failure(500, "INTERNAL_ERROR", INTERNAL_ERROR_MESSAGE)
 
 
 def add_exception_handlers(app: FastAPI) -> None:

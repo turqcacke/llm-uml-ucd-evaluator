@@ -4,6 +4,10 @@ from dishka.integrations.fastapi import FromDishka, inject
 from fastapi import APIRouter, Security, status
 from fastapi.sse import EventSourceResponse, ServerSentEvent
 
+from src.controller.api.exception_handlers import (
+    INTERNAL_ERROR_MESSAGE,
+    SERVICE_ERROR_MESSAGE,
+)
 from src.controller.api.security import api_key
 from src.services.diagram_assessment import (
     ApollonReferenceAssessment,
@@ -11,10 +15,14 @@ from src.services.diagram_assessment import (
     DescriptionReferenceAssessment,
     DescriptionReferenceAssessmentInput,
 )
+from src.services.exceptions import BaseAppException
 from src.view.responses import (
     ApollonAssessmentInput,
     AssessmentInput,
+    AssessmentProgress,
     AssessmentResult,
+    AssessmentStreamResult,
+    FailResponse,
     SuccessResponse,
 )
 
@@ -61,32 +69,50 @@ async def stream_assessment(
     description_assessment: FromDishka[DescriptionReferenceAssessment],
     apollon_assessment: FromDishka[ApollonReferenceAssessment],
 ) -> AsyncGenerator[ServerSentEvent]:
-    if isinstance(data, ApollonAssessmentInput):
-        progress = apollon_assessment.stream(
-            ApollonReferenceAssessmentInput(
-                reference=data.reference.to_service(),
-                candidate=data.candidate.to_service(),
-            )
-        )
-    else:
-        progress = description_assessment.stream(
-            DescriptionReferenceAssessmentInput(
-                reference_description=data.reference,
-                candidate=data.candidate.to_service(),
-            )
-        )
-
-    async for state, result in progress:
-        if result is None:
-            yield ServerSentEvent(
-                event="progress",
-                data={"state": state},
+    try:
+        if isinstance(data, ApollonAssessmentInput):
+            progress = apollon_assessment.stream(
+                ApollonReferenceAssessmentInput(
+                    reference=data.reference.to_service(),
+                    candidate=data.candidate.to_service(),
+                )
             )
         else:
-            yield ServerSentEvent(
-                event="result",
-                data={
-                    "state": state,
-                    "data": AssessmentResult.model_validate(result),
-                },
+            progress = description_assessment.stream(
+                DescriptionReferenceAssessmentInput(
+                    reference_description=data.reference,
+                    candidate=data.candidate.to_service(),
+                )
             )
+
+        async for state, result in progress:
+            if result is None:
+                yield ServerSentEvent(
+                    event="progress",
+                    data=AssessmentProgress(state=state),
+                )
+            else:
+                yield ServerSentEvent(
+                    event="result",
+                    data=AssessmentStreamResult(
+                        state=state,
+                        data=AssessmentResult.model_validate(result),
+                    ),
+                )
+                return
+    except BaseAppException as exc:
+        yield ServerSentEvent(
+            event="error",
+            data=FailResponse(
+                error_code=exc.error_code,
+                error_message=SERVICE_ERROR_MESSAGE,
+            ),
+        )
+    except Exception:
+        yield ServerSentEvent(
+            event="error",
+            data=FailResponse(
+                error_code="INTERNAL_ERROR",
+                error_message=INTERNAL_ERROR_MESSAGE,
+            ),
+        )
