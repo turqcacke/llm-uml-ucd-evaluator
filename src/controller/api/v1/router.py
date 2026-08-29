@@ -1,7 +1,10 @@
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, AsyncIterator
+from contextlib import AsyncExitStack
+from typing import Annotated
 
+from anyio import CancelScope
 from dishka.integrations.fastapi import FromDishka, inject
-from fastapi import APIRouter, Security, status
+from fastapi import APIRouter, Depends, Security, status
 from fastapi.sse import EventSourceResponse, ServerSentEvent
 
 from src.controller.api.exception_handlers import (
@@ -58,6 +61,15 @@ async def create_assessment(
     return SuccessResponse(data=AssessmentResult.model_validate(result))
 
 
+async def _stream_cleanup() -> AsyncIterator[AsyncExitStack]:
+    cleanup = AsyncExitStack()
+    try:
+        yield cleanup
+    finally:
+        with CancelScope(shield=True):
+            await cleanup.aclose()
+
+
 @router.post(
     "/assessments/streams",
     response_class=EventSourceResponse,
@@ -66,6 +78,7 @@ async def create_assessment(
 @inject
 async def stream_assessment(
     data: AssessmentInput,
+    cleanup: Annotated[AsyncExitStack, Depends(_stream_cleanup)],
     description_assessment: FromDishka[DescriptionReferenceAssessment],
     apollon_assessment: FromDishka[ApollonReferenceAssessment],
 ) -> AsyncGenerator[ServerSentEvent]:
@@ -85,6 +98,8 @@ async def stream_assessment(
                 )
             )
 
+        # The SSE producer may stop while this iterator is suspended at yield.
+        cleanup.push_async_callback(progress.aclose)
         async for state, result in progress:
             if result is None:
                 yield ServerSentEvent(

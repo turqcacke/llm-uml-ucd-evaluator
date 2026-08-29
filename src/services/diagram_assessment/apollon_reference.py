@@ -1,4 +1,5 @@
 from collections.abc import AsyncGenerator
+from contextlib import aclosing
 from dataclasses import dataclass
 
 from src.model.apollon import ApollonJson
@@ -59,11 +60,10 @@ class ApollonReferenceAssessment(
         assert result is not None
         return result
 
-    async def stream(
+    def stream(
         self, data: ApollonReferenceAssessmentInput
     ) -> AsyncGenerator[AssessmentProgress]:
-        async for progress in map_stream_exceptions(self._stream(data)):
-            yield progress
+        return map_stream_exceptions(self._stream(data))
 
     async def _stream(
         self, data: ApollonReferenceAssessmentInput
@@ -75,9 +75,8 @@ class ApollonReferenceAssessment(
         candidate = await self._extractor.execute(
             ApollonJsonExtractorInput(data.candidate)
         )
-        async for progress in stream_assess_diagrams(
-            reference,
-            candidate,
-            self._dependencies,
-        ):
-            yield progress
+        async with aclosing(
+            stream_assess_diagrams(reference, candidate, self._dependencies)
+        ) as stream:
+            async for progress in stream:
+                yield progress

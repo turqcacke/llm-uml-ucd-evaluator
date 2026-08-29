@@ -1,5 +1,6 @@
 from types import TracebackType
 
+from anyio import CancelScope
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import PyMongoError
 
@@ -18,7 +19,8 @@ class MongoUnitOfWork:
         exc: BaseException | None,
         tb: TracebackType | None,
     ) -> None:
-        await self.rollback()
+        with CancelScope(shield=True):
+            await self.rollback()
 
     async def commit(self) -> None:
         try:

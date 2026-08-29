@@ -1,4 +1,5 @@
 from collections.abc import AsyncGenerator, AsyncIterator, Callable, Coroutine
+from contextlib import aclosing
 from functools import wraps
 from typing import Any, Protocol, TypeVar
 
@@ -35,10 +36,11 @@ def map_use_case_exceptions[**P, ResultT](
 async def map_stream_exceptions[ResultT](
     stream: AsyncGenerator[ResultT],
 ) -> AsyncGenerator[ResultT]:
-    try:
-        async for item in stream:
-            yield item
-    except BaseAppException:
-        raise
-    except Exception as exc:
-        raise UseCaseError(str(exc), original=exc) from exc
+    async with aclosing(stream):
+        try:
+            async for item in stream:
+                yield item
+        except BaseAppException:
+            raise
+        except Exception as exc:
+            raise UseCaseError(str(exc), original=exc) from exc

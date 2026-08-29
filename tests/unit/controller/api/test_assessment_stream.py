@@ -7,6 +7,7 @@ from typing import Any, cast
 import pytest
 from dishka import Provider, Scope, make_async_container, provide
 from httpx import ASGITransport, AsyncClient
+from starlette.requests import ClientDisconnect
 
 from src.config import ApiSettings
 from src.controller.api.app import create_app
@@ -495,6 +496,7 @@ class AsgiStream:
         self.body = json.dumps(body).encode()
         self.messages: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
         self.request_sent = False
+        self.disconnected = asyncio.Event()
         self.task: asyncio.Task[None] | None = None
 
     async def receive(self) -> dict[str, Any]:
@@ -505,10 +507,12 @@ class AsgiStream:
                 "body": self.body,
                 "more_body": False,
             }
-        await asyncio.Event().wait()
-        raise AssertionError("unreachable")
+        await self.disconnected.wait()
+        return {"type": "http.disconnect"}
 
     async def send(self, message: dict[str, Any]) -> None:
+        if self.disconnected.is_set():
+            raise OSError("client disconnected")
         await self.messages.put(message)
 
     def start(self) -> None:
@@ -530,9 +534,13 @@ class AsgiStream:
             "client": ("test", 123),
             "server": ("test", 80),
         }
-        self.task = asyncio.create_task(
-            self.app(scope, self.receive, self.send)
-        )
+        async def run() -> None:
+            try:
+                await self.app(scope, self.receive, self.send)
+            except (OSError, ClientDisconnect):
+                pass
+
+        self.task = asyncio.create_task(run())
 
     async def next(self) -> dict[str, Any]:
         async with asyncio.timeout(1):
@@ -806,3 +814,55 @@ async def test_analysis_failure_cancels_sibling_before_persistence() -> None:
     assert matcher.cancelled
     assert repository.diagrams == repository.results == []
     assert not unit_of_work.commit_started.is_set()
+
+
+@pytest.mark.anyio
+async def test_disconnect_closes_suspended_stream_before_request_cleanup() -> (
+    None
+):
+    closed = asyncio.Event()
+    cleanup_observations: list[bool] = []
+
+    class SuspendedAssessment:
+        async def stream(
+            self, _: object
+        ) -> AsyncGenerator[
+            tuple[AssessmentState, MetricsWithEvaluation | None]
+        ]:
+            try:
+                while True:
+                    yield AssessmentState.ANALYZING, None
+            finally:
+                await asyncio.sleep(0)
+                closed.set()
+
+    class ClosingProvider(FakeProvider):
+        @provide(scope=Scope.REQUEST, override=True)
+        async def description_assessment(
+            self,
+        ) -> AsyncIterator[DescriptionReferenceAssessment]:
+            try:
+                yield cast(DescriptionReferenceAssessment, self.description)
+            finally:
+                cleanup_observations.append(closed.is_set())
+
+    class SlowStream(AsgiStream):
+        async def send(self, message: dict[str, Any]) -> None:
+            await super().send(message)
+            if message.get("body"):
+                await self.disconnected.wait()
+                raise OSError("client disconnected")
+
+    app = create_app(
+        settings=ApiSettings(API_SECRET="secret"),
+        container=make_async_container(ClosingProvider(SuspendedAssessment())),
+    )
+    async with app.router.lifespan_context(app), asyncio.timeout(2):
+        stream = SlowStream(app, _request("description"))
+        stream.start()
+        await stream.next()
+        await stream.next()
+        stream.disconnected.set()
+        assert stream.task is not None
+        await stream.task
+        assert cleanup_observations == [True]
