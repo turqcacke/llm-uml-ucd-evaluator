@@ -4,7 +4,7 @@ import json
 import re
 from pathlib import Path
 
-from dishka import Provider, Scope, make_async_container
+from dishka import Provider, Scope, make_async_container, provide
 from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
 
 from src.app_logging import logger
@@ -17,18 +17,25 @@ from src.controller.di import (
     MatcherProvider,
 )
 from src.controller.di.mongo import MongoProvider
+from src.infrastructure.requcd60.converter import ReqUCD60ToDomainConverter
 from src.model.apollon import ApollonJson
 from src.model.domain import UseCaseDiagramPresentation
+from src.model.requcd60.result import ReqUCD60Result
 from src.services.diagram_assessment import (
     ApollonReferenceAssessment,
     ApollonReferenceAssessmentInput,
     DescriptionReferenceAssessment,
     DescriptionReferenceAssessmentInput,
 )
+from src.services.diagram_assessment.requcd60_reference import (
+    ReqUCD60ReferenceAssessment,
+)
 from src.services.extractor import (
     ApollonJsonExtractor,
     ApollonJsonExtractorInput,
 )
+from src.services.extractor.converter import BaseConverter
+from src.services.extractor.requcd60 import ReqUCD60Extractor
 
 EXERCISES_PATH = BASE_URL / "exercises"
 CHECKPOINTS_PATH = BASE_URL / "experiments_out"
@@ -48,6 +55,19 @@ class CalibrationExtractor(ApollonJsonExtractor):
         return diagram
 
 
+class ReqUCD60Provider(Provider):
+    @provide(scope=Scope.APP)
+    def requcd60_to_domain_converter(
+        self,
+    ) -> BaseConverter[ReqUCD60Result, UseCaseDiagramPresentation]:
+        return ReqUCD60ToDomainConverter()
+
+    requcd60_extractor = provide(ReqUCD60Extractor, scope=Scope.REQUEST)
+    requcd60_reference_assessment = provide(
+        ReqUCD60ReferenceAssessment, scope=Scope.REQUEST
+    )
+
+
 calibration_provider = Provider()
 calibration_provider.provide(
     CalibrationExtractor,
@@ -62,6 +82,7 @@ app_container = make_async_container(
     EvaluatorProvider(),
     MongoProvider(),
     DiagramAssessmentProvider(),
+    ReqUCD60Provider(),
     calibration_provider,
 )
 
