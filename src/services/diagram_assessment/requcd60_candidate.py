@@ -21,24 +21,24 @@ from .repository import AssessmentWriteRepository
 
 
 @dataclass(frozen=True)
-class ReqUCD60ReferenceAssessmentInput:
-    reference: ReqUCD60Result
-    candidate_description: str
+class ReqUCD60CandidateAssessmentInput:
+    reference_description: str
+    candidate: ReqUCD60Result
 
 
-class ReqUCD60ReferenceAssessment(
-    UseCase[ReqUCD60ReferenceAssessmentInput, MetricsWithEvaluation]
+class ReqUCD60CandidateAssessment(
+    UseCase[ReqUCD60CandidateAssessmentInput, MetricsWithEvaluation]
 ):
     def __init__(
         self,
-        reference_extractor: ReqUCD60Extractor,
+        candidate_extractor: ReqUCD60Extractor,
         description_extractor: DescriptionExtractor,
         matcher: UseCaseDiagramMatcher,
         evaluator: PragmaticSyntacticLlmEvaluator,
         repository: AssessmentWriteRepository,
         unit_of_work: UnitOfWork,
     ) -> None:
-        self._reference_extractor = reference_extractor
+        self._candidate_extractor = candidate_extractor
         self._description_extractor = description_extractor
         self._dependencies = AssessmentDependencies(
             matcher, evaluator, repository, unit_of_work
@@ -46,13 +46,13 @@ class ReqUCD60ReferenceAssessment(
 
     @map_use_case_exceptions
     async def execute(
-        self, data: ReqUCD60ReferenceAssessmentInput
+        self, data: ReqUCD60CandidateAssessmentInput
     ) -> MetricsWithEvaluation:
-        reference = await self._reference_extractor.execute(
-            ReqUCD60ExtractorInput(data.reference)
+        reference = await self._description_extractor.execute(
+            DescriptionExtractorInput(data.reference_description)
         )
-        candidate = await self._description_extractor.execute(
-            DescriptionExtractorInput(data.candidate_description)
+        candidate = await self._candidate_extractor.execute(
+            ReqUCD60ExtractorInput(data.candidate)
         )
         result = None
         async with aclosing(

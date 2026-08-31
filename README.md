@@ -93,16 +93,34 @@ assessment.
 
 ## Calibration Experiment
 
-Run from the repository root with the current local date in the experiment name:
+Run the six-sample short calibration from the repository root. It evaluates
+examples 1, 11, 21, 31, 41, and 51:
 
 ```sh
-uv run python -m experiments.calibration.collect_metrics --experiment-name "calibration_$(date +%Y-%m-%d)"
+uv run python -m eval.calibration.collect_metrics --experiment-name "calibration_$(date +%Y-%m-%d)"
 ```
 
-To resume, use the original experiment date and add `--resume`:
+The explicit short form is equivalent:
 
 ```sh
-uv run python -m experiments.calibration.collect_metrics --experiment-name calibration_2026-09-13 --resume
+uv run python -m eval.calibration.collect_metrics --experiment-name "calibration_$(date +%Y-%m-%d)" --size=short
 ```
 
-The resume position is stored in `experiments_out/<experiment_name>.json`.
+Run all 60 samples in numeric order:
+
+```sh
+uv run python -m eval.calibration.collect_metrics --experiment-name "calibration_$(date +%Y-%m-%d)" --size=full
+```
+
+To resume, use the original experiment name, unchanged size, and add `--resume`:
+
+```sh
+uv run python -m eval.calibration.collect_metrics --experiment-name calibration_2026-09-15 --size=full --resume
+```
+
+Resume positions are stored in
+`experiments_out/<experiment_name>_requcd60_<size>.json`. Resume requires
+unchanged dataset contents and ordering. A crash after an assessment is
+persisted but before progress advances can repeat that assessment; execution is
+not exactly once. Use a new experiment name after changing reference content or
+conversion conventions.

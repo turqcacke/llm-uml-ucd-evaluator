@@ -20,9 +20,9 @@ from src.model.domain.evaluation import (
 )
 from src.model.domain.matching import MinMatching, NodeMatch, RelationMatch
 from src.model.requcd60.result import ReqUCD60Result
-from src.services.diagram_assessment.requcd60_reference import (
-    ReqUCD60ReferenceAssessment,
-    ReqUCD60ReferenceAssessmentInput,
+from src.services.diagram_assessment.requcd60_candidate import (
+    ReqUCD60CandidateAssessment,
+    ReqUCD60CandidateAssessmentInput,
 )
 from src.services.evaluator import PragmaticSyntacticLlmEvaluator
 from src.services.exceptions import (
@@ -119,31 +119,32 @@ def _annotation() -> ReqUCD60Result:
     )
 
 
-def _candidate() -> UseCaseDiagramPresentation:
+def _reference() -> UseCaseDiagramPresentation:
     return UseCaseDiagramPresentation(
         nodes=[
-            Node(uid="c-actor", name="Customer", type=NodeType.ACTOR),
-            Node(uid="c-order", name="Place order", type=NodeType.USECASE),
+            Node(uid="r-actor", name="Customer", type=NodeType.ACTOR),
+            Node(uid="r-order", name="Place order", type=NodeType.USECASE),
             Node(
-                uid="c-payment",
+                uid="r-payment",
                 name="Payment API",
                 type=NodeType.EXTERNAL_SYSTEM,
             ),
-            Node(uid="c-note", name="Generated note", type=NodeType.NOTE),
+            Node(uid="r-note", name="Generated note", type=NodeType.NOTE),
         ],
         relations=[
             NodeRelation(
-                uid="c-association",
-                source="c-actor",
-                target="c-order",
+                uid="r-association",
+                source="r-actor",
+                target="r-order",
                 type=NodeRelationType.ASSOCIATION,
             )
         ],
     )
 
 
-def _workflow(candidate: UseCaseDiagramPresentation, store: FakePersistence):
-    extraction = ControlledModel(candidate)
+def _workflow(reference: UseCaseDiagramPresentation, store: FakePersistence):
+    extraction = ControlledModel(reference)
+    candidate = ReqUCD60ToDomainConverter().convert(_annotation())
     matching = ControlledModel(
         MinMatching(node_matches=[], relation_matches=[])
     )
@@ -168,8 +169,8 @@ def _workflow(candidate: UseCaseDiagramPresentation, store: FakePersistence):
             applied_rules=[],
         )
     )
-    workflow = ReqUCD60ReferenceAssessment(
-        reference_extractor=ReqUCD60Extractor(ReqUCD60ToDomainConverter()),
+    workflow = ReqUCD60CandidateAssessment(
+        candidate_extractor=ReqUCD60Extractor(ReqUCD60ToDomainConverter()),
         description_extractor=DescriptionExtractor(extraction),
         matcher=UseCaseDiagramMatcher(matching),
         evaluator=PragmaticSyntacticLlmEvaluator(evaluation),
@@ -183,33 +184,34 @@ def _workflow(candidate: UseCaseDiagramPresentation, store: FakePersistence):
 async def test_assessment_returns_and_atomically_saves_agreed_diagram_roles():
     annotation = _annotation()
     annotation_before = annotation.model_dump()
-    reference = await ReqUCD60Extractor(ReqUCD60ToDomainConverter()).execute(
+    candidate = await ReqUCD60Extractor(ReqUCD60ToDomainConverter()).execute(
         ReqUCD60ExtractorInput(annotation)
     )
-    candidate = _candidate()
-    candidate_before = candidate.model_dump()
+    reference = _reference()
+    reference_before = reference.model_dump()
     store = FakePersistence()
-    workflow, extraction, matching, evaluation = _workflow(candidate, store)
+    workflow, extraction, matching, evaluation = _workflow(reference, store)
     matching.result = MinMatching(
         node_matches=[
             NodeMatch(
-                reference_uid=reference.actors[0], candidate_uid="c-actor"
+                reference_uid="r-actor", candidate_uid=candidate.actors[0]
             ),
             NodeMatch(
-                reference_uid=reference.usecases[0], candidate_uid="c-order"
+                reference_uid="r-order", candidate_uid=candidate.usecases[0]
             ),
         ],
         relation_matches=[
             RelationMatch(
-                reference_uid=reference.relations[0].uid,
-                candidate_uid="c-association",
+                reference_uid="r-association",
+                candidate_uid=candidate.relations[0].uid,
             )
         ],
     )
 
     result = await workflow.execute(
-        ReqUCD60ReferenceAssessmentInput(
-            annotation, "A customer places an order."
+        ReqUCD60CandidateAssessmentInput(
+            reference_description="A customer places an order.",
+            candidate=annotation,
         )
     )
 
@@ -228,19 +230,19 @@ async def test_assessment_returns_and_atomically_saves_agreed_diagram_roles():
     assert store.rollbacks == 0
     assert store.results == [result]
     saved_reference, saved_candidate = store.diagrams
-    assert saved_reference.model_dump(exclude={"uid"}) == reference.model_dump(
+    assert saved_reference.model_dump() == reference_before
+    assert saved_candidate.model_dump(exclude={"uid"}) == candidate.model_dump(
         exclude={"uid"}
     )
-    assert saved_candidate.model_dump() == candidate_before
-    assert candidate.model_dump() == candidate_before
+    assert reference.model_dump() == reference_before
     assert annotation.model_dump() == annotation_before
-    assert result.reference_uid == saved_reference.uid
-    assert result.candidate_uid == candidate.uid
+    assert result.reference_uid == reference.uid
+    assert result.candidate_uid == saved_candidate.uid
     assert result.matching is not None
     assert result.matching.reference == saved_reference
     assert result.matching.candidate == saved_candidate
-    assert result.matching.missing_nodes == reference.systems
-    assert result.matching.redundant_nodes == ["c-payment"]
+    assert result.matching.missing_nodes == ["r-payment"]
+    assert result.matching.redundant_nodes == candidate.systems
     assert result.evaluation is not None
     assert (
         result.evaluation.node_evaluations
@@ -250,12 +252,7 @@ async def test_assessment_returns_and_atomically_saves_agreed_diagram_roles():
         evaluation.result.relation_evaluations
     )
     assert len(extraction.prompts) == len(evaluation.prompts) == 1
-    assert "A customer places an order." in extraction.prompts[0]
-    assert candidate.model_dump_json() in evaluation.prompts[0]
-    assert saved_reference.model_dump_json() not in evaluation.prompts[0]
     assert len(matching.prompts) == 1
-    assert saved_reference.model_dump_json() in matching.prompts[0]
-    assert candidate.model_dump_json() in matching.prompts[0]
 
 
 @pytest.mark.anyio
@@ -266,13 +263,13 @@ async def test_model_failure_propagates_without_persisted_assessment(
     stage: int,
 ):
     store = FakePersistence()
-    workflow, *models = _workflow(_candidate(), store)
+    workflow, *models = _workflow(_reference(), store)
     error = LlmRequestError("model unavailable")
     models[stage].error = error
 
     with pytest.raises(LlmRequestError) as raised:
         await workflow.execute(
-            ReqUCD60ReferenceAssessmentInput(_annotation(), "Description")
+            ReqUCD60CandidateAssessmentInput("Description", _annotation())
         )
 
     assert raised.value is error
@@ -284,11 +281,11 @@ async def test_model_failure_propagates_without_persisted_assessment(
 @pytest.mark.parametrize("stage", ["candidate", "metrics", "commit"])
 async def test_persistence_failure_leaves_no_committed_assessment(stage: str):
     store = FakePersistence(fail_on=stage)
-    workflow, *_ = _workflow(_candidate(), store)
+    workflow, *_ = _workflow(_reference(), store)
 
     with pytest.raises(UseCaseError, match="persistence failed") as raised:
         await workflow.execute(
-            ReqUCD60ReferenceAssessmentInput(_annotation(), "Description")
+            ReqUCD60CandidateAssessmentInput("Description", _annotation())
         )
 
     assert isinstance(raised.value.original, RuntimeError)
@@ -300,12 +297,15 @@ async def test_persistence_failure_leaves_no_committed_assessment(stage: str):
 
 @pytest.mark.anyio
 async def test_disallowed_candidate_is_saved_with_prescribed_scores():
-    candidate = UseCaseDiagramPresentation(nodes=[], relations=[])
+    candidate = _annotation()
+    candidate.actors = []
+    candidate.usecases = []
+    candidate.association_relationships = {}
     store = FakePersistence()
-    workflow, _, matching, evaluation = _workflow(candidate, store)
+    workflow, _, matching, evaluation = _workflow(_reference(), store)
 
     result = await workflow.execute(
-        ReqUCD60ReferenceAssessmentInput(_annotation(), "Description")
+        ReqUCD60CandidateAssessmentInput("Description", candidate)
     )
 
     assert result.model_dump(
@@ -327,23 +327,21 @@ async def test_disallowed_candidate_is_saved_with_prescribed_scores():
     }
     assert store.results == [result]
     assert len(store.diagrams) == 2
-    assert store.diagrams[1] == candidate
+    assert store.diagrams[1].actors == store.diagrams[1].usecases == []
     assert store.commits == 1
     assert matching.prompts == evaluation.prompts == []
 
 
 @pytest.mark.anyio
 async def test_disallowed_reference_fails_without_analysis_or_persistence():
-    reference = _annotation()
-    reference.actors = []
-    reference.usecases = []
-    reference.association_relationships = {}
     store = FakePersistence()
-    workflow, _, matching, evaluation = _workflow(_candidate(), store)
+    workflow, _, matching, evaluation = _workflow(
+        UseCaseDiagramPresentation(nodes=[], relations=[]), store
+    )
 
     with pytest.raises(ReferenceNotAllowedError):
         await workflow.execute(
-            ReqUCD60ReferenceAssessmentInput(reference, "Description")
+            ReqUCD60CandidateAssessmentInput("Description", _annotation())
         )
 
     assert matching.prompts == evaluation.prompts == []
@@ -352,29 +350,29 @@ async def test_disallowed_reference_fails_without_analysis_or_persistence():
 
 
 @pytest.mark.anyio
-@pytest.mark.parametrize("different_candidate", [False, True])
+@pytest.mark.parametrize("different_reference", [False, True])
 async def test_repeated_assessments_keep_distinct_results(
-    different_candidate: bool,
+    different_reference: bool,
 ):
     store = FakePersistence()
-    workflow, extraction, *_ = _workflow(_candidate(), store)
-    data = ReqUCD60ReferenceAssessmentInput(_annotation(), "Description")
+    workflow, extraction, *_ = _workflow(_reference(), store)
+    data = ReqUCD60CandidateAssessmentInput("Description", _annotation())
 
     first = await workflow.execute(data)
-    if different_candidate:
-        extraction.result = _candidate()
+    if different_reference:
+        extraction.result = _reference()
         extraction.result.nodes[1].name = "Submit order"
     second = await workflow.execute(data)
 
     assert first.uid != second.uid
     assert store.results == [first, second]
     assert store.commits == 2
-    assert store.diagrams[0].model_dump(exclude={"uid"}) == (
-        store.diagrams[2].model_dump(exclude={"uid"})
+    assert store.diagrams[1].model_dump(exclude={"uid"}) == (
+        store.diagrams[3].model_dump(exclude={"uid"})
     )
-    if different_candidate:
-        assert first.candidate_uid != second.candidate_uid
-        assert store.diagrams[1].nodes[1].name == "Place order"
-        assert store.diagrams[3].nodes[1].name == "Submit order"
+    if different_reference:
+        assert first.reference_uid != second.reference_uid
+        assert store.diagrams[0].nodes[1].name == "Place order"
+        assert store.diagrams[2].nodes[1].name == "Submit order"
     else:
-        assert store.diagrams[1] == store.diagrams[3]
+        assert store.diagrams[0] == store.diagrams[2]

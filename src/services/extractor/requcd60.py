@@ -9,7 +9,7 @@ from .converter import BaseConverter
 
 @dataclass(frozen=True)
 class ReqUCD60ExtractorInput:
-    reference: ReqUCD60Result
+    candidate: ReqUCD60Result
 
 
 class ReqUCD60Extractor(
@@ -25,4 +25,4 @@ class ReqUCD60Extractor(
     async def execute(
         self, data: ReqUCD60ExtractorInput
     ) -> UseCaseDiagramPresentation:
-        return self._converter.convert(data.reference)
+        return self._converter.convert(data.candidate)
