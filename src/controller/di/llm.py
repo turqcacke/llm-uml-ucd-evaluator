@@ -36,6 +36,7 @@ def get_text_extractor_chat_model(
         else prompts.EXTRACTOR_FROM_APOLLON_MODEL,
         response_type=UseCaseDiagramPresentation,
         guardrails=text_guard_rails if type_ == "text" else apollon_guardrails,
+        reasoning_effort="medium",
     )
     return model
 
@@ -50,6 +51,7 @@ def get_use_case_diagram_matcher_chat_model() -> ChatModel[MinMatching]:
         system_prompt=prompts.USE_CASE_DIAGRAM_MATCHER,
         response_type=MinMatching,
         guardrails=list(guardrails.COMMON_GUARDRAILS),
+        reasoning_effort="medium",
     )
     return model
 
@@ -66,6 +68,7 @@ def get_pragmatic_syntactic_evaluator_chat_model() -> ChatModel[
         system_prompt=prompts.PRAGMATIC_SYNTACTIC_EVALUATOR,
         response_type=EvaluationResult,
         guardrails=list(guardrails.COMMON_GUARDRAILS),
+        reasoning_effort="medium",
     )
 
 
