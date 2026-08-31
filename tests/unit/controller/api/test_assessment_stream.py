@@ -26,7 +26,7 @@ from src.model.domain.evaluation import (
 )
 from src.model.domain.matching import NodeMatch
 from src.services.diagram_assessment import (
-    ApollonReferenceAssessment,
+    ApollonToApollonAssessment,
     AssessmentWriteRepository,
     DescriptionReferenceAssessment,
 )
@@ -145,8 +145,8 @@ class FakeProvider(Provider):
         return cast(DescriptionReferenceAssessment, self.description)
 
     @provide(scope=Scope.REQUEST)
-    def apollon_assessment(self) -> ApollonReferenceAssessment:
-        return cast(ApollonReferenceAssessment, self.apollon)
+    def apollon_assessment(self) -> ApollonToApollonAssessment:
+        return cast(ApollonToApollonAssessment, self.apollon)
 
 
 def _events(response: str) -> list[tuple[str, dict[str, Any]]]:
@@ -159,7 +159,9 @@ def _events(response: str) -> list[tuple[str, dict[str, Any]]]:
 
 @pytest.mark.anyio
 @pytest.mark.parametrize("kind", ["description", "apollon"])
-async def test_stream_supports_both_inputs_and_projects_result(kind: str) -> None:
+async def test_stream_supports_both_inputs_and_projects_result(
+    kind: str,
+) -> None:
     description = FakeAssessment()
     apollon = FakeAssessment()
     container = make_async_container(FakeProvider(description, apollon))
@@ -321,8 +323,7 @@ async def test_stream_reports_service_failure_as_terminal_error(
 
 
 @pytest.mark.anyio
-async def test_stream_reports_unexpected_failure_as_terminal_error(
-) -> None:
+async def test_stream_reports_unexpected_failure_as_terminal_error() -> None:
     assessment = FailingAssessment(RuntimeError("secret traceback"))
     container = make_async_container(FakeProvider(assessment))
     app = create_app(
@@ -352,7 +353,9 @@ async def test_stream_reports_unexpected_failure_as_terminal_error(
 
 
 @pytest.mark.anyio
-async def test_result_projection_failure_is_a_terminal_internal_error() -> None:
+async def test_result_projection_failure_is_a_terminal_internal_error() -> (
+    None
+):
     container = make_async_container(FakeProvider(InvalidResultAssessment()))
     app = create_app(
         settings=ApiSettings(API_SECRET="secret"), container=container
@@ -486,8 +489,8 @@ class LifecycleProvider(Provider):
         self.cleanups += 1
 
     @provide(scope=Scope.REQUEST)
-    def apollon_assessment(self) -> ApollonReferenceAssessment:
-        return cast(ApollonReferenceAssessment, self.assessment)
+    def apollon_assessment(self) -> ApollonToApollonAssessment:
+        return cast(ApollonToApollonAssessment, self.assessment)
 
 
 class AsgiStream:
@@ -534,6 +537,7 @@ class AsgiStream:
             "client": ("test", 123),
             "server": ("test", 80),
         }
+
         async def run() -> None:
             try:
                 await self.app(scope, self.receive, self.send)

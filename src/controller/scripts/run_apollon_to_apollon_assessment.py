@@ -9,12 +9,12 @@ from src.controller.scripts.results import save_result
 from src.model.apollon import ApollonJson
 from src.model.domain import MetricsWithEvaluation
 from src.services.diagram_assessment import (
-    ApollonReferenceAssessment,
-    ApollonReferenceAssessmentInput,
+    ApollonToApollonAssessment,
+    ApollonToApollonAssessmentInput,
 )
 from src.services.exceptions import BaseAppException
 
-RESULTS_PATH = BASE_URL / "scripts_out" / "run_apollon_reference_assessment"
+RESULTS_PATH = BASE_URL / "scripts_out" / "run_apollon_to_apollon_assessment"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -38,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
             args.candidate,
             args.results_path,
         )
-        data = ApollonReferenceAssessmentInput(
+        data = ApollonToApollonAssessmentInput(
             reference=ApollonJson.model_validate_json(
                 args.reference.read_text("utf-8")
             ),
@@ -57,11 +57,11 @@ def main(argv: list[str] | None = None) -> int:
 
 
 async def _execute(
-    data: ApollonReferenceAssessmentInput,
+    data: ApollonToApollonAssessmentInput,
 ) -> MetricsWithEvaluation:
     async with app_container:
         async with app_container() as request_container:
-            use_case = await request_container.get(ApollonReferenceAssessment)
+            use_case = await request_container.get(ApollonToApollonAssessment)
             return await use_case.execute(data)
 
 

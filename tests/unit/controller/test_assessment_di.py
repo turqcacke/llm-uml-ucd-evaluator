@@ -14,7 +14,7 @@ from src.controller.di import (
 from src.controller.di.llm import ChatModelProvider
 from src.infrastructure.langchain import chat_model
 from src.services.diagram_assessment import (
-    ApollonReferenceAssessment,
+    ApollonToApollonAssessment,
     AssessmentWriteRepository,
     DescriptionReferenceAssessment,
 )
@@ -66,8 +66,8 @@ async def test_container_resolves_assessment_use_cases(
             DescriptionReferenceAssessment,
         )
         assert isinstance(
-            await request_container.get(ApollonReferenceAssessment),
-            ApollonReferenceAssessment,
+            await request_container.get(ApollonToApollonAssessment),
+            ApollonToApollonAssessment,
         )
     await local_container.close()
 

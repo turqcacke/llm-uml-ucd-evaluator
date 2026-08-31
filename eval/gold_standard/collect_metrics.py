@@ -20,9 +20,9 @@ from src.controller.di.mongo import MongoProvider
 from src.infrastructure.requcd60.converter import ReqUCD60ToDomainConverter
 from src.model.domain import UseCaseDiagramPresentation
 from src.model.requcd60.result import ReqUCD60Result
-from src.services.diagram_assessment.requcd60_candidate import (
-    ReqUCD60CandidateAssessment,
-    ReqUCD60CandidateAssessmentInput,
+from src.services.diagram_assessment.requcd60_reference import (
+    ReqUCD60ReferenceAssessment,
+    ReqUCD60ReferenceAssessmentInput,
 )
 from src.services.extractor.converter import BaseConverter
 from src.services.extractor.requcd60 import (
@@ -35,17 +35,17 @@ DESCRIPTIONS_PATH = BASE_URL / "datasets" / "60_artificial"
 CHECKPOINTS_PATH = BASE_URL / "experiments_out"
 
 
-class CalibrationCandidate(ReqUCD60Result):
+class GoldStandardReference(ReqUCD60Result):
     uid: str
 
 
-class CalibrationReqUCD60Extractor(ReqUCD60Extractor):
+class GoldStandardReqUCD60Extractor(ReqUCD60Extractor):
     async def execute(
         self, data: ReqUCD60ExtractorInput
     ) -> UseCaseDiagramPresentation:
         diagram = await super().execute(data)
-        if isinstance(data.candidate, CalibrationCandidate):
-            diagram.uid = data.candidate.uid
+        if isinstance(data.reference, GoldStandardReference):
+            diagram.uid = data.reference.uid
         return diagram
 
 
@@ -57,12 +57,12 @@ class ReqUCD60Provider(Provider):
         return ReqUCD60ToDomainConverter()
 
     requcd60_extractor = provide(
-        CalibrationReqUCD60Extractor,
+        GoldStandardReqUCD60Extractor,
         provides=ReqUCD60Extractor,
         scope=Scope.REQUEST,
     )
-    requcd60_candidate_assessment = provide(
-        ReqUCD60CandidateAssessment, scope=Scope.REQUEST
+    requcd60_reference_assessment = provide(
+        ReqUCD60ReferenceAssessment, scope=Scope.REQUEST
     )
 
 
@@ -79,9 +79,9 @@ app_container = make_async_container(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Run ReqUCD60 description extraction calibration"
+        description="Compare ReqUCD60 extraction with the gold standard"
     )
-    parser.add_argument("--experiment-name", default="calibration")
+    parser.add_argument("--experiment-name", default="gold_standard")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--size", choices=("short", "full"), default="short")
     args = parser.parse_args(argv)
@@ -177,7 +177,7 @@ async def _run(
                 "utf-8",
             )
             temporary.replace(checkpoint)
-            candidate = CalibrationCandidate(
+            reference = GoldStandardReference(
                 **ReqUCD60Result.model_validate_json(
                     annotation_path.read_text("utf-8")
                 ).model_dump(),
@@ -201,19 +201,19 @@ async def _run(
                     )
                     async with app_container() as request_container:
                         assessment = await request_container.get(
-                            ReqUCD60CandidateAssessment
+                            ReqUCD60ReferenceAssessment
                         )
                         result = await assessment.execute(
-                            ReqUCD60CandidateAssessmentInput(
-                                reference_description=description,
-                                candidate=candidate,
+                            ReqUCD60ReferenceAssessmentInput(
+                                reference=reference,
+                                candidate_description=description,
                             )
                         )
                     logger.info(
-                        "Iteration {} sample={} candidate={} saved result={}",
+                        "Iteration {} sample={} reference={} saved result={}",
                         iteration,
                         sample,
-                        candidate.uid,
+                        reference.uid,
                         result.uid,
                     )
 

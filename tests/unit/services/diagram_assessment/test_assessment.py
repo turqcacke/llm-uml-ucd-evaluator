@@ -20,8 +20,8 @@ from src.model.domain.evaluation import (
 from src.model.domain.exceptions import MetricsCalculationError
 from src.model.domain.matching import NodeMatch
 from src.services.diagram_assessment import (
-    ApollonReferenceAssessment,
-    ApollonReferenceAssessmentInput,
+    ApollonToApollonAssessment,
+    ApollonToApollonAssessmentInput,
     DescriptionReferenceAssessment,
     DescriptionReferenceAssessmentInput,
 )
@@ -372,7 +372,7 @@ async def test_storage_failure_fails_execution_and_rolls_back() -> None:
 
 
 @pytest.mark.anyio
-async def test_apollon_reference_assessment_extracts_both_diagrams() -> None:
+async def test_apollon_to_apollon_assessment_extracts_both_diagrams() -> None:
     reference = _diagram("reference")
     candidate = _diagram("candidate")
     extraction = SequenceUseCase(reference, candidate)
@@ -396,7 +396,7 @@ async def test_apollon_reference_assessment_extracts_both_diagrams() -> None:
         ],
         relation_matches=[],
     )
-    assessment = ApollonReferenceAssessment(
+    assessment = ApollonToApollonAssessment(
         cast(ApollonJsonExtractor, extraction),
         cast(UseCaseDiagramMatcher, FakeUseCase(matching)),
         cast(PragmaticSyntacticLlmEvaluator, FakeUseCase(evaluation)),
@@ -407,7 +407,7 @@ async def test_apollon_reference_assessment_extracts_both_diagrams() -> None:
     candidate_source = _apollon()
 
     result = await assessment.execute(
-        ApollonReferenceAssessmentInput(reference_source, candidate_source)
+        ApollonToApollonAssessmentInput(reference_source, candidate_source)
     )
 
     assert result.semantic_f1_score == Decimal(1)
@@ -500,11 +500,11 @@ async def test_invalid_evaluation_is_reported_as_llm_response_error() -> None:
 
 
 @pytest.mark.anyio
-async def test_apollon_reference_assessment_maps_extraction_failure() -> None:
+async def test_apollon_to_apollon_assessment_maps_extraction_failure() -> None:
     error = RuntimeError("Candidate extraction failed")
     matcher = FakeUseCase(None)
     evaluator = FakeUseCase(None)
-    assessment = ApollonReferenceAssessment(
+    assessment = ApollonToApollonAssessment(
         cast(
             ApollonJsonExtractor,
             SequenceUseCase(_diagram("reference"), error),
@@ -519,7 +519,7 @@ async def test_apollon_reference_assessment_maps_extraction_failure() -> None:
         UseCaseError, match="Candidate extraction failed"
     ) as info:
         await assessment.execute(
-            ApollonReferenceAssessmentInput(_apollon(), _apollon())
+            ApollonToApollonAssessmentInput(_apollon(), _apollon())
         )
 
     assert info.value.original is error
@@ -528,10 +528,12 @@ async def test_apollon_reference_assessment_maps_extraction_failure() -> None:
 
 
 @pytest.mark.anyio
-async def test_apollon_reference_assessment_preserves_conversion_error() -> None:
+async def test_apollon_to_apollon_assessment_preserves_conversion_error() -> (
+    None
+):
     original = ValueError("Duplicate node UID")
     error = ConversionError("Invalid Apollon diagram", original=original)
-    assessment = ApollonReferenceAssessment(
+    assessment = ApollonToApollonAssessment(
         cast(ApollonJsonExtractor, SequenceUseCase(error)),
         cast(UseCaseDiagramMatcher, FakeUseCase(None)),
         cast(PragmaticSyntacticLlmEvaluator, FakeUseCase(None)),
@@ -541,7 +543,7 @@ async def test_apollon_reference_assessment_preserves_conversion_error() -> None
 
     with pytest.raises(ConversionError) as error_info:
         await assessment.execute(
-            ApollonReferenceAssessmentInput(_apollon(), _apollon())
+            ApollonToApollonAssessmentInput(_apollon(), _apollon())
         )
 
     assert error_info.value is error

@@ -26,14 +26,14 @@ from .repository import AssessmentWriteRepository
 
 
 @dataclass(frozen=True)
-class ApollonReferenceAssessmentInput:
+class ApollonToApollonAssessmentInput:
     reference: ApollonJson
     candidate: ApollonJson
 
 
-class ApollonReferenceAssessment(
-    UseCase[ApollonReferenceAssessmentInput, MetricsWithEvaluation],
-    StreamingUseCase[ApollonReferenceAssessmentInput, AssessmentProgress],
+class ApollonToApollonAssessment(
+    UseCase[ApollonToApollonAssessmentInput, MetricsWithEvaluation],
+    StreamingUseCase[ApollonToApollonAssessmentInput, AssessmentProgress],
 ):
     def __init__(
         self,
@@ -52,7 +52,7 @@ class ApollonReferenceAssessment(
         )
 
     async def execute(
-        self, data: ApollonReferenceAssessmentInput
+        self, data: ApollonToApollonAssessmentInput
     ) -> MetricsWithEvaluation:
         result = None
         async for _, result in self.stream(data):
@@ -61,12 +61,12 @@ class ApollonReferenceAssessment(
         return result
 
     def stream(
-        self, data: ApollonReferenceAssessmentInput
+        self, data: ApollonToApollonAssessmentInput
     ) -> AsyncGenerator[AssessmentProgress]:
         return map_stream_exceptions(self._stream(data))
 
     async def _stream(
-        self, data: ApollonReferenceAssessmentInput
+        self, data: ApollonToApollonAssessmentInput
     ) -> AsyncGenerator[AssessmentProgress]:
         yield AssessmentState.EXTRACTING, None
         reference = await self._extractor.execute(

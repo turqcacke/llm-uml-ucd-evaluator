@@ -1,6 +1,6 @@
-from .apollon_reference import (
-    ApollonReferenceAssessment,
-    ApollonReferenceAssessmentInput,
+from .apollon_to_apollon import (
+    ApollonToApollonAssessment,
+    ApollonToApollonAssessmentInput,
 )
 from .description_reference import (
     DescriptionReferenceAssessment,
@@ -9,8 +9,8 @@ from .description_reference import (
 from .repository import AssessmentWriteRepository
 
 __all__ = [
-    "ApollonReferenceAssessment",
-    "ApollonReferenceAssessmentInput",
+    "ApollonToApollonAssessment",
+    "ApollonToApollonAssessmentInput",
     "AssessmentWriteRepository",
     "DescriptionReferenceAssessment",
     "DescriptionReferenceAssessmentInput",

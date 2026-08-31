@@ -80,7 +80,7 @@ def test_real_di_cli_persists_result_by_returned_uid(
     monkeypatch: pytest.MonkeyPatch,
     mongo_test_uri: str,
 ) -> None:
-    from src.controller.scripts import run_apollon_reference_assessment
+    from src.controller.scripts import run_apollon_to_apollon_assessment
 
     for prefix in ("EXTRACTOR", "MATCHER", "EVALUATOR"):
         monkeypatch.setenv(f"{prefix}_MODEL", f"test-{prefix.lower()}")
@@ -98,7 +98,7 @@ def test_real_di_cli_persists_result_by_returned_uid(
         DiagramAssessmentProvider(),
     )
     monkeypatch.setattr(
-        run_apollon_reference_assessment,
+        run_apollon_to_apollon_assessment,
         "app_container",
         container,
     )
@@ -110,7 +110,7 @@ def test_real_di_cli_persists_result_by_returned_uid(
 
     try:
         assert (
-            run_apollon_reference_assessment.main(
+            run_apollon_to_apollon_assessment.main(
                 [
                     str(reference),
                     str(candidate),

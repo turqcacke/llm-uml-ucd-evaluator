@@ -60,7 +60,7 @@ uv run python -m src.controller.scripts.run_extractor description.txt > referenc
 uv run python -m src.controller.scripts.run_apollon_extractor apollon.json > candidate.json
 uv run python -m src.controller.scripts.run_mathcer reference.json candidate.json > matching.json
 uv run python -m src.controller.scripts.run_description_reference_assessment description.txt candidate.json
-uv run python -m src.controller.scripts.run_apollon_reference_assessment reference.json candidate.json
+uv run python -m src.controller.scripts.run_apollon_to_apollon_assessment reference.json candidate.json
 ```
 
 All paths are positional arguments. Text is read as UTF-8. Matcher inputs
@@ -76,7 +76,7 @@ Each command also saves a UTF-8 JSON file with a unique UUID filename. Its
 - `scripts_out/run_apollon_extractor/`
 - `scripts_out/run_mathcer/`
 - `scripts_out/run_description_reference_assessment/`
-- `scripts_out/run_apollon_reference_assessment/`
+- `scripts_out/run_apollon_to_apollon_assessment/`
 
 Directories are created automatically, and repeated runs keep earlier
 results. Override the output directory with `--results-path /path/to/results`.
@@ -91,31 +91,31 @@ Diagram Assessment commands persist both diagrams and each distinct result in
 one MongoDB transaction. The returned result `uid` identifies the stored
 assessment.
 
-## Calibration Experiment
+## Gold Standard Evaluation
 
-Run the six-sample short calibration from the repository root. It evaluates
+Run the six-sample gold-standard comparison from the repository root. It uses
 examples 1, 11, 21, 31, 41, and 51:
 
 ```sh
-uv run python -m eval.calibration.collect_metrics --experiment-name "calibration_$(date +%Y-%m-%d)"
+uv run python -m eval.gold_standard.collect_metrics --experiment-name "gold_standard_$(date +%Y-%m-%d)"
 ```
 
 The explicit short form is equivalent:
 
 ```sh
-uv run python -m eval.calibration.collect_metrics --experiment-name "calibration_$(date +%Y-%m-%d)" --size=short
+uv run python -m eval.gold_standard.collect_metrics --experiment-name "gold_standard_$(date +%Y-%m-%d)" --size=short
 ```
 
 Run all 60 samples in numeric order:
 
 ```sh
-uv run python -m eval.calibration.collect_metrics --experiment-name "calibration_$(date +%Y-%m-%d)" --size=full
+uv run python -m eval.gold_standard.collect_metrics --experiment-name "gold_standard_$(date +%Y-%m-%d)" --size=full
 ```
 
 To resume, use the original experiment name, unchanged size, and add `--resume`:
 
 ```sh
-uv run python -m eval.calibration.collect_metrics --experiment-name calibration_2026-09-15 --size=full --resume
+uv run python -m eval.gold_standard.collect_metrics --experiment-name gold_standard_2026-09-15 --size=full --resume
 ```
 
 Resume positions are stored in

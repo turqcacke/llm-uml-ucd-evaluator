@@ -13,8 +13,8 @@ from src.controller.api.exception_handlers import (
 )
 from src.controller.api.security import api_key
 from src.services.diagram_assessment import (
-    ApollonReferenceAssessment,
-    ApollonReferenceAssessmentInput,
+    ApollonToApollonAssessment,
+    ApollonToApollonAssessmentInput,
     DescriptionReferenceAssessment,
     DescriptionReferenceAssessmentInput,
 )
@@ -42,11 +42,11 @@ router = APIRouter(prefix="/v1")
 async def create_assessment(
     data: AssessmentInput,
     description_assessment: FromDishka[DescriptionReferenceAssessment],
-    apollon_assessment: FromDishka[ApollonReferenceAssessment],
+    apollon_assessment: FromDishka[ApollonToApollonAssessment],
 ) -> SuccessResponse[AssessmentResult]:
     if isinstance(data, ApollonAssessmentInput):
         result = await apollon_assessment.execute(
-            ApollonReferenceAssessmentInput(
+            ApollonToApollonAssessmentInput(
                 reference=data.reference.to_service(),
                 candidate=data.candidate.to_service(),
             )
@@ -80,12 +80,12 @@ async def stream_assessment(
     data: AssessmentInput,
     cleanup: Annotated[AsyncExitStack, Depends(_stream_cleanup)],
     description_assessment: FromDishka[DescriptionReferenceAssessment],
-    apollon_assessment: FromDishka[ApollonReferenceAssessment],
+    apollon_assessment: FromDishka[ApollonToApollonAssessment],
 ) -> AsyncGenerator[ServerSentEvent]:
     try:
         if isinstance(data, ApollonAssessmentInput):
             progress = apollon_assessment.stream(
-                ApollonReferenceAssessmentInput(
+                ApollonToApollonAssessmentInput(
                     reference=data.reference.to_service(),
                     candidate=data.candidate.to_service(),
                 )

@@ -18,8 +18,8 @@ from src.model.domain import (
     UseCaseDiagramPresentation,
 )
 from src.services.diagram_assessment import (
-    ApollonReferenceAssessment,
-    ApollonReferenceAssessmentInput,
+    ApollonToApollonAssessment,
+    ApollonToApollonAssessmentInput,
     AssessmentWriteRepository,
     DescriptionReferenceAssessment,
     DescriptionReferenceAssessmentInput,
@@ -64,14 +64,14 @@ class FakeAssessment:
     def __init__(self, *, candidate_is_allowed: bool = True) -> None:
         self.calls: list[
             DescriptionReferenceAssessmentInput
-            | ApollonReferenceAssessmentInput
+            | ApollonToApollonAssessmentInput
         ] = []
         self.candidate_is_allowed = candidate_is_allowed
 
     async def execute(
         self,
         data: DescriptionReferenceAssessmentInput
-        | ApollonReferenceAssessmentInput,
+        | ApollonToApollonAssessmentInput,
     ) -> MetricsWithEvaluation:
         self.calls.append(data)
         return MetricsWithEvaluation(
@@ -134,7 +134,9 @@ def _apollon_export() -> dict[str, Any]:
     return export
 
 
-def test_api_configuration_defaults_to_dev_and_rejects_invalid_values() -> None:
+def test_api_configuration_defaults_to_dev_and_rejects_invalid_values() -> (
+    None
+):
     assert ApiSettings(API_SECRET="secret").ENVIRONMENT is Environment.DEV
 
     with pytest.raises(ValidationError):
@@ -170,12 +172,14 @@ class FakeProvider(Provider):
         return cast(DescriptionReferenceAssessment, self.assessment)
 
     @provide(scope=Scope.REQUEST)
-    def apollon_assessment(self) -> ApollonReferenceAssessment:
-        return cast(ApollonReferenceAssessment, self.apollon)
+    def apollon_assessment(self) -> ApollonToApollonAssessment:
+        return cast(ApollonToApollonAssessment, self.apollon)
 
 
 @pytest.mark.anyio
-async def test_apollon_assessment_accepts_editor_export_and_dispatches() -> None:
+async def test_apollon_assessment_accepts_editor_export_and_dispatches() -> (
+    None
+):
     description_assessment = FakeAssessment()
     apollon_assessment = FakeAssessment()
     container = make_async_container(
@@ -320,7 +324,9 @@ async def test_apollon_string_values_outside_boundaries_are_rejected(
 
 
 @pytest.mark.anyio
-async def test_apollon_string_boundaries_and_disallowed_result_succeed() -> None:
+async def test_apollon_string_boundaries_and_disallowed_result_succeed() -> (
+    None
+):
     assessment = FakeAssessment(candidate_is_allowed=False)
     container = make_async_container(FakeProvider(assessment))
     app = create_app(
@@ -364,13 +370,13 @@ async def test_apollon_string_boundaries_and_disallowed_result_succeed() -> None
 
 
 @pytest.mark.anyio
-async def test_description_assessment_returns_reduced_persisted_result() -> None:
+async def test_description_assessment_returns_reduced_persisted_result() -> (
+    None
+):
     assessment = FakeAssessment()
     container = make_async_container(FakeProvider(assessment))
     app = create_app(
-        settings=ApiSettings(
-            API_SECRET="secret", ENVIRONMENT=Environment.DEV
-        ),
+        settings=ApiSettings(API_SECRET="secret", ENVIRONMENT=Environment.DEV),
         container=container,
     )
 
@@ -448,14 +454,16 @@ async def test_authentication_rejects_request_before_assessment() -> None:
             "CONVERSION_ERROR",
         ),
         (
-            ReferenceNotAllowedError(
-                "secret input", original=ValueError()
-            ),
+            ReferenceNotAllowedError("secret input", original=ValueError()),
             422,
             "REFERENCE_NOT_ALLOWED",
         ),
         (LlmRequestError("secret provider payload"), 502, "LLM_REQUEST_ERROR"),
-        (LlmResponseError("secret provider payload"), 502, "LLM_RESPONSE_ERROR"),
+        (
+            LlmResponseError("secret provider payload"),
+            502,
+            "LLM_RESPONSE_ERROR",
+        ),
         (RateLimitError("secret credentials"), 503, "LLM_RATE_LIMIT_ERROR"),
         (ConfigError("secret configuration"), 500, "CONFIG_ERROR"),
         (
@@ -520,9 +528,7 @@ async def test_framework_and_internal_failures_use_error_contract() -> None:
             transport=transport, base_url="http://test"
         ) as client:
             missing = await client.get("/missing", headers=headers)
-            wrong_method = await client.get(
-                "/v1/assessments", headers=headers
-            )
+            wrong_method = await client.get("/v1/assessments", headers=headers)
             invalid = await client.get("/invalid-response", headers=headers)
             custom = await client.get("/custom-http-error", headers=headers)
             unexpected = await client.post(
@@ -590,7 +596,9 @@ async def test_invalid_request_does_not_run_assessment(
 
 @pytest.mark.anyio
 @pytest.mark.parametrize("length", [100, 5000])
-async def test_reference_accepts_non_whitespace_boundaries(length: int) -> None:
+async def test_reference_accepts_non_whitespace_boundaries(
+    length: int,
+) -> None:
     assessment = FakeAssessment()
     container = make_async_container(FakeProvider(assessment))
     app = create_app(
@@ -611,7 +619,9 @@ async def test_reference_accepts_non_whitespace_boundaries(length: int) -> None:
 
 
 @pytest.mark.anyio
-async def test_missing_reference_and_malformed_json_are_validation_errors() -> None:
+async def test_missing_reference_and_malformed_json_are_validation_errors() -> (
+    None
+):
     assessment = FakeAssessment()
     container = make_async_container(FakeProvider(assessment))
     app = create_app(
@@ -783,8 +793,8 @@ class LifecycleProvider(Provider):
     @provide(scope=Scope.REQUEST)
     def apollon_assessment(
         self, description_assessment: DescriptionReferenceAssessment
-    ) -> ApollonReferenceAssessment:
-        return cast(ApollonReferenceAssessment, description_assessment)
+    ) -> ApollonToApollonAssessment:
+        return cast(ApollonToApollonAssessment, description_assessment)
 
 
 @pytest.mark.anyio
@@ -863,7 +873,9 @@ async def test_development_documentation_is_public(
 
 
 @pytest.mark.anyio
-async def test_production_disables_docs_and_keeps_assessment_protected() -> None:
+async def test_production_disables_docs_and_keeps_assessment_protected() -> (
+    None
+):
     assessment = FakeAssessment()
     container = make_async_container(FakeProvider(assessment))
     app = create_app(
@@ -891,6 +903,8 @@ async def test_production_disables_docs_and_keeps_assessment_protected() -> None
             )
 
     assert all(response.status_code == 404 for response in docs)
-    assert all(response.json()["error_code"] == "NOT_FOUND" for response in docs)
+    assert all(
+        response.json()["error_code"] == "NOT_FOUND" for response in docs
+    )
     assert unauthorized.status_code == 401
     assert success.status_code == 201

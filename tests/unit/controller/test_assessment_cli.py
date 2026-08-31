@@ -58,7 +58,7 @@ class FakeContainer:
             "A customer places an order.",
         ),
         (
-            "run_apollon_reference_assessment",
+            "run_apollon_to_apollon_assessment",
             '{"model": {"elements": {}, "relationships": {}}}',
         ),
     ],
@@ -79,9 +79,7 @@ def test_assessment_cli_reads_inputs_and_saves_result(
     )
     use_case = FakeUseCase()
     saved: list[tuple[str, Path]] = []
-    monkeypatch.setattr(
-        module, "app_container", FakeContainer(use_case)
-    )
+    monkeypatch.setattr(module, "app_container", FakeContainer(use_case))
     monkeypatch.setattr(
         module, "save_result", lambda value, path: saved.append((value, path))
     )
@@ -113,7 +111,7 @@ def test_assessment_cli_reads_inputs_and_saves_result(
     "script",
     [
         "run_description_reference_assessment",
-        "run_apollon_reference_assessment",
+        "run_apollon_to_apollon_assessment",
     ],
 )
 def test_assessment_cli_reports_unreadable_input(
@@ -124,9 +122,7 @@ def test_assessment_cli_reports_unreadable_input(
 ) -> None:
     module = importlib.import_module(f"src.controller.scripts.{script}")
     use_case = FakeUseCase()
-    monkeypatch.setattr(
-        module, "app_container", FakeContainer(use_case)
-    )
+    monkeypatch.setattr(module, "app_container", FakeContainer(use_case))
 
     assert module.main([str(tmp_path / "missing"), "candidate.json"]) == 1
     assert "error:" in capsys.readouterr().err

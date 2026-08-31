@@ -392,7 +392,7 @@ def test_model_configuration_failure_is_cli_error(
         "run_mathcer",
         "run_apollon_extractor",
         "run_description_reference_assessment",
-        "run_apollon_reference_assessment",
+        "run_apollon_to_apollon_assessment",
     ],
 )
 @pytest.mark.parametrize("args, code", [(["--help"], 0), ([], 2)])
