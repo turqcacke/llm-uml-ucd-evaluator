@@ -1,0 +1,185 @@
+{
+    "mutation": {
+        "actors": [
+            "City Drivers",
+            "Road Sensors",
+            "Traffic Officers",
+            "Senior Officers",
+            "Accident Reconstruction Specialists"
+        ],
+        "usecases": [
+            "Find Optimal Routes",
+            "Activate SOS Mode",
+            "Monitor Traffic Congestion",
+            "Transmit Real-Time Congestion Data",
+            "Monitor Violations",
+            "Generate Incident Reports",
+            "Coordinate Disaster Responses",
+            "Create 3D Collision Analysis"
+        ],
+        "association_relationships": {
+            "City Drivers": [
+                "Find Optimal Routes",
+                "Activate SOS Mode"
+            ],
+            "Road Sensors": [
+                "Monitor Traffic Congestion",
+                "Transmit Real-Time Congestion Data"
+            ],
+            "Traffic Officers": [
+                "Monitor Violations",
+                "Generate Incident Reports"
+            ],
+            "Senior Officers": [
+                "Monitor Violations",
+                "Generate Incident Reports",
+                "Coordinate Disaster Responses"
+            ],
+            "Accident Reconstruction Specialists": [
+                "Monitor Violations",
+                "Generate Incident Reports",
+                "Create 3D Collision Analysis"
+            ]
+        },
+        "inclusion_relationships": {
+            "Find Optimal Routes": [
+                "Monitor Traffic Congestion",
+                "Transmit Real-Time Congestion Data"
+            ]
+        },
+        "extension_relationships": {},
+        "generalization_relationships_for_usecases": {},
+        "generalization_relationships_for_actors": {
+            "Traffic Officers": [
+                "Senior Officers",
+                "Accident Reconstruction Specialists"
+            ]
+        }
+    },
+    "expectation": {
+        "node_matches": [
+            {
+                "reference_uid": "system",
+                "candidate_uid": "system"
+            },
+            {
+                "reference_uid": "actor-0",
+                "candidate_uid": "actor-0"
+            },
+            {
+                "reference_uid": "actor-1",
+                "candidate_uid": "actor-1"
+            },
+            {
+                "reference_uid": "actor-2",
+                "candidate_uid": "actor-2"
+            },
+            {
+                "reference_uid": "actor-3",
+                "candidate_uid": "actor-3"
+            },
+            {
+                "reference_uid": "actor-4",
+                "candidate_uid": "actor-4"
+            },
+            {
+                "reference_uid": "usecase-0",
+                "candidate_uid": "usecase-0"
+            },
+            {
+                "reference_uid": "usecase-1",
+                "candidate_uid": "usecase-1"
+            },
+            {
+                "reference_uid": "usecase-2",
+                "candidate_uid": "usecase-2"
+            },
+            {
+                "reference_uid": "usecase-3",
+                "candidate_uid": "usecase-3"
+            },
+            {
+                "reference_uid": "usecase-4",
+                "candidate_uid": "usecase-4"
+            },
+            {
+                "reference_uid": "usecase-5",
+                "candidate_uid": "usecase-5"
+            },
+            {
+                "reference_uid": "usecase-6",
+                "candidate_uid": "usecase-6"
+            },
+            {
+                "reference_uid": "usecase-7",
+                "candidate_uid": "usecase-7"
+            }
+        ],
+        "relation_matches": [
+            {
+                "reference_uid": "relation-0",
+                "candidate_uid": "relation-0"
+            },
+            {
+                "reference_uid": "relation-1",
+                "candidate_uid": "relation-1"
+            },
+            {
+                "reference_uid": "relation-2",
+                "candidate_uid": "relation-2"
+            },
+            {
+                "reference_uid": "relation-3",
+                "candidate_uid": "relation-3"
+            },
+            {
+                "reference_uid": "relation-4",
+                "candidate_uid": "relation-4"
+            },
+            {
+                "reference_uid": "relation-5",
+                "candidate_uid": "relation-5"
+            },
+            {
+                "reference_uid": "relation-6",
+                "candidate_uid": "relation-6"
+            },
+            {
+                "reference_uid": "relation-7",
+                "candidate_uid": "relation-7"
+            },
+            {
+                "reference_uid": "relation-8",
+                "candidate_uid": "relation-8"
+            },
+            {
+                "reference_uid": "relation-9",
+                "candidate_uid": "relation-9"
+            },
+            {
+                "reference_uid": "relation-10",
+                "candidate_uid": "relation-10"
+            },
+            {
+                "reference_uid": "relation-11",
+                "candidate_uid": "relation-11"
+            },
+            {
+                "reference_uid": "relation-12",
+                "candidate_uid": "relation-12"
+            },
+            {
+                "reference_uid": "relation-13",
+                "candidate_uid": "relation-13"
+            },
+            {
+                "reference_uid": "relation-14",
+                "candidate_uid": "relation-14"
+            },
+            {
+                "reference_uid": "relation-15",
+                "candidate_uid": "relation-15"
+            }
+        ]
+    }
+}

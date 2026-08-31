@@ -1,0 +1,152 @@
+{
+    "mutation": {
+        "actors": [
+            "International Buyers",
+            "Premium Members",
+            "Compliance System",
+            "Sellers",
+            "Power Sellers"
+        ],
+        "usecases": [
+            "Place Order",
+            "Request Personal Shopper",
+            "Access Exclusive Deals",
+            "Initiate Anti-Fraud Verification",
+            "Manage Listings",
+            "Run Cross-Border Promotions"
+        ],
+        "association_relationships": {
+            "International Buyers": [
+                "Place Order"
+            ],
+            "Premium Members": [
+                "Place Order",
+                "Request Personal Shopper",
+                "Access Exclusive Deals"
+            ],
+            "Compliance System": [
+                "Initiate Anti-Fraud Verification"
+            ],
+            "Sellers": [
+                "Manage Listings"
+            ],
+            "Power Sellers": [
+                "Manage Listings",
+                "Run Cross-Border Promotions"
+            ]
+        },
+        "inclusion_relationships": {},
+        "extension_relationships": {
+            "Place Order": [
+                "Initiate Anti-Fraud Verification"
+            ]
+        },
+        "generalization_relationships_for_usecases": {},
+        "generalization_relationships_for_actors": {
+            "International Buyers": [
+                "Premium Members"
+            ],
+            "Sellers": [
+                "Power Sellers"
+            ]
+        }
+    },
+    "expectation": {
+        "node_matches": [
+            {
+                "reference_uid": "system",
+                "candidate_uid": "system"
+            },
+            {
+                "reference_uid": "actor-0",
+                "candidate_uid": "actor-0"
+            },
+            {
+                "reference_uid": "actor-1",
+                "candidate_uid": "actor-1"
+            },
+            {
+                "reference_uid": "actor-2",
+                "candidate_uid": "actor-2"
+            },
+            {
+                "reference_uid": "actor-3",
+                "candidate_uid": "actor-3"
+            },
+            {
+                "reference_uid": "actor-4",
+                "candidate_uid": "actor-4"
+            },
+            {
+                "reference_uid": "usecase-0",
+                "candidate_uid": "usecase-0"
+            },
+            {
+                "reference_uid": "usecase-1",
+                "candidate_uid": "usecase-1"
+            },
+            {
+                "reference_uid": "usecase-2",
+                "candidate_uid": "usecase-2"
+            },
+            {
+                "reference_uid": "usecase-3",
+                "candidate_uid": "usecase-3"
+            },
+            {
+                "reference_uid": "usecase-4",
+                "candidate_uid": "usecase-4"
+            },
+            {
+                "reference_uid": "usecase-5",
+                "candidate_uid": "usecase-5"
+            }
+        ],
+        "relation_matches": [
+            {
+                "reference_uid": "relation-0",
+                "candidate_uid": "relation-0"
+            },
+            {
+                "reference_uid": "relation-1",
+                "candidate_uid": "relation-1"
+            },
+            {
+                "reference_uid": "relation-2",
+                "candidate_uid": "relation-2"
+            },
+            {
+                "reference_uid": "relation-3",
+                "candidate_uid": "relation-3"
+            },
+            {
+                "reference_uid": "relation-4",
+                "candidate_uid": "relation-4"
+            },
+            {
+                "reference_uid": "relation-5",
+                "candidate_uid": "relation-5"
+            },
+            {
+                "reference_uid": "relation-6",
+                "candidate_uid": "relation-6"
+            },
+            {
+                "reference_uid": "relation-7",
+                "candidate_uid": "relation-7"
+            },
+            {
+                "reference_uid": "relation-9",
+                "candidate_uid": "relation-8"
+            },
+            {
+                "reference_uid": "relation-10",
+                "candidate_uid": "relation-9"
+            },
+            {
+                "reference_uid": "relation-11",
+                "candidate_uid": "relation-10"
+            }
+        ]
+    }
+}

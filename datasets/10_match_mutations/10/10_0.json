@@ -1,0 +1,241 @@
+{
+    "mutation": {
+        "actors": [
+            "Scientific Expedition Team Member",
+            "Scientific Expedition Team Chief",
+            "Remote Logistics Coordinator",
+            "Meteorological Analyst"
+        ],
+        "usecases": [
+            "Register Materials Consumption",
+            "Submit Material Replenishment Request",
+            "Check Current Inventory Level",
+            "Estimate Future Material Demand",
+            "Approve Material Applications",
+            "Develop Final Supply Order",
+            "Manage Team Members' Task Scheduling",
+            "Release Weekly Reports",
+            "Process Supply Orders",
+            "Track Supply Orders",
+            "Coordinate Transportation Arrangements",
+            "Confirm Materials Stored",
+            "Negotiate With Suppliers",
+            "Provide Meteorological Forecast Data"
+        ],
+        "association_relationships": {
+            "Scientific Expedition Team Member": [
+                "Register Materials Consumption",
+                "Submit Material Replenishment Request",
+                "Check Current Inventory Level",
+                "Estimate Future Material Demand"
+            ],
+            "Scientific Expedition Team Chief": [
+                "Register Materials Consumption",
+                "Submit Material Replenishment Request",
+                "Check Current Inventory Level",
+                "Estimate Future Material Demand",
+                "Approve Material Applications",
+                "Develop Final Supply Order",
+                "Manage Team Members' Task Scheduling",
+                "Release Weekly Reports"
+            ],
+            "Remote Logistics Coordinator": [
+                "Process Supply Orders",
+                "Track Supply Orders",
+                "Coordinate Transportation Arrangements",
+                "Confirm Materials Stored",
+                "Negotiate With Suppliers"
+            ],
+            "Meteorological Analyst": [
+                "Provide Meteorological Forecast Data"
+            ]
+        },
+        "inclusion_relationships": {
+            "Submit Material Replenishment Request": [
+                "Check Current Inventory Level",
+                "Estimate Future Material Demand"
+            ]
+        },
+        "extension_relationships": {
+            "Process Supply Orders": [
+                "Negotiate With Suppliers"
+            ]
+        },
+        "generalization_relationships_for_usecases": {},
+        "generalization_relationships_for_actors": {
+            "Scientific Expedition Team Member": [
+                "Scientific Expedition Team Chief"
+            ]
+        }
+    },
+    "expectation": {
+        "node_matches": [
+            {
+                "reference_uid": "system",
+                "candidate_uid": "system"
+            },
+            {
+                "reference_uid": "actor-0",
+                "candidate_uid": "actor-0"
+            },
+            {
+                "reference_uid": "actor-1",
+                "candidate_uid": "actor-1"
+            },
+            {
+                "reference_uid": "actor-2",
+                "candidate_uid": "actor-2"
+            },
+            {
+                "reference_uid": "actor-3",
+                "candidate_uid": "actor-3"
+            },
+            {
+                "reference_uid": "usecase-0",
+                "candidate_uid": "usecase-0"
+            },
+            {
+                "reference_uid": "usecase-1",
+                "candidate_uid": "usecase-1"
+            },
+            {
+                "reference_uid": "usecase-2",
+                "candidate_uid": "usecase-2"
+            },
+            {
+                "reference_uid": "usecase-3",
+                "candidate_uid": "usecase-3"
+            },
+            {
+                "reference_uid": "usecase-4",
+                "candidate_uid": "usecase-4"
+            },
+            {
+                "reference_uid": "usecase-5",
+                "candidate_uid": "usecase-5"
+            },
+            {
+                "reference_uid": "usecase-6",
+                "candidate_uid": "usecase-6"
+            },
+            {
+                "reference_uid": "usecase-7",
+                "candidate_uid": "usecase-7"
+            },
+            {
+                "reference_uid": "usecase-8",
+                "candidate_uid": "usecase-8"
+            },
+            {
+                "reference_uid": "usecase-9",
+                "candidate_uid": "usecase-9"
+            },
+            {
+                "reference_uid": "usecase-10",
+                "candidate_uid": "usecase-10"
+            },
+            {
+                "reference_uid": "usecase-11",
+                "candidate_uid": "usecase-11"
+            },
+            {
+                "reference_uid": "usecase-12",
+                "candidate_uid": "usecase-12"
+            },
+            {
+                "reference_uid": "usecase-13",
+                "candidate_uid": "usecase-13"
+            }
+        ],
+        "relation_matches": [
+            {
+                "reference_uid": "relation-0",
+                "candidate_uid": "relation-0"
+            },
+            {
+                "reference_uid": "relation-1",
+                "candidate_uid": "relation-1"
+            },
+            {
+                "reference_uid": "relation-2",
+                "candidate_uid": "relation-2"
+            },
+            {
+                "reference_uid": "relation-3",
+                "candidate_uid": "relation-3"
+            },
+            {
+                "reference_uid": "relation-4",
+                "candidate_uid": "relation-4"
+            },
+            {
+                "reference_uid": "relation-5",
+                "candidate_uid": "relation-5"
+            },
+            {
+                "reference_uid": "relation-6",
+                "candidate_uid": "relation-6"
+            },
+            {
+                "reference_uid": "relation-7",
+                "candidate_uid": "relation-7"
+            },
+            {
+                "reference_uid": "relation-8",
+                "candidate_uid": "relation-8"
+            },
+            {
+                "reference_uid": "relation-9",
+                "candidate_uid": "relation-9"
+            },
+            {
+                "reference_uid": "relation-10",
+                "candidate_uid": "relation-10"
+            },
+            {
+                "reference_uid": "relation-11",
+                "candidate_uid": "relation-11"
+            },
+            {
+                "reference_uid": "relation-12",
+                "candidate_uid": "relation-12"
+            },
+            {
+                "reference_uid": "relation-13",
+                "candidate_uid": "relation-13"
+            },
+            {
+                "reference_uid": "relation-14",
+                "candidate_uid": "relation-14"
+            },
+            {
+                "reference_uid": "relation-15",
+                "candidate_uid": "relation-15"
+            },
+            {
+                "reference_uid": "relation-16",
+                "candidate_uid": "relation-16"
+            },
+            {
+                "reference_uid": "relation-17",
+                "candidate_uid": "relation-17"
+            },
+            {
+                "reference_uid": "relation-18",
+                "candidate_uid": "relation-18"
+            },
+            {
+                "reference_uid": "relation-19",
+                "candidate_uid": "relation-19"
+            },
+            {
+                "reference_uid": "relation-20",
+                "candidate_uid": "relation-20"
+            },
+            {
+                "reference_uid": "relation-21",
+                "candidate_uid": "relation-21"
+            }
+        ]
+    }
+}

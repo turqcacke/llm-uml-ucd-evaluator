@@ -1,0 +1,286 @@
+{
+    "mutation": {
+        "actors": [
+            "Senior Librarian",
+            "Student Member",
+            "Library Member",
+            "Librarian"
+        ],
+        "usecases": [
+            "Oversee Inter-Library Loans",
+            "Handle Special Requests",
+            "Request Expedited Processing",
+            "Process Borrowing",
+            "Borrow Books",
+            "Place Hold Request",
+            "Generate Monthly Acquisition Reports",
+            "Process Returns",
+            "Check Availability",
+            "Search Catalog",
+            "Access Online Journals",
+            "Borrow Reference Textbooks"
+        ],
+        "association_relationships": {
+            "Senior Librarian": [
+                "Process Returns",
+                "Handle Special Requests",
+                "Oversee Inter-Library Loans",
+                "Process Borrowing",
+                "Generate Monthly Acquisition Reports"
+            ],
+            "Student Member": [
+                "Search Catalog",
+                "Check Availability",
+                "Borrow Reference Textbooks",
+                "Place Hold Request",
+                "Access Online Journals",
+                "Request Expedited Processing",
+                "Borrow Books"
+            ],
+            "Librarian": [
+                "Process Borrowing",
+                "Handle Special Requests",
+                "Process Returns"
+            ],
+            "Library Member": [
+                "Check Availability",
+                "Borrow Books",
+                "Request Expedited Processing",
+                "Search Catalog",
+                "Place Hold Request"
+            ]
+        },
+        "inclusion_relationships": {
+            "Access Online Journals": [
+                "Check Availability"
+            ],
+            "Borrow Reference Textbooks": [
+                "Check Availability"
+            ],
+            "Borrow Books": [
+                "Check Availability"
+            ]
+        },
+        "extension_relationships": {
+            "Borrow Books": [
+                "Request Expedited Processing",
+                "Place Hold Request"
+            ],
+            "Borrow Reference Textbooks": [
+                "Request Expedited Processing",
+                "Place Hold Request"
+            ],
+            "Access Online Journals": [
+                "Place Hold Request",
+                "Request Expedited Processing"
+            ]
+        },
+        "generalization_relationships_for_usecases": {},
+        "generalization_relationships_for_actors": {
+            "Librarian": [
+                "Senior Librarian"
+            ],
+            "Library Member": [
+                "Student Member"
+            ]
+        }
+    },
+    "expectation": {
+        "node_matches": [
+            {
+                "reference_uid": "system",
+                "candidate_uid": "system"
+            },
+            {
+                "reference_uid": "actor-0",
+                "candidate_uid": "actor-2"
+            },
+            {
+                "reference_uid": "actor-1",
+                "candidate_uid": "actor-1"
+            },
+            {
+                "reference_uid": "actor-2",
+                "candidate_uid": "actor-3"
+            },
+            {
+                "reference_uid": "actor-3",
+                "candidate_uid": "actor-0"
+            },
+            {
+                "reference_uid": "usecase-0",
+                "candidate_uid": "usecase-9"
+            },
+            {
+                "reference_uid": "usecase-1",
+                "candidate_uid": "usecase-4"
+            },
+            {
+                "reference_uid": "usecase-2",
+                "candidate_uid": "usecase-8"
+            },
+            {
+                "reference_uid": "usecase-3",
+                "candidate_uid": "usecase-5"
+            },
+            {
+                "reference_uid": "usecase-4",
+                "candidate_uid": "usecase-2"
+            },
+            {
+                "reference_uid": "usecase-5",
+                "candidate_uid": "usecase-11"
+            },
+            {
+                "reference_uid": "usecase-6",
+                "candidate_uid": "usecase-10"
+            },
+            {
+                "reference_uid": "usecase-7",
+                "candidate_uid": "usecase-3"
+            },
+            {
+                "reference_uid": "usecase-8",
+                "candidate_uid": "usecase-7"
+            },
+            {
+                "reference_uid": "usecase-9",
+                "candidate_uid": "usecase-1"
+            },
+            {
+                "reference_uid": "usecase-10",
+                "candidate_uid": "usecase-6"
+            },
+            {
+                "reference_uid": "usecase-11",
+                "candidate_uid": "usecase-0"
+            }
+        ],
+        "relation_matches": [
+            {
+                "reference_uid": "relation-0",
+                "candidate_uid": "relation-18"
+            },
+            {
+                "reference_uid": "relation-1",
+                "candidate_uid": "relation-16"
+            },
+            {
+                "reference_uid": "relation-2",
+                "candidate_uid": "relation-15"
+            },
+            {
+                "reference_uid": "relation-3",
+                "candidate_uid": "relation-19"
+            },
+            {
+                "reference_uid": "relation-4",
+                "candidate_uid": "relation-17"
+            },
+            {
+                "reference_uid": "relation-5",
+                "candidate_uid": "relation-5"
+            },
+            {
+                "reference_uid": "relation-6",
+                "candidate_uid": "relation-11"
+            },
+            {
+                "reference_uid": "relation-7",
+                "candidate_uid": "relation-7"
+            },
+            {
+                "reference_uid": "relation-8",
+                "candidate_uid": "relation-9"
+            },
+            {
+                "reference_uid": "relation-9",
+                "candidate_uid": "relation-6"
+            },
+            {
+                "reference_uid": "relation-10",
+                "candidate_uid": "relation-8"
+            },
+            {
+                "reference_uid": "relation-11",
+                "candidate_uid": "relation-10"
+            },
+            {
+                "reference_uid": "relation-12",
+                "candidate_uid": "relation-12"
+            },
+            {
+                "reference_uid": "relation-13",
+                "candidate_uid": "relation-14"
+            },
+            {
+                "reference_uid": "relation-14",
+                "candidate_uid": "relation-13"
+            },
+            {
+                "reference_uid": "relation-15",
+                "candidate_uid": "relation-3"
+            },
+            {
+                "reference_uid": "relation-16",
+                "candidate_uid": "relation-0"
+            },
+            {
+                "reference_uid": "relation-17",
+                "candidate_uid": "relation-1"
+            },
+            {
+                "reference_uid": "relation-18",
+                "candidate_uid": "relation-4"
+            },
+            {
+                "reference_uid": "relation-19",
+                "candidate_uid": "relation-2"
+            },
+            {
+                "reference_uid": "relation-20",
+                "candidate_uid": "relation-22"
+            },
+            {
+                "reference_uid": "relation-21",
+                "candidate_uid": "relation-21"
+            },
+            {
+                "reference_uid": "relation-22",
+                "candidate_uid": "relation-20"
+            },
+            {
+                "reference_uid": "relation-23",
+                "candidate_uid": "relation-24"
+            },
+            {
+                "reference_uid": "relation-24",
+                "candidate_uid": "relation-23"
+            },
+            {
+                "reference_uid": "relation-25",
+                "candidate_uid": "relation-26"
+            },
+            {
+                "reference_uid": "relation-26",
+                "candidate_uid": "relation-25"
+            },
+            {
+                "reference_uid": "relation-27",
+                "candidate_uid": "relation-27"
+            },
+            {
+                "reference_uid": "relation-28",
+                "candidate_uid": "relation-28"
+            },
+            {
+                "reference_uid": "relation-29",
+                "candidate_uid": "relation-30"
+            },
+            {
+                "reference_uid": "relation-30",
+                "candidate_uid": "relation-29"
+            }
+        ]
+    }
+}

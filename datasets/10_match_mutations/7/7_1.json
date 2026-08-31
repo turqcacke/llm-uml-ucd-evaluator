@@ -1,0 +1,171 @@
+{
+    "mutation": {
+        "actors": [
+            "Teacher",
+            "Student"
+        ],
+        "usecases": [
+            "Enter Specific Scores",
+            "Fill in Feedback",
+            "Single Download Homework File",
+            "Grade Homework",
+            "Fill In Submission Instructions",
+            "Download Homework File",
+            "Upload Homework File",
+            "Submit Assignment",
+            "Batch Download Homework File"
+        ],
+        "association_relationships": {
+            "Student": [
+                "Upload Homework File",
+                "Fill In Submission Instructions",
+                "Submit Assignment"
+            ],
+            "Teacher": [
+                "Grade Homework",
+                "Single Download Homework File",
+                "Download Homework File",
+                "Batch Download Homework File",
+                "Fill in Feedback",
+                "Enter Specific Scores"
+            ]
+        },
+        "inclusion_relationships": {
+            "Grade Homework": [
+                "Download Homework File",
+                "Enter Specific Scores",
+                "Fill in Feedback"
+            ],
+            "Submit Assignment": [
+                "Upload Homework File",
+                "Fill In Submission Instructions"
+            ]
+        },
+        "extension_relationships": {},
+        "generalization_relationships_for_usecases": {
+            "Download Homework File": [
+                "Single Download Homework File",
+                "Batch Download Homework File"
+            ]
+        },
+        "generalization_relationships_for_actors": {}
+    },
+    "expectation": {
+        "node_matches": [
+            {
+                "reference_uid": "system",
+                "candidate_uid": "system"
+            },
+            {
+                "reference_uid": "actor-0",
+                "candidate_uid": "actor-1"
+            },
+            {
+                "reference_uid": "actor-1",
+                "candidate_uid": "actor-0"
+            },
+            {
+                "reference_uid": "usecase-0",
+                "candidate_uid": "usecase-7"
+            },
+            {
+                "reference_uid": "usecase-1",
+                "candidate_uid": "usecase-6"
+            },
+            {
+                "reference_uid": "usecase-2",
+                "candidate_uid": "usecase-4"
+            },
+            {
+                "reference_uid": "usecase-3",
+                "candidate_uid": "usecase-3"
+            },
+            {
+                "reference_uid": "usecase-4",
+                "candidate_uid": "usecase-5"
+            },
+            {
+                "reference_uid": "usecase-5",
+                "candidate_uid": "usecase-8"
+            },
+            {
+                "reference_uid": "usecase-6",
+                "candidate_uid": "usecase-2"
+            },
+            {
+                "reference_uid": "usecase-7",
+                "candidate_uid": "usecase-0"
+            },
+            {
+                "reference_uid": "usecase-8",
+                "candidate_uid": "usecase-1"
+            }
+        ],
+        "relation_matches": [
+            {
+                "reference_uid": "relation-0",
+                "candidate_uid": "relation-2"
+            },
+            {
+                "reference_uid": "relation-1",
+                "candidate_uid": "relation-0"
+            },
+            {
+                "reference_uid": "relation-2",
+                "candidate_uid": "relation-1"
+            },
+            {
+                "reference_uid": "relation-3",
+                "candidate_uid": "relation-3"
+            },
+            {
+                "reference_uid": "relation-4",
+                "candidate_uid": "relation-5"
+            },
+            {
+                "reference_uid": "relation-5",
+                "candidate_uid": "relation-6"
+            },
+            {
+                "reference_uid": "relation-6",
+                "candidate_uid": "relation-4"
+            },
+            {
+                "reference_uid": "relation-7",
+                "candidate_uid": "relation-8"
+            },
+            {
+                "reference_uid": "relation-8",
+                "candidate_uid": "relation-7"
+            },
+            {
+                "reference_uid": "relation-9",
+                "candidate_uid": "relation-12"
+            },
+            {
+                "reference_uid": "relation-10",
+                "candidate_uid": "relation-13"
+            },
+            {
+                "reference_uid": "relation-11",
+                "candidate_uid": "relation-9"
+            },
+            {
+                "reference_uid": "relation-12",
+                "candidate_uid": "relation-10"
+            },
+            {
+                "reference_uid": "relation-13",
+                "candidate_uid": "relation-11"
+            },
+            {
+                "reference_uid": "relation-14",
+                "candidate_uid": "relation-15"
+            },
+            {
+                "reference_uid": "relation-15",
+                "candidate_uid": "relation-14"
+            }
+        ]
+    }
+}
