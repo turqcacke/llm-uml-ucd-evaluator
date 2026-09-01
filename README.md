@@ -119,7 +119,7 @@ uv run python -m eval.gold_standard.collect_metrics --experiment-name gold_stand
 ```
 
 Resume positions are stored in
-`experiments_out/<experiment_name>_requcd60_<size>.json`. Resume requires
+`eval_out/<experiment_name>_requcd60_<size>.json`. Resume requires
 unchanged dataset contents and ordering. A crash after an assessment is
 persisted but before progress advances can repeat that assessment; execution is
 not exactly once. Use a new experiment name after changing reference content or

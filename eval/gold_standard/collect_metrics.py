@@ -32,7 +32,7 @@ from src.services.extractor.requcd60 import (
 
 ANNOTATIONS_PATH = BASE_URL / "datasets" / "60_ideal_UCD"
 DESCRIPTIONS_PATH = BASE_URL / "datasets" / "60_artificial"
-CHECKPOINTS_PATH = BASE_URL / "experiments_out"
+CHECKPOINTS_PATH = BASE_URL / "eval_out"
 
 
 class GoldStandardReference(ReqUCD60Result):

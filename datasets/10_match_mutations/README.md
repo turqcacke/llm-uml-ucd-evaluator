@@ -50,6 +50,25 @@ Its expectation matches every node and relation to itself. Files
 Reference/Candidate UIDs and expectations without the system match before an
 experiment invokes the matcher.
 
+## Run the experiment
+
+Start a three-repetition experiment from the repository root:
+
+```sh
+uv run python -m eval.matching.collect_observations \
+  --experiment-name matcher_2026-09-16
+```
+
+Resume an interrupted experiment with the same name and repetition count:
+
+```sh
+uv run python -m eval.matching.collect_observations \
+  --experiment-name matcher_2026-09-16 --repetitions 3 --resume
+```
+
+Progress is stored atomically in `eval_out/`. A completed experiment
+name cannot be reused; choose a new name for another run.
+
 ## Expected metrics changes
 
 | Mutation | Specification | Metric changes |
