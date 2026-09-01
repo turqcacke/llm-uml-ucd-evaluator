@@ -91,6 +91,28 @@ Diagram Assessment commands persist both diagrams and each distinct result in
 one MongoDB transaction. The returned result `uid` identifies the stored
 assessment.
 
+## Matching Mutation Evaluation
+
+Start MongoDB, configure `MATCHER_MODEL` and `MATCHER_API_KEY`, then run the
+experiment from the repository root. It uses three repetitions by default:
+
+```sh
+uv run python -m eval.matching.collect_observations \
+  --experiment-name "matching_$(date +%Y-%m-%d)"
+```
+
+Use `--repetitions 1`, `2`, or `3` to change the repetition count. Resume an
+interrupted run with the same experiment name and repetition count:
+
+```sh
+uv run python -m eval.matching.collect_observations \
+  --experiment-name matching_2026-09-16 --repetitions 3 --resume
+```
+
+Observations are stored in the `matching_eval` MongoDB collection. Resume
+positions are stored in `eval_out/<experiment-name>_matching.json`. Completed
+experiment names cannot be reused; choose a new name for another run.
+
 ## Gold Standard Evaluation
 
 Run the six-sample gold-standard comparison from the repository root. It uses
