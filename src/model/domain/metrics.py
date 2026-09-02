@@ -1,4 +1,3 @@
-from collections import Counter
 from decimal import ROUND_HALF_EVEN, Decimal
 from typing import Self
 
@@ -111,79 +110,6 @@ class Metrics(BaseModel):
             node.type not in {NodeType.NOTE, NodeType.OTHER}
             for node in candidate.nodes
         ) + len(candidate.relations)
-        included_node_uids = {
-            node.uid
-            for node in candidate.nodes
-            if node.type not in {NodeType.NOTE, NodeType.OTHER}
-        }
-        candidate_node_uids = {node.uid for node in candidate.nodes}
-        node_evaluation_counts = Counter(
-            element.uid for element in evaluation.node_evaluations
-        )
-        relation_evaluation_counts = Counter(
-            element.uid for element in evaluation.relation_evaluations
-        )
-        evaluated_node_uids = node_evaluation_counts.keys()
-        missing_node_evaluations = (
-            not included_node_uids <= evaluated_node_uids
-        )
-        unknown_node_evaluations = (
-            not evaluated_node_uids <= candidate_node_uids
-        )
-        repeated_node_evaluations = any(
-            count != 1 for count in node_evaluation_counts.values()
-        )
-        invalid_relation_evaluations = relation_evaluation_counts != Counter(
-            relation.uid for relation in candidate.relations
-        )
-        if (
-            missing_node_evaluations
-            or unknown_node_evaluations
-            or repeated_node_evaluations
-            or invalid_relation_evaluations
-        ):
-            raise MetricsCalculationError(
-                "Candidate elements must each have exactly one evaluation."
-            )
-        catalog_rule_ids = [rule.rule_id for rule in evaluation.applied_rules]
-        catalog_rule_id_set = set(catalog_rule_ids)
-        all_evaluations = (
-            evaluation.node_evaluations + evaluation.relation_evaluations
-        )
-        catalog_rule_ids_are_unique = len(catalog_rule_ids) == len(
-            catalog_rule_id_set
-        )
-        evaluations_are_valid = True
-        for element in all_evaluations:
-            if not element.is_eval_valid(catalog_rule_id_set):
-                evaluations_are_valid = False
-                break
-        if not catalog_rule_ids_are_unique or not evaluations_are_valid:
-            raise MetricsCalculationError(
-                "Evaluation rule references must be unique and consistent."
-            )
-        naming_node_uids = {
-            node.uid
-            for node in candidate.nodes
-            if node.type
-            in {NodeType.ACTOR, NodeType.EXTERNAL_SYSTEM, NodeType.USECASE}
-        }
-        element_evaluations = [
-            element
-            for element in evaluation.node_evaluations
-            if element.uid in included_node_uids
-        ] + evaluation.relation_evaluations
-        applied_rule_count = sum(
-            len(element.rules_applied) for element in element_evaluations
-        )
-        syntactic_error_count = sum(
-            len(element.syntactic_errors) for element in element_evaluations
-        )
-        naming_scores = [
-            element.naming_score
-            for element in evaluation.node_evaluations
-            if element.uid in naming_node_uids
-        ]
         completeness = matched / reference_count
         precision = matched / candidate_count
         redundancy = (
@@ -203,12 +129,8 @@ class Metrics(BaseModel):
                 if matched
                 else Decimal(0)
             ),
-            syntactic_error_rate=(
-                Decimal(syntactic_error_count) / max(1, applied_rule_count)
-            ),
-            naming_understandability_score=(
-                Decimal(sum(naming_scores)) / len(naming_scores)
-            ),
+            syntactic_error_rate=evaluation.syntactic_error_rate,
+            naming_understandability_score=evaluation.naming_understandability_score,
             reference_complexity=reference_complexity,
             candidate_complexity=candidate_complexity,
             complexity_difference=complexity_difference,

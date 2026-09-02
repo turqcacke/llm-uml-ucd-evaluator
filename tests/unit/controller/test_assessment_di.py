@@ -4,6 +4,7 @@ import pytest
 from dishka import Provider, Scope, make_async_container, provide
 from pydantic import BaseModel
 
+from eval.gold_standard.collect_metrics import ReqUCD60Provider
 from src.config import get_settings
 from src.controller.di import (
     DiagramAssessmentProvider,
@@ -17,6 +18,9 @@ from src.services.diagram_assessment import (
     ApollonToApollonAssessment,
     AssessmentWriteRepository,
     DescriptionReferenceAssessment,
+)
+from src.services.diagram_assessment.requcd60_reference import (
+    ReqUCD60ReferenceAssessment,
 )
 from src.services.ports import UnitOfWork
 
@@ -59,6 +63,7 @@ async def test_container_resolves_assessment_use_cases(
         EvaluatorProvider(),
         PersistenceProvider(),
         DiagramAssessmentProvider(),
+        ReqUCD60Provider(),
     )
     async with local_container() as request_container:
         assert isinstance(
@@ -68,6 +73,10 @@ async def test_container_resolves_assessment_use_cases(
         assert isinstance(
             await request_container.get(ApollonToApollonAssessment),
             ApollonToApollonAssessment,
+        )
+        assert isinstance(
+            await request_container.get(ReqUCD60ReferenceAssessment),
+            ReqUCD60ReferenceAssessment,
         )
     await local_container.close()
 

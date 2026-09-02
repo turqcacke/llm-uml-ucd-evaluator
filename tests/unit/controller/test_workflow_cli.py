@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 from src.config import get_settings
 from src.infrastructure.langchain import chat_model
-from src.model.domain.evaluation import EvaluationResult
+from src.model.domain.evaluation import PragmaticEvaluationResult
 from src.model.domain.matching import MinMatching
 from src.services.ports import LLMRoles
 from src.services.shared import guardrails, prompts
@@ -48,11 +48,9 @@ def llm_calls(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
 
         async def ainvoke(self, messages: list[BaseMessage]) -> BaseModel:
             calls.append((self.model, messages))
-            if self.response_type is EvaluationResult:
-                return EvaluationResult(
-                    node_evaluations=[],
-                    relation_evaluations=[],
-                    applied_rules=[],
+            if self.response_type is PragmaticEvaluationResult:
+                return PragmaticEvaluationResult(
+                    nodes=[],
                 )
             if self.response_type is MinMatching:
                 return MinMatching(
@@ -188,7 +186,7 @@ async def test_models_send_guardrails_as_system_instructions(
     llm_calls: list[tuple[str, list[BaseMessage]]],
 ) -> None:
     from src.controller.di.llm import (
-        get_pragmatic_syntactic_evaluator_chat_model,
+        get_pragmatic_evaluator_chat_model,
         get_text_extractor_chat_model,
         get_use_case_diagram_matcher_chat_model,
     )
@@ -196,7 +194,7 @@ async def test_models_send_guardrails_as_system_instructions(
     if kind == "matcher":
         model = get_use_case_diagram_matcher_chat_model()
     elif kind == "evaluator":
-        model = get_pragmatic_syntactic_evaluator_chat_model()
+        model = get_pragmatic_evaluator_chat_model()
     else:
         model = get_text_extractor_chat_model(
             type_="text" if kind == "text" else "apollon"

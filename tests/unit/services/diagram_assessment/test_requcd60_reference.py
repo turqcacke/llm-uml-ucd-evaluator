@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal
 from types import TracebackType
 
@@ -5,18 +6,17 @@ import pytest
 
 from src.infrastructure.requcd60.converter import ReqUCD60ToDomainConverter
 from src.model.domain import (
-    EvaluationResult,
     MetricsWithEvaluation,
     Node,
     NodeRelation,
     NodeRelationType,
     NodeType,
+    PragmaticEvaluationResult,
     UseCaseDiagramPresentation,
 )
 from src.model.domain.evaluation import (
     NamingUnderstandabilityScore,
-    NodeEvaluation,
-    RelationEvaluation,
+    NodeNamingEvaluation,
 )
 from src.model.domain.matching import MinMatching, NodeMatch, RelationMatch
 from src.model.requcd60.result import ReqUCD60Result
@@ -24,7 +24,10 @@ from src.services.diagram_assessment.requcd60_reference import (
     ReqUCD60ReferenceAssessment,
     ReqUCD60ReferenceAssessmentInput,
 )
-from src.services.evaluator import PragmaticSyntacticLlmEvaluator
+from src.services.evaluator import (
+    PragmaticLlmEvaluator,
+    SyntacticDiagramEvaluator,
+)
 from src.services.exceptions import (
     LlmRequestError,
     ReferenceNotAllowedError,
@@ -148,33 +151,26 @@ def _workflow(candidate: UseCaseDiagramPresentation, store: FakePersistence):
         MinMatching(node_matches=[], relation_matches=[])
     )
     evaluation = ControlledModel(
-        EvaluationResult(
-            node_evaluations=[
-                NodeEvaluation(
+        PragmaticEvaluationResult(
+            nodes=[
+                NodeNamingEvaluation(
                     uid=node.uid,
-                    naming_score=NamingUnderstandabilityScore.HIGH,
-                    syntactic_errors=[],
-                    rules_applied=[],
+                    score=NamingUnderstandabilityScore.HIGH,
                 )
                 for node in candidate.nodes
-                if node.type != NodeType.NOTE
+                if node.type
+                in {NodeType.ACTOR, NodeType.EXTERNAL_SYSTEM, NodeType.USECASE}
             ],
-            relation_evaluations=[
-                RelationEvaluation(
-                    uid=relation.uid, syntactic_errors=[], rules_applied=[]
-                )
-                for relation in candidate.relations
-            ],
-            applied_rules=[],
         )
     )
     workflow = ReqUCD60ReferenceAssessment(
         reference_extractor=ReqUCD60Extractor(ReqUCD60ToDomainConverter()),
         description_extractor=DescriptionExtractor(extraction),
         matcher=UseCaseDiagramMatcher(matching),
-        evaluator=PragmaticSyntacticLlmEvaluator(evaluation),
+        pragmatic_evaluator=PragmaticLlmEvaluator(evaluation),
         repository=store,
         unit_of_work=store,
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
     return workflow, extraction, matching, evaluation
 
@@ -243,14 +239,16 @@ async def test_assessment_returns_and_atomically_saves_agreed_diagram_roles():
     assert result.matching.missing_nodes == reference.systems
     assert result.matching.redundant_nodes == ["c-payment"]
     assert result.evaluation is not None
-    assert (
-        result.evaluation.node_evaluations
-        == evaluation.result.node_evaluations
-    )
-    assert result.evaluation.relation_evaluations == (
-        evaluation.result.relation_evaluations
-    )
+    assert result.evaluation.pragmatic == evaluation.result
+    assert result.evaluation.syntactic.relations[0].model_dump() == {
+        "uid": "c-association",
+        "checks": {},
+    }
     assert len(extraction.prompts) == len(evaluation.prompts) == 1
+    naming_context = json.loads(
+        evaluation.prompts[0].split("<input>", 1)[1].split("</input>", 1)[0]
+    )
+    assert naming_context["description"] == "A customer places an order."
     assert len(matching.prompts) == 1
 
 
@@ -374,3 +372,45 @@ async def test_repeated_assessments_keep_distinct_results(
         assert store.diagrams[3].nodes[1].name == "Submit order"
     else:
         assert store.diagrams[1] == store.diagrams[3]
+
+
+@pytest.mark.anyio
+async def test_node_violations_preserve_naming_matching_and_saved_evidence():
+    candidate = _candidate()
+    candidate.nodes[0].name = " \t"
+    candidate.nodes[1].parent = "missing"
+    candidate.nodes.append(Node(uid="boundary", name="", type=NodeType.SYSTEM))
+    store = FakePersistence()
+    workflow, _, matching, naming = _workflow(candidate, store)
+    naming.result.nodes[0].score = NamingUnderstandabilityScore.LOW
+    result = await workflow.execute(
+        ReqUCD60ReferenceAssessmentInput(_annotation(), "Description")
+    )
+    assert result.evaluation is not None
+    assert result.evaluation.syntactic.model_dump() == {
+        "nodes": [
+            {
+                "uid": "c-actor",
+                "checks": {"name_present": False, "parent_exists": True},
+            },
+            {
+                "uid": "c-order",
+                "checks": {"name_present": True, "parent_exists": False},
+            },
+            {
+                "uid": "c-payment",
+                "checks": {"name_present": True, "parent_exists": True},
+            },
+            {
+                "uid": "boundary",
+                "checks": {"name_present": False, "parent_exists": True},
+            },
+        ],
+        "relations": [{"uid": "c-association", "checks": {}}],
+    }
+    assert result.syntactic_error_rate == Decimal("0.375")
+    assert result.naming_understandability_score == Decimal(7) / 3
+    assert result.matching is not None
+    assert len(matching.prompts) == len(naming.prompts) == 1
+    assert store.results == [result]
+    assert store.commits == 1

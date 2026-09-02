@@ -1,80 +1,78 @@
+from decimal import Decimal
+
 import pytest
 from pydantic import ValidationError
 
 from src.model.domain.evaluation import (
+    ElementSyntacticEvaluation,
     EvaluationResult,
-    EvaluationRule,
     NamingUnderstandabilityScore,
-    NodeEvaluation,
-    RelationEvaluation,
+    NodeNamingEvaluation,
+    PragmaticEvaluationResult,
+    SyntacticEvaluationResult,
 )
 
 
-def test_evaluation_result_serializes_candidate_element_metrics() -> None:
+def test_evaluation_keeps_separate_evidence_and_aggregates_applied_checks():
     result = EvaluationResult(
-        node_evaluations=[
-            NodeEvaluation(
-                uid="node-1",
-                syntactic_errors=[2],
-                rules_applied=[1, 2],
-                naming_score=NamingUnderstandabilityScore.HIGH,
-            )
-        ],
-        relation_evaluations=[
-            RelationEvaluation(
-                uid="relation-1",
-                syntactic_errors=[],
-                rules_applied=[1],
-            )
-        ],
-        applied_rules=[
-            EvaluationRule(rule_id=1, content="Actors initiate use cases."),
-            EvaluationRule(
-                rule_id=2, content="Use case names start with verbs."
-            ),
-        ],
+        syntactic=SyntacticEvaluationResult(
+            nodes=[
+                ElementSyntacticEvaluation(
+                    uid="actor",
+                    checks={"name_present": False, "parent_exists": True},
+                ),
+                ElementSyntacticEvaluation(
+                    uid="system", checks={"name_present": True}
+                ),
+            ],
+            relations=[ElementSyntacticEvaluation(uid="actor", checks={})],
+        ),
+        pragmatic=PragmaticEvaluationResult(
+            nodes=[
+                NodeNamingEvaluation(
+                    uid="actor", score=NamingUnderstandabilityScore.LOW
+                ),
+                NodeNamingEvaluation(
+                    uid="usecase", score=NamingUnderstandabilityScore.HIGH
+                ),
+            ]
+        ),
     )
 
+    assert result.syntactic_error_rate == Decimal(1) / 3
+    assert result.naming_understandability_score == Decimal(2)
     assert result.model_dump(mode="json") == {
-        "node_evaluations": [
-            {
-                "uid": "node-1",
-                "syntactic_errors": [2],
-                "rules_applied": [1, 2],
-                "naming_score": 3,
-            }
-        ],
-        "relation_evaluations": [
-            {
-                "uid": "relation-1",
-                "syntactic_errors": [],
-                "rules_applied": [1],
-            }
-        ],
-        "applied_rules": [
-            {"rule_id": 1, "content": "Actors initiate use cases."},
-            {"rule_id": 2, "content": "Use case names start with verbs."},
-        ],
+        "syntactic": {
+            "nodes": [
+                {
+                    "uid": "actor",
+                    "checks": {"name_present": False, "parent_exists": True},
+                },
+                {"uid": "system", "checks": {"name_present": True}},
+            ],
+            "relations": [{"uid": "actor", "checks": {}}],
+        },
+        "pragmatic": {
+            "nodes": [
+                {"uid": "actor", "score": 1},
+                {"uid": "usecase", "score": 3},
+            ]
+        },
     }
 
 
-def test_evaluation_result_rejects_positional_rules() -> None:
-    with pytest.raises(ValidationError):
-        EvaluationResult.model_validate(
-            {
-                "node_evaluations": [],
-                "relation_evaluations": [],
-                "applied_rules": [[1, "Actors initiate use cases."]],
-            }
-        )
+def test_empty_evaluation_has_zero_rates():
+    result = EvaluationResult(
+        syntactic=SyntacticEvaluationResult(nodes=[], relations=[]),
+        pragmatic=PragmaticEvaluationResult(nodes=[]),
+    )
+    assert result.syntactic_error_rate == Decimal(0)
+    assert result.naming_understandability_score == Decimal(0)
 
 
-def test_node_evaluation_requires_naming_score() -> None:
+@pytest.mark.parametrize(
+    "data", [{"uid": "actor"}, {"uid": "actor", "score": 4}]
+)
+def test_naming_evaluation_requires_supported_score(data):
     with pytest.raises(ValidationError):
-        NodeEvaluation.model_validate(
-            {
-                "uid": "node-1",
-                "syntactic_errors": [],
-                "rules_applied": [],
-            }
-        )
+        NodeNamingEvaluation.model_validate(data)

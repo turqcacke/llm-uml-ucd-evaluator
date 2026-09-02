@@ -13,16 +13,16 @@ from src.config import ApiSettings
 from src.controller.api.app import create_app
 from src.model.domain import (
     AssessmentState,
-    EvaluationResult,
     ExtendedMatching,
     MetricsWithEvaluation,
     Node,
     NodeType,
+    PragmaticEvaluationResult,
     UseCaseDiagramPresentation,
 )
 from src.model.domain.evaluation import (
     NamingUnderstandabilityScore,
-    NodeEvaluation,
+    NodeNamingEvaluation,
 )
 from src.model.domain.matching import NodeMatch
 from src.services.diagram_assessment import (
@@ -30,7 +30,10 @@ from src.services.diagram_assessment import (
     AssessmentWriteRepository,
     DescriptionReferenceAssessment,
 )
-from src.services.evaluator import PragmaticSyntacticLlmEvaluator
+from src.services.evaluator import (
+    PragmaticLlmEvaluator,
+    SyntacticDiagramEvaluator,
+)
 from src.services.exceptions import (
     BaseAppException,
     ConfigError,
@@ -563,17 +566,13 @@ async def test_stream_delivers_incrementally_and_completes_after_commit() -> (
         nodes=[Node(uid="candidate", name="Customer", type=NodeType.ACTOR)],
         relations=[],
     )
-    evaluation = EvaluationResult(
-        node_evaluations=[
-            NodeEvaluation(
+    evaluation = PragmaticEvaluationResult(
+        nodes=[
+            NodeNamingEvaluation(
                 uid="candidate",
-                syntactic_errors=[],
-                rules_applied=[],
-                naming_score=NamingUnderstandabilityScore.HIGH,
+                score=NamingUnderstandabilityScore.HIGH,
             )
         ],
-        relation_evaluations=[],
-        applied_rules=[],
     )
     matching = ExtendedMatching(
         reference=reference,
@@ -592,9 +591,10 @@ async def test_stream_delivers_incrementally_and_completes_after_commit() -> (
         cast(DescriptionExtractor, description),
         cast(ApollonJsonExtractor, FakeUseCase(candidate)),
         cast(UseCaseDiagramMatcher, matcher),
-        cast(PragmaticSyntacticLlmEvaluator, evaluator),
+        cast(PragmaticLlmEvaluator, evaluator),
         cast(AssessmentWriteRepository, repository),
         cast(UnitOfWork, unit_of_work),
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
     provider = LifecycleProvider(assessment)
     container = make_async_container(provider)
@@ -662,9 +662,10 @@ async def test_disallowed_candidate_streams_persisted_result_without_analysis() 
         cast(DescriptionExtractor, description),
         cast(ApollonJsonExtractor, candidate),
         cast(UseCaseDiagramMatcher, matcher),
-        cast(PragmaticSyntacticLlmEvaluator, evaluator),
+        cast(PragmaticLlmEvaluator, evaluator),
         cast(AssessmentWriteRepository, repository),
         cast(UnitOfWork, unit_of_work),
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
     provider = LifecycleProvider(assessment)
     container = make_async_container(provider)
@@ -710,9 +711,10 @@ async def test_disallowed_reference_ends_stream_without_persistence() -> None:
         ),
         cast(ApollonJsonExtractor, FakeUseCase(_diagram("candidate"))),
         cast(UseCaseDiagramMatcher, matcher),
-        cast(PragmaticSyntacticLlmEvaluator, evaluator),
+        cast(PragmaticLlmEvaluator, evaluator),
         cast(AssessmentWriteRepository, repository),
         cast(UnitOfWork, unit_of_work),
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
     container = make_async_container(LifecycleProvider(assessment))
     app = create_app(
@@ -748,9 +750,10 @@ async def test_commit_failure_rolls_back_and_ends_stream_with_error() -> None:
             FakeUseCase(UseCaseDiagramPresentation(nodes=[], relations=[])),
         ),
         cast(UseCaseDiagramMatcher, FakeUseCase(None)),
-        cast(PragmaticSyntacticLlmEvaluator, FakeUseCase(None)),
+        cast(PragmaticLlmEvaluator, FakeUseCase(None)),
         cast(AssessmentWriteRepository, repository),
         cast(UnitOfWork, unit_of_work),
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
     provider = LifecycleProvider(assessment)
     container = make_async_container(provider)
@@ -793,9 +796,10 @@ async def test_analysis_failure_cancels_sibling_before_persistence() -> None:
         cast(DescriptionExtractor, FakeUseCase(_diagram("reference"))),
         cast(ApollonJsonExtractor, FakeUseCase(_diagram("candidate"))),
         cast(UseCaseDiagramMatcher, matcher),
-        cast(PragmaticSyntacticLlmEvaluator, evaluator),
+        cast(PragmaticLlmEvaluator, evaluator),
         cast(AssessmentWriteRepository, repository),
         cast(UnitOfWork, unit_of_work),
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
     container = make_async_container(LifecycleProvider(assessment))
     app = create_app(

@@ -24,7 +24,10 @@ from src.services.diagram_assessment import (
     DescriptionReferenceAssessment,
     DescriptionReferenceAssessmentInput,
 )
-from src.services.evaluator import PragmaticSyntacticLlmEvaluator
+from src.services.evaluator import (
+    PragmaticLlmEvaluator,
+    SyntacticDiagramEvaluator,
+)
 from src.services.exceptions import (
     BaseAppException,
     ConfigError,
@@ -744,9 +747,10 @@ async def test_http_success_observes_persisted_assessment() -> None:
         cast(DescriptionExtractor, FakeUseCase(reference)),
         cast(ApollonJsonExtractor, FakeUseCase(candidate)),
         cast(UseCaseDiagramMatcher, FakeUseCase(None)),
-        cast(PragmaticSyntacticLlmEvaluator, FakeUseCase(None)),
+        cast(PragmaticLlmEvaluator, FakeUseCase(None)),
         cast(AssessmentWriteRepository, repository),
         cast(UnitOfWork, unit_of_work),
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
     container = make_async_container(FakeProvider(assessment))
     app = create_app(

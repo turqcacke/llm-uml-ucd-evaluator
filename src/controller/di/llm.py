@@ -4,7 +4,10 @@ from dishka import FromComponent, Provider, Scope, provide
 
 from src.config import get_settings
 from src.infrastructure.langchain import LangChainChatModel
-from src.model.domain import EvaluationResult, UseCaseDiagramPresentation
+from src.model.domain import (
+    PragmaticEvaluationResult,
+    UseCaseDiagramPresentation,
+)
 from src.model.domain.matching import MinMatching
 from src.services.ports import ChatModel
 from src.services.shared import guardrails, prompts
@@ -56,8 +59,8 @@ def get_use_case_diagram_matcher_chat_model() -> ChatModel[MinMatching]:
     return model
 
 
-def get_pragmatic_syntactic_evaluator_chat_model() -> ChatModel[
-    EvaluationResult
+def get_pragmatic_evaluator_chat_model() -> ChatModel[
+    PragmaticEvaluationResult
 ]:
     settings = get_settings()
     return LangChainChatModel(
@@ -65,8 +68,8 @@ def get_pragmatic_syntactic_evaluator_chat_model() -> ChatModel[
         api_key=settings.EVALUATOR_API_KEY.get_secret_value(),
         base_url=settings.EVALUATOR_BASE_URL,
         model_provider=settings.EVALUATOR_PROVIDER,
-        system_prompt=prompts.PRAGMATIC_SYNTACTIC_EVALUATOR,
-        response_type=EvaluationResult,
+        system_prompt=prompts.PRAGMATIC_EVALUATOR,
+        response_type=PragmaticEvaluationResult,
         guardrails=list(guardrails.COMMON_GUARDRAILS),
         reasoning_effort="medium",
     )
@@ -90,7 +93,7 @@ class ChatModelProvider(Provider):
         return get_use_case_diagram_matcher_chat_model()
 
     @provide(scope=Scope.APP)
-    def pragmatic_syntactic_evaluator_chat_model(
+    def pragmatic_evaluator_chat_model(
         self,
-    ) -> ChatModel[EvaluationResult]:
-        return get_pragmatic_syntactic_evaluator_chat_model()
+    ) -> ChatModel[PragmaticEvaluationResult]:
+        return get_pragmatic_evaluator_chat_model()

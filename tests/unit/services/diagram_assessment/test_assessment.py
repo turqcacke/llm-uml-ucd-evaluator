@@ -1,3 +1,4 @@
+import json
 from asyncio import Event
 from decimal import Decimal
 from typing import Any, cast
@@ -7,15 +8,15 @@ import pytest
 from src.model.apollon import ApollonJson
 from src.model.domain import (
     AssessmentState,
-    EvaluationResult,
     ExtendedMatching,
     Node,
     NodeType,
+    PragmaticEvaluationResult,
     UseCaseDiagramPresentation,
 )
 from src.model.domain.evaluation import (
     NamingUnderstandabilityScore,
-    NodeEvaluation,
+    NodeNamingEvaluation,
 )
 from src.model.domain.exceptions import MetricsCalculationError
 from src.model.domain.matching import NodeMatch
@@ -25,7 +26,10 @@ from src.services.diagram_assessment import (
     DescriptionReferenceAssessment,
     DescriptionReferenceAssessmentInput,
 )
-from src.services.evaluator import PragmaticSyntacticLlmEvaluator
+from src.services.evaluator import (
+    PragmaticLlmEvaluator,
+    SyntacticDiagramEvaluator,
+)
 from src.services.exceptions import (
     ConversionError,
     LlmRequestError,
@@ -35,6 +39,7 @@ from src.services.exceptions import (
 )
 from src.services.extractor import ApollonJsonExtractor, DescriptionExtractor
 from src.services.matcher import UseCaseDiagramMatcher
+from src.services.ports import LLMRoles
 
 
 class FakeUseCase:
@@ -138,17 +143,13 @@ async def test_description_reference_assessment_returns_metrics_and_evaluation()
 ):
     reference = _diagram("reference")
     candidate = _diagram("candidate")
-    evaluation = EvaluationResult(
-        node_evaluations=[
-            NodeEvaluation(
+    evaluation = PragmaticEvaluationResult(
+        nodes=[
+            NodeNamingEvaluation(
                 uid="candidate",
-                syntactic_errors=[],
-                rules_applied=[],
-                naming_score=NamingUnderstandabilityScore.HIGH,
+                score=NamingUnderstandabilityScore.HIGH,
             )
         ],
-        relation_evaluations=[],
-        applied_rules=[],
     )
     matching = ExtendedMatching(
         reference=reference,
@@ -161,16 +162,28 @@ async def test_description_reference_assessment_returns_metrics_and_evaluation()
     description_extractor = FakeUseCase(reference)
     candidate_extractor = FakeUseCase(candidate)
     matcher = FakeUseCase(matching)
-    evaluator = FakeUseCase(evaluation)
+
+    class NamingModel:
+        async def invoke(
+            self, prompt: str, role: LLMRoles
+        ) -> PragmaticEvaluationResult:
+            context = json.loads(
+                prompt.split("<input>", 1)[1].split("</input>", 1)[0]
+            )
+            assert context["description"] == "A customer uses the system."
+            return evaluation
+
+    evaluator = PragmaticLlmEvaluator(NamingModel())
     repository = FakeRepository()
     unit_of_work = FakeUnitOfWork()
     assessment = DescriptionReferenceAssessment(
         cast(DescriptionExtractor, description_extractor),
         cast(ApollonJsonExtractor, candidate_extractor),
         cast(UseCaseDiagramMatcher, matcher),
-        cast(PragmaticSyntacticLlmEvaluator, evaluator),
+        evaluator,
         repository,
         unit_of_work,
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
 
     result = await assessment.execute(
@@ -192,7 +205,21 @@ async def test_description_reference_assessment_returns_metrics_and_evaluation()
         "candidate_complexity": Decimal(0),
         "complexity_difference": Decimal(0),
         "complexity_deviation_rate": Decimal(0),
-        "evaluation": evaluation.model_dump(),
+        "evaluation": {
+            "syntactic": {
+                "nodes": [
+                    {
+                        "uid": "candidate",
+                        "checks": {
+                            "name_present": True,
+                            "parent_exists": True,
+                        },
+                    }
+                ],
+                "relations": [],
+            },
+            "pragmatic": evaluation.model_dump(),
+        },
         "reference_uid": reference.uid,
         "candidate_uid": candidate.uid,
         "matching": {
@@ -226,9 +253,10 @@ async def test_assessment_stream_yields_each_stage_and_final_result() -> None:
         cast(DescriptionExtractor, FakeUseCase(reference)),
         cast(ApollonJsonExtractor, FakeUseCase(candidate)),
         cast(UseCaseDiagramMatcher, FakeUseCase(None)),
-        cast(PragmaticSyntacticLlmEvaluator, FakeUseCase(None)),
+        cast(PragmaticLlmEvaluator, FakeUseCase(None)),
         repository,
         unit_of_work,
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
 
     progress = [
@@ -265,9 +293,10 @@ async def test_disallowed_candidate_returns_fixed_metrics_without_analysis() -> 
         cast(DescriptionExtractor, description_extractor),
         cast(ApollonJsonExtractor, candidate_extractor),
         cast(UseCaseDiagramMatcher, matcher),
-        cast(PragmaticSyntacticLlmEvaluator, evaluator),
+        cast(PragmaticLlmEvaluator, evaluator),
         repository,
         unit_of_work,
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
 
     result = await assessment.execute(
@@ -299,9 +328,10 @@ async def test_disallowed_reference_fails_without_analysis() -> None:
         cast(DescriptionExtractor, FakeUseCase(reference)),
         cast(ApollonJsonExtractor, FakeUseCase(candidate)),
         cast(UseCaseDiagramMatcher, matcher),
-        cast(PragmaticSyntacticLlmEvaluator, evaluator),
+        cast(PragmaticLlmEvaluator, evaluator),
         repository,
         unit_of_work,
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
 
     with pytest.raises(
@@ -328,9 +358,10 @@ async def test_repeated_assessments_return_distinct_result_uids() -> None:
         cast(DescriptionExtractor, FakeUseCase(reference)),
         cast(ApollonJsonExtractor, FakeUseCase(candidate)),
         cast(UseCaseDiagramMatcher, FakeUseCase(None)),
-        cast(PragmaticSyntacticLlmEvaluator, FakeUseCase(None)),
+        cast(PragmaticLlmEvaluator, FakeUseCase(None)),
         repository,
         unit_of_work,
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
 
     first = await assessment.execute(
@@ -358,9 +389,10 @@ async def test_storage_failure_fails_execution_and_rolls_back() -> None:
             FakeUseCase(UseCaseDiagramPresentation(nodes=[], relations=[])),
         ),
         cast(UseCaseDiagramMatcher, FakeUseCase(None)),
-        cast(PragmaticSyntacticLlmEvaluator, FakeUseCase(None)),
+        cast(PragmaticLlmEvaluator, FakeUseCase(None)),
         repository,
         unit_of_work,
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
 
     with pytest.raises(UseCaseError, match="Commit failed"):
@@ -376,17 +408,13 @@ async def test_apollon_to_apollon_assessment_extracts_both_diagrams() -> None:
     reference = _diagram("reference")
     candidate = _diagram("candidate")
     extraction = SequenceUseCase(reference, candidate)
-    evaluation = EvaluationResult(
-        node_evaluations=[
-            NodeEvaluation(
+    evaluation = PragmaticEvaluationResult(
+        nodes=[
+            NodeNamingEvaluation(
                 uid="candidate",
-                syntactic_errors=[],
-                rules_applied=[],
-                naming_score=NamingUnderstandabilityScore.MEDIUM,
+                score=NamingUnderstandabilityScore.MEDIUM,
             )
         ],
-        relation_evaluations=[],
-        applied_rules=[],
     )
     matching = ExtendedMatching(
         reference=reference,
@@ -399,9 +427,10 @@ async def test_apollon_to_apollon_assessment_extracts_both_diagrams() -> None:
     assessment = ApollonToApollonAssessment(
         cast(ApollonJsonExtractor, extraction),
         cast(UseCaseDiagramMatcher, FakeUseCase(matching)),
-        cast(PragmaticSyntacticLlmEvaluator, FakeUseCase(evaluation)),
+        cast(PragmaticLlmEvaluator, FakeUseCase(evaluation)),
         FakeRepository(),
         FakeUnitOfWork(),
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
     reference_source = _apollon()
     candidate_source = _apollon()
@@ -411,7 +440,8 @@ async def test_apollon_to_apollon_assessment_extracts_both_diagrams() -> None:
     )
 
     assert result.semantic_f1_score == Decimal(1)
-    assert result.evaluation == evaluation
+    assert result.evaluation is not None
+    assert result.evaluation.pragmatic == evaluation
     assert [call.apollon_model for call in extraction.calls] == [
         reference_source,
         candidate_source,
@@ -426,9 +456,10 @@ async def test_analysis_failure_cancels_the_other_task() -> None:
         cast(DescriptionExtractor, FakeUseCase(_diagram("reference"))),
         cast(ApollonJsonExtractor, FakeUseCase(_diagram("candidate"))),
         cast(UseCaseDiagramMatcher, matcher),
-        cast(PragmaticSyntacticLlmEvaluator, evaluator),
+        cast(PragmaticLlmEvaluator, evaluator),
         FakeRepository(),
         FakeUnitOfWork(),
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
 
     with pytest.raises(UseCaseError) as error_info:
@@ -449,9 +480,10 @@ async def test_analysis_reraises_single_application_error() -> None:
         cast(DescriptionExtractor, FakeUseCase(_diagram("reference"))),
         cast(ApollonJsonExtractor, FakeUseCase(_diagram("candidate"))),
         cast(UseCaseDiagramMatcher, matcher),
-        cast(PragmaticSyntacticLlmEvaluator, evaluator),
+        cast(PragmaticLlmEvaluator, evaluator),
         FakeRepository(),
         FakeUnitOfWork(),
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
 
     with pytest.raises(LlmRequestError) as error_info:
@@ -473,30 +505,30 @@ async def test_invalid_evaluation_is_reported_as_llm_response_error() -> None:
         node_matches=[],
         relation_matches=[],
     )
+
+    class IncompleteNamingModel:
+        async def invoke(
+            self, prompt: str, role: LLMRoles
+        ) -> PragmaticEvaluationResult:
+            return PragmaticEvaluationResult(nodes=[])
+
+    repository = FakeRepository()
     assessment = DescriptionReferenceAssessment(
         cast(DescriptionExtractor, FakeUseCase(reference)),
         cast(ApollonJsonExtractor, FakeUseCase(candidate)),
         cast(UseCaseDiagramMatcher, FakeUseCase(matching)),
-        cast(
-            PragmaticSyntacticLlmEvaluator,
-            FakeUseCase(
-                EvaluationResult(
-                    node_evaluations=[],
-                    relation_evaluations=[],
-                    applied_rules=[],
-                )
-            ),
-        ),
-        FakeRepository(),
+        PragmaticLlmEvaluator(IncompleteNamingModel()),
+        repository,
         FakeUnitOfWork(),
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
 
-    with pytest.raises(LlmResponseError) as error_info:
+    with pytest.raises(LlmResponseError, match="exactly one"):
         await assessment.execute(
             DescriptionReferenceAssessmentInput("Reference", _apollon())
         )
 
-    assert isinstance(error_info.value.original, MetricsCalculationError)
+    assert repository.results == []
 
 
 @pytest.mark.anyio
@@ -510,9 +542,10 @@ async def test_apollon_to_apollon_assessment_maps_extraction_failure() -> None:
             SequenceUseCase(_diagram("reference"), error),
         ),
         cast(UseCaseDiagramMatcher, matcher),
-        cast(PragmaticSyntacticLlmEvaluator, evaluator),
+        cast(PragmaticLlmEvaluator, evaluator),
         FakeRepository(),
         FakeUnitOfWork(),
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
 
     with pytest.raises(
@@ -536,9 +569,10 @@ async def test_apollon_to_apollon_assessment_preserves_conversion_error() -> (
     assessment = ApollonToApollonAssessment(
         cast(ApollonJsonExtractor, SequenceUseCase(error)),
         cast(UseCaseDiagramMatcher, FakeUseCase(None)),
-        cast(PragmaticSyntacticLlmEvaluator, FakeUseCase(None)),
+        cast(PragmaticLlmEvaluator, FakeUseCase(None)),
         FakeRepository(),
         FakeUnitOfWork(),
+        syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
 
     with pytest.raises(ConversionError) as error_info:
@@ -548,3 +582,28 @@ async def test_apollon_to_apollon_assessment_preserves_conversion_error() -> (
 
     assert error_info.value is error
     assert error_info.value.original is original
+
+
+@pytest.mark.anyio
+async def test_deterministic_evaluation_failure_is_execution_error():
+    error = RuntimeError("Syntax execution failed")
+    repository = FakeRepository()
+    assessment = DescriptionReferenceAssessment(
+        cast(DescriptionExtractor, FakeUseCase(_diagram("reference"))),
+        cast(ApollonJsonExtractor, FakeUseCase(_diagram("candidate"))),
+        cast(UseCaseDiagramMatcher, FakeUseCase(None)),
+        cast(PragmaticLlmEvaluator, FakeUseCase(None)),
+        repository,
+        FakeUnitOfWork(),
+        syntactic_evaluator=cast(
+            SyntacticDiagramEvaluator, SequenceUseCase(error)
+        ),
+    )
+    with pytest.raises(
+        UseCaseError, match="Syntax execution failed"
+    ) as raised:
+        await assessment.execute(
+            DescriptionReferenceAssessmentInput("Reference", _apollon())
+        )
+    assert raised.value.original is error
+    assert repository.diagrams == repository.results == []

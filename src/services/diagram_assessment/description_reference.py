@@ -4,7 +4,10 @@ from dataclasses import dataclass
 
 from src.model.apollon import ApollonJson
 from src.model.domain import AssessmentState, MetricsWithEvaluation
-from src.services.evaluator import PragmaticSyntacticLlmEvaluator
+from src.services.evaluator import (
+    PragmaticLlmEvaluator,
+    SyntacticDiagramEvaluator,
+)
 from src.services.extractor import (
     ApollonJsonExtractor,
     ApollonJsonExtractorInput,
@@ -42,17 +45,19 @@ class DescriptionReferenceAssessment(
         description_extractor: DescriptionExtractor,
         candidate_extractor: ApollonJsonExtractor,
         matcher: UseCaseDiagramMatcher,
-        evaluator: PragmaticSyntacticLlmEvaluator,
+        pragmatic_evaluator: PragmaticLlmEvaluator,
         repository: AssessmentWriteRepository,
         unit_of_work: UnitOfWork,
+        syntactic_evaluator: SyntacticDiagramEvaluator,
     ) -> None:
         self._description_extractor = description_extractor
         self._candidate_extractor = candidate_extractor
         self._dependencies = AssessmentDependencies(
             matcher,
-            evaluator,
+            pragmatic_evaluator,
             repository,
             unit_of_work,
+            syntactic_evaluator,
         )
 
     async def execute(
@@ -80,7 +85,12 @@ class DescriptionReferenceAssessment(
             ApollonJsonExtractorInput(data.candidate)
         )
         async with aclosing(
-            stream_assess_diagrams(reference, candidate, self._dependencies)
+            stream_assess_diagrams(
+                reference,
+                candidate,
+                self._dependencies,
+                description=data.reference_description,
+            )
         ) as stream:
             async for progress in stream:
                 yield progress

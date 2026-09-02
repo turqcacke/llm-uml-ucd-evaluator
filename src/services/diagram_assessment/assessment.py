@@ -9,16 +9,18 @@ from src.model.domain import (
     ExtendedMatching,
     Metrics,
     MetricsWithEvaluation,
+    PragmaticEvaluationResult,
+    SyntacticEvaluationResult,
     UseCaseDiagramPresentation,
 )
 from src.model.domain.exceptions import MetricsCalculationError
 from src.services.evaluator import (
-    PragmaticSyntacticInput,
-    PragmaticSyntacticLlmEvaluator,
+    PragmaticInput,
+    PragmaticLlmEvaluator,
+    SyntacticDiagramEvaluator,
 )
 from src.services.exceptions import (
     BaseAppException,
-    LlmResponseError,
     ReferenceNotAllowedError,
 )
 from src.services.matcher import (
@@ -35,15 +37,18 @@ type AssessmentProgress = tuple[AssessmentState, MetricsWithEvaluation | None]
 @dataclass(frozen=True)
 class AssessmentDependencies:
     matcher: UseCaseDiagramMatcher
-    evaluator: PragmaticSyntacticLlmEvaluator
+    pragmatic_evaluator: PragmaticLlmEvaluator
     repository: AssessmentWriteRepository
     unit_of_work: UnitOfWork
+    syntactic_evaluator: SyntacticDiagramEvaluator
 
 
 async def stream_assess_diagrams(
     reference: UseCaseDiagramPresentation,
     candidate: UseCaseDiagramPresentation,
     dependencies: AssessmentDependencies,
+    *,
+    description: str | None = None,
 ) -> AsyncGenerator[AssessmentProgress]:
     yield AssessmentState.ANALYZING, None
     if not reference.is_allowed:
@@ -54,9 +59,8 @@ async def stream_assess_diagrams(
             reference,
             candidate,
             EvaluationResult(
-                node_evaluations=[],
-                relation_evaluations=[],
-                applied_rules=[],
+                syntactic=SyntacticEvaluationResult(nodes=[], relations=[]),
+                pragmatic=PragmaticEvaluationResult(nodes=[]),
             ),
             ExtendedMatching(
                 reference=reference,
@@ -74,6 +78,7 @@ async def stream_assess_diagrams(
             matching=None,
         )
     else:
+        syntactic = await dependencies.syntactic_evaluator.execute(candidate)
         try:
             async with TaskGroup() as tasks:
                 matching_task = tasks.create_task(
@@ -81,9 +86,9 @@ async def stream_assess_diagrams(
                         UseCaseDiagramMatcherInput(reference, candidate)
                     )
                 )
-                evaluation_task = tasks.create_task(
-                    dependencies.evaluator.execute(
-                        PragmaticSyntacticInput(candidate)
+                pragmatic_task = tasks.create_task(
+                    dependencies.pragmatic_evaluator.execute(
+                        PragmaticInput(candidate, description)
                     )
                 )
         except ExceptionGroup as exc:
@@ -93,17 +98,16 @@ async def stream_assess_diagrams(
                 raise error from exc
             raise
 
-        evaluation = evaluation_task.result()
+        evaluation = EvaluationResult(
+            syntactic=syntactic, pragmatic=pragmatic_task.result()
+        )
         matching = matching_task.result()
-        try:
-            metrics = Metrics.calculate_metrics(
-                reference,
-                candidate,
-                evaluation,
-                matching,
-            )
-        except MetricsCalculationError as exc:
-            raise LlmResponseError(str(exc), original=exc) from exc
+        metrics = Metrics.calculate_metrics(
+            reference,
+            candidate,
+            evaluation,
+            matching,
+        )
         result = MetricsWithEvaluation(
             **metrics.model_dump(),
             uid=uuid4().hex,

@@ -1,6 +1,8 @@
-from .pragmatic_syntactic_llm import (
-    PragmaticSyntacticInput,
-    PragmaticSyntacticLlmEvaluator,
-)
+from .pragmatic_llm import PragmaticInput, PragmaticLlmEvaluator
+from .syntactic_rule_based import SyntacticDiagramEvaluator
 
-__all__ = ["PragmaticSyntacticInput", "PragmaticSyntacticLlmEvaluator"]
+__all__ = [
+    "PragmaticInput",
+    "PragmaticLlmEvaluator",
+    "SyntacticDiagramEvaluator",
+]

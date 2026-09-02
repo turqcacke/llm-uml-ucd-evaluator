@@ -15,11 +15,16 @@ from src.infrastructure.mongo import (
     prepare_database,
 )
 from src.model.domain import (
+    ElementSyntacticEvaluation,
     EvaluationResult,
     ExtendedMatching,
     MetricsWithEvaluation,
+    NamingUnderstandabilityScore,
     Node,
+    NodeNamingEvaluation,
     NodeType,
+    PragmaticEvaluationResult,
+    SyntacticEvaluationResult,
     UseCaseDiagramPresentation,
 )
 from src.model.domain.matching import NodeMatch
@@ -54,7 +59,23 @@ def _result(
         complexity_difference=Decimal(2),
         complexity_deviation_rate=Decimal("Infinity"),
         evaluation=EvaluationResult(
-            node_evaluations=[], relation_evaluations=[], applied_rules=[]
+            syntactic=SyntacticEvaluationResult(
+                nodes=[
+                    ElementSyntacticEvaluation(
+                        uid=candidate.nodes[0].uid,
+                        checks={"name_present": True, "parent_exists": True},
+                    )
+                ],
+                relations=[],
+            ),
+            pragmatic=PragmaticEvaluationResult(
+                nodes=[
+                    NodeNamingEvaluation(
+                        uid=candidate.nodes[0].uid,
+                        score=NamingUnderstandabilityScore.HIGH,
+                    )
+                ]
+            ),
         ),
     )
 
@@ -87,6 +108,8 @@ async def test_repository_persists_complete_assessment_and_identity_rules(
         {"uid": result.uid}
     )
     assert stored["reference_uid"] == reference.uid
+    assert result.evaluation is not None
+    assert stored["evaluation"] == result.evaluation.model_dump(mode="json")
     assert stored["matching"]["node_matches"] == [
         {"reference_uid": "r1", "candidate_uid": "c1"}
     ]
