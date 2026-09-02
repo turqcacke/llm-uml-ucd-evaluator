@@ -242,7 +242,10 @@ async def test_assessment_returns_and_atomically_saves_agreed_diagram_roles():
     assert result.evaluation.pragmatic == evaluation.result
     assert result.evaluation.syntactic.relations[0].model_dump() == {
         "uid": "c-association",
-        "checks": {},
+        "checks": {
+            "endpoints_exist": True,
+            "endpoint_types_valid": True,
+        },
     }
     assert len(extraction.prompts) == len(evaluation.prompts) == 1
     naming_context = json.loads(
@@ -375,11 +378,27 @@ async def test_repeated_assessments_keep_distinct_results(
 
 
 @pytest.mark.anyio
-async def test_node_violations_preserve_naming_matching_and_saved_evidence():
+async def test_structural_violations_preserve_analysis_and_saved_evidence():
     candidate = _candidate()
     candidate.nodes[0].name = " \t"
     candidate.nodes[1].parent = "missing"
     candidate.nodes.append(Node(uid="boundary", name="", type=NodeType.SYSTEM))
+    candidate.relations.extend(
+        [
+            NodeRelation(
+                uid="bad-generalization-1",
+                source="c-actor",
+                target="c-order",
+                type=NodeRelationType.GENERALIZATION,
+            ),
+            NodeRelation(
+                uid="bad-generalization-2",
+                source="c-order",
+                target="c-actor",
+                type=NodeRelationType.GENERALIZATION,
+            ),
+        ]
+    )
     store = FakePersistence()
     workflow, _, matching, naming = _workflow(candidate, store)
     naming.result.nodes[0].score = NamingUnderstandabilityScore.LOW
@@ -406,9 +425,33 @@ async def test_node_violations_preserve_naming_matching_and_saved_evidence():
                 "checks": {"name_present": False, "parent_exists": True},
             },
         ],
-        "relations": [{"uid": "c-association", "checks": {}}],
+        "relations": [
+            {
+                "uid": "c-association",
+                "checks": {
+                    "endpoints_exist": True,
+                    "endpoint_types_valid": True,
+                },
+            },
+            {
+                "uid": "bad-generalization-1",
+                "checks": {
+                    "endpoints_exist": True,
+                    "endpoint_types_valid": False,
+                    "generalization_acyclic": True,
+                },
+            },
+            {
+                "uid": "bad-generalization-2",
+                "checks": {
+                    "endpoints_exist": True,
+                    "endpoint_types_valid": False,
+                    "generalization_acyclic": False,
+                },
+            },
+        ],
     }
-    assert result.syntactic_error_rate == Decimal("0.375")
+    assert result.syntactic_error_rate == Decimal(3) / 8
     assert result.naming_understandability_score == Decimal(7) / 3
     assert result.matching is not None
     assert len(matching.prompts) == len(naming.prompts) == 1
