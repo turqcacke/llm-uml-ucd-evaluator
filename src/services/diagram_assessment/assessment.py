@@ -74,6 +74,7 @@ async def stream_assess_diagrams(
             uid=uuid4().hex,
             reference_uid=reference.uid,
             candidate_uid=candidate.uid,
+            reference=reference,
             evaluation=None,
             matching=None,
         )
@@ -113,6 +114,7 @@ async def stream_assess_diagrams(
             uid=uuid4().hex,
             reference_uid=reference.uid,
             candidate_uid=candidate.uid,
+            reference=reference,
             evaluation=evaluation,
             matching=matching,
         )

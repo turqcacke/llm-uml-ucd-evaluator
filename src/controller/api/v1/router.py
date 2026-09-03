@@ -7,6 +7,7 @@ from dishka.integrations.fastapi import FromDishka, inject
 from fastapi import APIRouter, Depends, Security, status
 from fastapi.sse import EventSourceResponse, ServerSentEvent
 
+from src.controller.api.descriptions import ASSESSMENT_DESCRIPTION
 from src.controller.api.exception_handlers import (
     INTERNAL_ERROR_MESSAGE,
     SERVICE_ERROR_MESSAGE,
@@ -36,6 +37,7 @@ router = APIRouter(prefix="/v1")
     "/assessments",
     status_code=status.HTTP_201_CREATED,
     response_model=SuccessResponse[AssessmentResult],
+    description=ASSESSMENT_DESCRIPTION,
     dependencies=[Security(api_key)],
 )
 @inject
@@ -73,6 +75,7 @@ async def _stream_cleanup() -> AsyncIterator[AsyncExitStack]:
 @router.post(
     "/assessments/streams",
     response_class=EventSourceResponse,
+    description=ASSESSMENT_DESCRIPTION,
     dependencies=[Security(api_key)],
 )
 @inject

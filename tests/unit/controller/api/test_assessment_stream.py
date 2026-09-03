@@ -13,11 +13,16 @@ from src.config import ApiSettings
 from src.controller.api.app import create_app
 from src.model.domain import (
     AssessmentState,
+    ElementSyntacticEvaluation,
+    EvaluationResult,
     ExtendedMatching,
     MetricsWithEvaluation,
     Node,
+    NodeRelation,
+    NodeRelationType,
     NodeType,
     PragmaticEvaluationResult,
+    SyntacticEvaluationResult,
     UseCaseDiagramPresentation,
 )
 from src.model.domain.evaluation import (
@@ -75,6 +80,31 @@ def _request(kind: str) -> dict[str, Any]:
 
 
 def _metrics() -> MetricsWithEvaluation:
+    reference = UseCaseDiagramPresentation(
+        uid="reference-1",
+        nodes=[Node(uid="shared-id", name="Customer", type=NodeType.ACTOR)],
+        relations=[
+            NodeRelation(
+                uid="shared-id",
+                source="shared-id",
+                target="shared-id",
+                type=NodeRelationType.ASSOCIATION,
+            )
+        ],
+    )
+    candidate = UseCaseDiagramPresentation(
+        nodes=[
+            Node(uid="candidate-node", name="Customer", type=NodeType.ACTOR)
+        ],
+        relations=[
+            NodeRelation(
+                uid="candidate-node",
+                source="candidate-node",
+                target="candidate-node",
+                type=NodeRelationType.ASSOCIATION,
+            )
+        ],
+    )
     return MetricsWithEvaluation(
         uid="assessment-1",
         reference_uid="reference-1",
@@ -90,8 +120,42 @@ def _metrics() -> MetricsWithEvaluation:
         candidate_complexity=Decimal(2),
         complexity_difference=Decimal(2),
         complexity_deviation_rate=Decimal("Infinity"),
-        evaluation=None,
-        matching=None,
+        reference=reference,
+        evaluation=EvaluationResult(
+            syntactic=SyntacticEvaluationResult(
+                nodes=[
+                    ElementSyntacticEvaluation(
+                        uid="candidate-node",
+                        checks={"name_present": True},
+                    )
+                ],
+                relations=[
+                    ElementSyntacticEvaluation(
+                        uid="candidate-node",
+                        checks={"endpoints_exist": True},
+                    )
+                ],
+            ),
+            pragmatic=PragmaticEvaluationResult(
+                nodes=[
+                    NodeNamingEvaluation(
+                        uid="candidate-node",
+                        score=NamingUnderstandabilityScore.HIGH,
+                    )
+                ]
+            ),
+        ),
+        matching=ExtendedMatching(
+            reference=reference,
+            candidate=candidate,
+            node_matches=[
+                NodeMatch(
+                    reference_uid="shared-id",
+                    candidate_uid="candidate-node",
+                )
+            ],
+            relation_matches=[],
+        ),
     )
 
 
@@ -115,6 +179,10 @@ class FakeAssessment:
         yield AssessmentState.SAVING, None
         yield AssessmentState.COMPLETED, _metrics()
         raise RuntimeError("stream continued after terminal result")
+
+    async def execute(self, data: object) -> MetricsWithEvaluation:
+        self.calls.append(data)
+        return _metrics()
 
 
 class FailingAssessment:
@@ -181,6 +249,11 @@ async def test_stream_supports_both_inputs_and_projects_result(
                 headers={"X-API-Key": "secret"},
                 json=_request(kind),
             )
+            ordinary_response = await client.post(
+                "/v1/assessments",
+                headers={"X-API-Key": "secret"},
+                json=_request(kind),
+            )
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/event-stream")
@@ -204,12 +277,67 @@ async def test_stream_supports_both_inputs_and_projects_result(
         "candidate_complexity": 2,
         "complexity_difference": 2,
         "complexity_deviation_rate": "Infinity",
+        "reference": {
+            "uid": "reference-1",
+            "nodes": [
+                {
+                    "uid": "shared-id",
+                    "name": "Customer",
+                    "parent": None,
+                    "type": "actor",
+                }
+            ],
+            "relations": [
+                {
+                    "uid": "shared-id",
+                    "source": "shared-id",
+                    "target": "shared-id",
+                    "type": "association",
+                }
+            ],
+        },
+        "matching": {
+            "node_matches": [
+                {
+                    "reference_uid": "shared-id",
+                    "candidate_uid": "candidate-node",
+                }
+            ],
+            "relation_matches": [],
+            "missing_nodes": [],
+            "redundant_nodes": [],
+            "missing_relations": ["shared-id"],
+            "redundant_relations": ["candidate-node"],
+        },
+        "evaluation": {
+            "syntactic": {
+                "nodes": [
+                    {
+                        "uid": "candidate-node",
+                        "checks": {"name_present": True},
+                    }
+                ],
+                "relations": [
+                    {
+                        "uid": "candidate-node",
+                        "checks": {"endpoints_exist": True},
+                    }
+                ],
+            },
+            "pragmatic": {
+                "nodes": [{"uid": "candidate-node", "score": 3}]
+            },
+        },
     }
+    assert events[-1][1]["data"] == ordinary_response.json()["data"]
     selected, unselected = (
         (apollon, description) if kind == "apollon" else (description, apollon)
     )
-    assert len(selected.calls) == 1
-    assert type(selected.calls[0]).__name__.startswith(kind.capitalize())
+    assert len(selected.calls) == 2
+    assert all(
+        type(call).__name__.startswith(kind.capitalize())
+        for call in selected.calls
+    )
     assert unselected.calls == []
 
 
@@ -691,6 +819,11 @@ async def test_disallowed_candidate_streams_persisted_result_without_analysis() 
         "result",
     ]
     assert events[-1][1]["data"]["candidate_is_allowed"] is False
+    assert events[-1][1]["data"]["reference"]["nodes"][0]["uid"] == (
+        "reference"
+    )
+    assert events[-1][1]["data"]["evaluation"] is None
+    assert events[-1][1]["data"]["matching"] is None
     assert description.calls == candidate.calls == 1
     assert matcher.calls == evaluator.calls == 0
     assert len(repository.results) == 1

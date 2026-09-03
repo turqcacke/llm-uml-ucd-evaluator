@@ -12,11 +12,21 @@ from pydantic import ValidationError
 from src.config import ApiSettings, Environment, Settings
 from src.controller.api.app import create_app
 from src.model.domain import (
+    ElementSyntacticEvaluation,
+    EvaluationResult,
+    ExtendedMatching,
     MetricsWithEvaluation,
+    NamingUnderstandabilityScore,
     Node,
+    NodeNamingEvaluation,
+    NodeRelation,
+    NodeRelationType,
     NodeType,
+    PragmaticEvaluationResult,
+    SyntacticEvaluationResult,
     UseCaseDiagramPresentation,
 )
+from src.model.domain.matching import NodeMatch
 from src.services.diagram_assessment import (
     ApollonToApollonAssessment,
     ApollonToApollonAssessmentInput,
@@ -77,6 +87,74 @@ class FakeAssessment:
         | ApollonToApollonAssessmentInput,
     ) -> MetricsWithEvaluation:
         self.calls.append(data)
+        reference = UseCaseDiagramPresentation(
+            uid="reference-1",
+            nodes=[
+                Node(
+                    uid="shared-id",
+                    name="Customer",
+                    type=NodeType.ACTOR,
+                )
+            ],
+            relations=[
+                NodeRelation(
+                    uid="shared-id",
+                    source="shared-id",
+                    target="shared-id",
+                    type=NodeRelationType.ASSOCIATION,
+                )
+            ],
+        )
+        candidate = UseCaseDiagramPresentation(
+            uid="candidate-1",
+            nodes=[Node(uid="candidate-node", name="", type=NodeType.ACTOR)],
+            relations=[
+                NodeRelation(
+                    uid="candidate-node",
+                    source="candidate-node",
+                    target="candidate-node",
+                    type=NodeRelationType.ASSOCIATION,
+                )
+            ],
+        )
+        evaluation = None
+        matching = None
+        if self.candidate_is_allowed:
+            evaluation = EvaluationResult(
+                syntactic=SyntacticEvaluationResult(
+                    nodes=[
+                        ElementSyntacticEvaluation(
+                            uid="candidate-node",
+                            checks={"name_present": False},
+                        )
+                    ],
+                    relations=[
+                        ElementSyntacticEvaluation(
+                            uid="candidate-node",
+                            checks={"endpoints_exist": True},
+                        )
+                    ],
+                ),
+                pragmatic=PragmaticEvaluationResult(
+                    nodes=[
+                        NodeNamingEvaluation(
+                            uid="candidate-node",
+                            score=NamingUnderstandabilityScore.LOW,
+                        )
+                    ]
+                ),
+            )
+            matching = ExtendedMatching(
+                reference=reference,
+                candidate=candidate,
+                node_matches=[
+                    NodeMatch(
+                        reference_uid="shared-id",
+                        candidate_uid="candidate-node",
+                    )
+                ],
+                relation_matches=[],
+            )
         return MetricsWithEvaluation(
             uid=f"assessment-{len(self.calls)}",
             reference_uid="reference-1",
@@ -92,8 +170,9 @@ class FakeAssessment:
             candidate_complexity=Decimal(2),
             complexity_difference=Decimal(2),
             complexity_deviation_rate=Decimal("Infinity"),
-            evaluation=None,
-            matching=None,
+            evaluation=evaluation,
+            matching=matching,
+            reference=reference,
         )
 
 
@@ -368,12 +447,13 @@ async def test_apollon_string_boundaries_and_disallowed_result_succeed() -> (
     assert all(result["candidate_is_allowed"] is False for result in results)
     assert all("reference_uid" not in result for result in results)
     assert all("candidate_uid" not in result for result in results)
-    assert all("evaluation" not in result for result in results)
-    assert all("matching" not in result for result in results)
+    assert all(result["evaluation"] is None for result in results)
+    assert all(result["matching"] is None for result in results)
+    assert all(result["reference"]["uid"] == "reference-1" for result in results)
 
 
 @pytest.mark.anyio
-async def test_description_assessment_returns_reduced_persisted_result() -> (
+async def test_description_assessment_returns_detailed_result() -> (
     None
 ):
     assessment = FakeAssessment()
@@ -413,6 +493,57 @@ async def test_description_assessment_returns_reduced_persisted_result() -> (
             "candidate_complexity": 2,
             "complexity_difference": 2,
             "complexity_deviation_rate": "Infinity",
+            "reference": {
+                "uid": "reference-1",
+                "nodes": [
+                    {
+                        "uid": "shared-id",
+                        "name": "Customer",
+                        "parent": None,
+                        "type": "actor",
+                    }
+                ],
+                "relations": [
+                    {
+                        "uid": "shared-id",
+                        "source": "shared-id",
+                        "target": "shared-id",
+                        "type": "association",
+                    }
+                ],
+            },
+            "matching": {
+                "node_matches": [
+                    {
+                        "reference_uid": "shared-id",
+                        "candidate_uid": "candidate-node",
+                    }
+                ],
+                "relation_matches": [],
+                "missing_nodes": [],
+                "redundant_nodes": [],
+                "missing_relations": ["shared-id"],
+                "redundant_relations": ["candidate-node"],
+            },
+            "evaluation": {
+                "syntactic": {
+                    "nodes": [
+                        {
+                            "uid": "candidate-node",
+                            "checks": {"name_present": False},
+                        }
+                    ],
+                    "relations": [
+                        {
+                            "uid": "candidate-node",
+                            "checks": {"endpoints_exist": True},
+                        }
+                    ],
+                },
+                "pragmatic": {
+                    "nodes": [{"uid": "candidate-node", "score": 1}]
+                },
+            },
         },
     }
     assert len(assessment.calls) == 1

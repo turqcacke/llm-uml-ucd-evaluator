@@ -237,6 +237,7 @@ async def test_description_reference_assessment_returns_metrics_and_evaluation()
         },
     }
     assert result.uid
+    assert result.reference == reference
     assert repository.diagrams == [reference, candidate]
     assert result.matching == matching
     assert repository.results == [result]
@@ -308,6 +309,7 @@ async def test_disallowed_candidate_returns_fixed_metrics_without_analysis() -> 
     assert result.redundancy_rate == Decimal(1)
     assert result.syntactic_error_rate == Decimal(1)
     assert result.evaluation is None
+    assert result.reference == reference
     assert repository.diagrams == [reference, candidate]
     assert result.matching is None
     assert repository.results == [result]

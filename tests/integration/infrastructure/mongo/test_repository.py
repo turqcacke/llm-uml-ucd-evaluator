@@ -47,6 +47,7 @@ def _result(
         uid=uid,
         reference_uid=reference.uid,
         candidate_uid=candidate.uid,
+        reference=reference,
         candidate_is_allowed=True,
         redundancy_rate=Decimal("0.123456789123456789"),
         completeness_rate=Decimal(1),
@@ -108,6 +109,7 @@ async def test_repository_persists_complete_assessment_and_identity_rules(
         {"uid": result.uid}
     )
     assert stored["reference_uid"] == reference.uid
+    assert "reference" not in stored
     assert result.evaluation is not None
     assert stored["evaluation"] == result.evaluation.model_dump(mode="json")
     assert stored["matching"]["node_matches"] == [

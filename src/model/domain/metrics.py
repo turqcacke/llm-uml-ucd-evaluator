@@ -142,5 +142,8 @@ class MetricsWithEvaluation(Metrics):
     uid: str
     reference_uid: str
     candidate_uid: str
+    reference: UseCaseDiagramPresentation | None = Field(
+        default=None, exclude=True
+    )
     evaluation: EvaluationResult | None = None
     matching: ExtendedMatching | None = None

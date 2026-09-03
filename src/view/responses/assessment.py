@@ -11,7 +11,13 @@ from pydantic import (
 )
 
 from src.model.apollon import ApollonJson
-from src.model.domain import AssessmentState
+from src.model.domain import (
+    AssessmentState,
+    EvaluationResult,
+    ExtendedMatching,
+    Node,
+    NodeRelation,
+)
 
 Identifier = Annotated[StrictStr, Field(min_length=1, max_length=256)]
 Name = Annotated[StrictStr, Field(max_length=512)]
@@ -103,6 +109,14 @@ AssessmentInput = Annotated[
 ]
 
 
+class AssessmentReference(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    uid: str
+    nodes: list[Node]
+    relations: list[NodeRelation]
+
+
 class AssessmentResult(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -118,6 +132,9 @@ class AssessmentResult(BaseModel):
     candidate_complexity: Decimal
     complexity_difference: Decimal
     complexity_deviation_rate: Decimal = Field(allow_inf_nan=True)
+    reference: AssessmentReference
+    matching: ExtendedMatching | None
+    evaluation: EvaluationResult | None
 
     @field_serializer(
         "redundancy_rate",
