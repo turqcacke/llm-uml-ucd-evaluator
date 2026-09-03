@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated
 
 from dishka import FromComponent, Provider, Scope, provide
 
@@ -15,16 +15,10 @@ from src.services.shared import guardrails, prompts
 type TextExtractorChatModel = Annotated[
     ChatModel[UseCaseDiagramPresentation], FromComponent("text")
 ]
-type ApollonExtractorChatModel = Annotated[
-    ChatModel[UseCaseDiagramPresentation], FromComponent("apollon")
-]
 
 
-def get_text_extractor_chat_model(
-    type_: Literal["text", "apollon"],
-) -> ChatModel[UseCaseDiagramPresentation]:
+def get_text_extractor_chat_model() -> ChatModel[UseCaseDiagramPresentation]:
     settings = get_settings()
-    apollon_guardrails = list(guardrails.COMMON_GUARDRAILS)
     text_guard_rails = [
         guardrails.USE_DESCRIPTION_FACTS,
         *guardrails.COMMON_GUARDRAILS,
@@ -34,11 +28,9 @@ def get_text_extractor_chat_model(
         api_key=settings.EXTRACTOR_API_KEY.get_secret_value(),
         base_url=settings.EXTRACTOR_BASE_URL,
         model_provider=settings.EXTRACTOR_PROVIDER,
-        system_prompt=prompts.EXTRACTOR_FROM_DESCRIPTION
-        if type_ == "text"
-        else prompts.EXTRACTOR_FROM_APOLLON_MODEL,
+        system_prompt=prompts.EXTRACTOR_FROM_DESCRIPTION,
         response_type=UseCaseDiagramPresentation,
-        guardrails=text_guard_rails if type_ == "text" else apollon_guardrails,
+        guardrails=text_guard_rails,
         reasoning_effort="medium",
     )
     return model
@@ -86,13 +78,7 @@ class ChatModelProvider(Provider):
     def text_extractor_chat_model(
         self,
     ) -> TextExtractorChatModel:
-        return get_text_extractor_chat_model(type_="text")
-
-    @provide(scope=Scope.APP)
-    def apollon_extractor_chat_model(
-        self,
-    ) -> ApollonExtractorChatModel:
-        return get_text_extractor_chat_model(type_="apollon")
+        return get_text_extractor_chat_model()
 
     @provide(scope=Scope.APP)
     def use_case_diagram_matcher_chat_model(self) -> ChatModel[MinMatching]:

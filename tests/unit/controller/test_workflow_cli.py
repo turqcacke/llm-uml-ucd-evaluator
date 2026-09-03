@@ -72,11 +72,12 @@ def llm_calls(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     monkeypatch.setenv("EVALUATOR_MODEL", "test-evaluator")
     monkeypatch.setenv("EVALUATOR_API_KEY", "test-key")
     monkeypatch.setattr(prompts, "EXTRACTOR_FROM_DESCRIPTION", "Extract prose")
-    monkeypatch.setattr(
-        prompts, "EXTRACTOR_FROM_APOLLON_MODEL", "Extract JSON"
-    )
     get_settings.cache_clear()
-    for script in ("run_extractor", "run_mathcer", "run_apollon_extractor"):
+    for script in (
+        "run_description_extractor",
+        "run_mathcer",
+        "run_apollon_extractor",
+    ):
         module = importlib.import_module(f"src.controller.scripts.{script}")
         monkeypatch.setattr(
             module,
@@ -90,7 +91,11 @@ def llm_calls(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
 @pytest.fixture
 def result_store(monkeypatch: pytest.MonkeyPatch) -> InMemoryResultStore:
     store = InMemoryResultStore()
-    for script in ("run_extractor", "run_mathcer", "run_apollon_extractor"):
+    for script in (
+        "run_description_extractor",
+        "run_mathcer",
+        "run_apollon_extractor",
+    ):
         module = importlib.import_module(f"src.controller.scripts.{script}")
         monkeypatch.setattr(module, "save_result", store.save)
     return store
@@ -101,16 +106,16 @@ def test_workflow_extracts_prose_from_cli(
     llm_calls: list[tuple[str, list[BaseMessage]]],
     result_store: InMemoryResultStore,
 ) -> None:
-    from src.controller.scripts import run_extractor
+    from src.controller.scripts import run_description_extractor
 
     description = tmp_path / "description with spaces.txt"
     description.write_text("A user logs in.\nAn admin manages users.", "utf-8")
 
-    assert run_extractor.main([str(description)]) == 0
+    assert run_description_extractor.main([str(description)]) == 0
 
     result, directory = result_store.only_result()
     assert result["uid"] == "extracted"
-    assert directory == run_extractor.RESULTS_PATH
+    assert directory == run_description_extractor.RESULTS_PATH
     assert len(llm_calls) == 1
     model, messages = llm_calls[0]
     assert model == "test-extractor"
@@ -177,9 +182,9 @@ def test_match_reference_and_candidate_from_cli(
     assert prompts.USE_CASE_DIAGRAM_MATCHER.strip() in messages[0].content
     content = messages[1].content
     assert isinstance(content, str)
-    assert "A customer uses the system." in content.split(
-        "</description>", 1
-    )[0]
+    assert (
+        "A customer uses the system." in content.split("</description>", 1)[0]
+    )
     reference_prompt = content.split("<reference>", 1)[1].split(
         "</reference>", 1
     )[0]
@@ -191,7 +196,7 @@ def test_match_reference_and_candidate_from_cli(
 
 
 @pytest.mark.anyio
-@pytest.mark.parametrize("kind", ["text", "apollon", "matcher", "evaluator"])
+@pytest.mark.parametrize("kind", ["text", "matcher", "evaluator"])
 @pytest.mark.parametrize(
     "payload",
     [
@@ -216,9 +221,7 @@ async def test_models_send_guardrails_as_system_instructions(
     elif kind == "evaluator":
         model = get_pragmatic_evaluator_chat_model()
     else:
-        model = get_text_extractor_chat_model(
-            type_="text" if kind == "text" else "apollon"
-        )
+        model = get_text_extractor_chat_model()
 
     await model.invoke(payload, LLMRoles.USER)
 
@@ -232,38 +235,9 @@ async def test_models_send_guardrails_as_system_instructions(
     assert messages[1].content == payload
 
 
-def test_extract_apollon_from_cli(
-    tmp_path: Path,
-    llm_calls: list[tuple[str, list[BaseMessage]]],
-    result_store: InMemoryResultStore,
-) -> None:
-    from src.controller.scripts import run_apollon_extractor
-
-    apollon = tmp_path / "apollon.json"
-    apollon.write_text(
-        '{"model": {"elements": {}, "relationships": {}}}', "utf-8"
-    )
-
-    assert run_apollon_extractor.main([str(apollon)]) == 0
-
-    result, directory = result_store.only_result()
-    assert result["uid"] == "extracted"
-    assert directory == run_apollon_extractor.RESULTS_PATH
-    assert len(llm_calls) == 1
-    model, messages = llm_calls[0]
-    assert model == "test-extractor"
-    assert "Extract JSON" in messages[0].content
-    assert guardrails.RESTRICT_TO_STRUCTURED_OUTPUT in messages[0].content
-    assert guardrails.USE_DESCRIPTION_FACTS not in messages[0].content
-    content = messages[1].content
-    assert isinstance(content, str)
-    assert content == prompts.EXTRACTOR_FROM_APOLLON_MODEL_REQUEST.format(
-        json_model='{"model":{"elements":{},"relationships":{}}}'
-    )
-
-
 @pytest.mark.parametrize(
-    "script", ["run_extractor", "run_mathcer", "run_apollon_extractor"]
+    "script",
+    ["run_description_extractor", "run_mathcer", "run_apollon_extractor"],
 )
 @pytest.mark.parametrize("custom_path", [False, True])
 def test_cli_sends_each_result_to_storage(
@@ -290,12 +264,17 @@ def test_cli_sends_each_result_to_storage(
         assert module.main(args) == 0
 
     assert len(result_store.results) == 2
-    assert result_store.results[0][0] == result_store.results[1][0]
+    first, second = [
+        {key: value for key, value in result.items() if key != "uid"}
+        for result, _ in result_store.results
+    ]
+    assert first == second
     assert all(path == directory for _, path in result_store.results)
 
 
 @pytest.mark.parametrize(
-    "script", ["run_extractor", "run_mathcer", "run_apollon_extractor"]
+    "script",
+    ["run_description_extractor", "run_mathcer", "run_apollon_extractor"],
 )
 def test_output_directory_failure_is_cli_error(
     script: str,
@@ -324,7 +303,8 @@ def test_output_directory_failure_is_cli_error(
 
 
 @pytest.mark.parametrize(
-    "script", ["run_extractor", "run_mathcer", "run_apollon_extractor"]
+    "script",
+    ["run_description_extractor", "run_mathcer", "run_apollon_extractor"],
 )
 @pytest.mark.parametrize("problem", ["missing", "directory", "encoding"])
 def test_unreadable_input_fails_before_llm_request(
@@ -375,7 +355,7 @@ def test_invalid_json_fails_before_llm_request(
 
 
 @pytest.mark.parametrize(
-    "script", ["run_extractor", "run_mathcer", "run_apollon_extractor"]
+    "script", ["run_description_extractor", "run_mathcer"]
 )
 def test_model_configuration_failure_is_cli_error(
     script: str,
@@ -406,19 +386,45 @@ def test_model_configuration_failure_is_cli_error(
 
 
 @pytest.mark.parametrize(
-    "script",
+    "script, args, code",
     [
-        "run_extractor",
-        "run_mathcer",
-        "run_apollon_extractor",
-        "run_description_reference_assessment",
-        "run_apollon_to_apollon_assessment",
-    ],
+        (script, args, code)
+        for script in (
+            "run_description_extractor",
+            "run_mathcer",
+            "run_apollon_extractor",
+            "run_description_reference_assessment",
+            "run_apollon_to_apollon_assessment",
+        )
+        for args, code in ((["--help"], 0), ([], 2))
+    ]
+    + [("run_apollon_extractor", ["input"], 0)],
 )
-@pytest.mark.parametrize("args, code", [(["--help"], 0), ([], 2)])
 def test_module_cli_usage_without_llm_configuration(
-    script: str, args: list[str], code: int
+    script: str, args: list[str], code: int, tmp_path: Path
 ) -> None:
+    if args == ["input"]:
+        source = tmp_path / "apollon.json"
+        source.write_text(
+            json.dumps(
+                {
+                    "model": {
+                        "elements": {
+                            "actor": {
+                                "id": "actor",
+                                "name": "Customer",
+                                "type": "UseCaseActor",
+                                "owner": None,
+                                "bounds": {"x": 0, "y": 0},
+                            }
+                        },
+                        "relationships": {},
+                    }
+                }
+            ),
+            "utf-8",
+        )
+        args = [str(source), "--results-path", str(tmp_path / "results")]
     env = dict(os.environ)
     for name in (
         "EXTRACTOR_MODEL",
@@ -438,5 +444,18 @@ def test_module_cli_usage_without_llm_configuration(
         timeout=15,
     )
     assert result.returncode == code
-    assert "usage:" in (result.stdout if code == 0 else result.stderr)
+    if args[0:1] == ["--help"] or code == 2:
+        assert "usage:" in (result.stdout if code == 0 else result.stderr)
+    else:
+        [saved] = (tmp_path / "results").glob("*.json")
+        output = json.loads(saved.read_text("utf-8"))
+        assert output["nodes"] == [
+            {
+                "uid": "actor",
+                "name": "Customer",
+                "type": "actor",
+                "parent": None,
+            }
+        ]
+        assert output["relations"] == []
     assert "Traceback" not in result.stderr

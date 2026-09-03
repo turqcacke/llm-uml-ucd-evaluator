@@ -5,12 +5,11 @@ from src.model.apollon import ApollonJson
 from src.model.domain import UseCaseDiagramPresentation
 from src.services.extractor import (
     ApollonJsonExtractor,
-    ApollonLlmExtractor,
     BaseConverter,
     DescriptionExtractor,
 )
 
-from .llm import ApollonExtractorChatModel, TextExtractorChatModel
+from .llm import TextExtractorChatModel
 
 
 class ExtractorProvider(Provider):
@@ -27,9 +26,3 @@ class ExtractorProvider(Provider):
         self, chat_model: TextExtractorChatModel
     ) -> DescriptionExtractor:
         return DescriptionExtractor(chat_model)
-
-    @provide(scope=Scope.REQUEST)
-    def apollon_extractor(
-        self, chat_model: ApollonExtractorChatModel
-    ) -> ApollonLlmExtractor:
-        return ApollonLlmExtractor(chat_model)

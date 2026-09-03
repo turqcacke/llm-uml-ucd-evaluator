@@ -55,8 +55,11 @@ environment or in the root `.env` file. Matching `*_BASE_URL` and
 `*_PROVIDER` settings configure each provider endpoint. Omit a provider to let
 LangChain determine it from the model name.
 
+Apollon extraction uses deterministic conversion and requires no LLM
+configuration. `EXTRACTOR_*` settings apply only to text-description extraction.
+
 ```sh
-uv run python -m src.controller.scripts.run_extractor description.txt > reference.json
+uv run python -m src.controller.scripts.run_description_extractor description.txt > reference.json
 uv run python -m src.controller.scripts.run_apollon_extractor apollon.json > candidate.json
 uv run python -m src.controller.scripts.run_mathcer reference.json candidate.json > matching.json
 uv run python -m src.controller.scripts.run_description_reference_assessment description.txt candidate.json
@@ -72,7 +75,7 @@ configuring or calling an LLM.
 Each command also saves a UTF-8 JSON file with a unique UUID filename. Its
 `RESULTS_PATH` constant defaults to `BASE_URL / "scripts_out" / <script_name>`:
 
-- `scripts_out/run_extractor/`
+- `scripts_out/run_description_extractor/`
 - `scripts_out/run_apollon_extractor/`
 - `scripts_out/run_mathcer/`
 - `scripts_out/run_description_reference_assessment/`

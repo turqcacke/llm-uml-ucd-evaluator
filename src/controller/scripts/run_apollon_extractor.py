@@ -9,8 +9,8 @@ from src.controller.scripts.results import save_result
 from src.model.apollon import ApollonJson
 from src.services.exceptions import BaseAppException
 from src.services.extractor import (
-    ApollonLlmExtractor,
-    ApollonLlmExtractorInput,
+    ApollonJsonExtractor,
+    ApollonJsonExtractorInput,
 )
 
 RESULTS_PATH = BASE_URL / "scripts_out" / "run_apollon_extractor"
@@ -34,12 +34,12 @@ def main(argv: list[str] | None = None) -> int:
             args.apollon,
             args.results_path,
         )
-        data = ApollonLlmExtractorInput(
+        data = ApollonJsonExtractorInput(
             ApollonJson.model_validate_json(args.apollon.read_text("utf-8"))
         )
         with app_container:
             with app_container() as request_container:
-                use_case = request_container.get(ApollonLlmExtractor)
+                use_case = request_container.get(ApollonJsonExtractor)
                 result = asyncio.run(use_case.execute(data))
         output = result.model_dump_json(indent=2)
         save_result(output, args.results_path)

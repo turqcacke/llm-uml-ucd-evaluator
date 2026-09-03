@@ -18,8 +18,6 @@ from src.services.exceptions import (
 from src.services.extractor import (
     ApollonJsonExtractor,
     ApollonJsonExtractorInput,
-    ApollonLlmExtractor,
-    ApollonLlmExtractorInput,
     DescriptionExtractor,
     DescriptionExtractorInput,
 )
@@ -85,12 +83,6 @@ async def _run_apollon_json(error: Exception) -> object:
     )
 
 
-async def _run_apollon_llm(error: Exception) -> object:
-    return await ApollonLlmExtractor(FailingChatModel(error)).execute(
-        ApollonLlmExtractorInput(_apollon_json())
-    )
-
-
 async def _run_description(error: Exception) -> object:
     return await DescriptionExtractor(FailingChatModel(error)).execute(
         DescriptionExtractorInput("A customer places an order.")
@@ -109,7 +101,6 @@ async def _run_matcher(error: Exception) -> object:
     "execute_use_case",
     [
         _run_apollon_json,
-        _run_apollon_llm,
         _run_description,
         _run_matcher,
     ],

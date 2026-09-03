@@ -12,7 +12,7 @@ from src.services.extractor import (
     DescriptionExtractorInput,
 )
 
-RESULTS_PATH = BASE_URL / "scripts_out" / "run_extractor"
+RESULTS_PATH = BASE_URL / "scripts_out" / "run_description_extractor"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -29,7 +29,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         logger.info(
-            "Extractor CLI started input={} results_path={}",
+            "Description extractor CLI started input={} results_path={}",
             args.description,
             args.results_path,
         )
