@@ -1,0 +1,86 @@
+{
+  "mutation": {
+    "actors": [
+      "Zorple"
+    ],
+    "usecases": [
+      "Log In",
+      "Select Channel",
+      "Access Content",
+      "Review Program Content",
+      "Send Barrage Message",
+      "Subscribe to Channel or Program",
+      "Interact with Other Viewers",
+      "Register Account",
+      "Modify Password",
+      "Log Out"
+    ],
+    "association_relationships": {
+      "Zorple": [
+        "Log In",
+        "Select Channel",
+        "Access Content",
+        "Review Program Content",
+        "Send Barrage Message",
+        "Subscribe to Channel or Program",
+        "Interact with Other Viewers",
+        "Register Account",
+        "Modify Password",
+        "Log Out"
+      ]
+    },
+    "inclusion_relationships": {},
+    "extension_relationships": {},
+    "generalization_relationships_for_usecases": {},
+    "generalization_relationships_for_actors": {}
+  },
+  "expectation": {
+    "nodes": [
+      {
+        "uid": "actor-0",
+        "score": 1
+      },
+      {
+        "uid": "usecase-0",
+        "score": 3
+      },
+      {
+        "uid": "usecase-1",
+        "score": 3
+      },
+      {
+        "uid": "usecase-2",
+        "score": 2
+      },
+      {
+        "uid": "usecase-3",
+        "score": 3
+      },
+      {
+        "uid": "usecase-4",
+        "score": 3
+      },
+      {
+        "uid": "usecase-5",
+        "score": 3
+      },
+      {
+        "uid": "usecase-6",
+        "score": 3
+      },
+      {
+        "uid": "usecase-7",
+        "score": 3
+      },
+      {
+        "uid": "usecase-8",
+        "score": 3
+      },
+      {
+        "uid": "usecase-9",
+        "score": 3
+      }
+    ]
+  },
+  "description": "I hope to develop a TV live streaming software that aims to provide a comprehensive and high-quality TV live streaming service. This software should have the following functions:\n1. User login function: Users can log in to the system with their username and password to access and enjoy TV live streaming services.\n2. Channel selection function: Users can choose the TV channel to watch according to their interests. The system should provide multiple TV channels for users to choose from and be able to classify them according to different categories.\n3. Live streaming function: Users can watch live content of TV channels in real time. The system should ensure stable video quality, smooth playback, and be able to automatically adapt to the user's network environment.\n4. Program playback function: In addition to live streaming, the system should also provide program playback function, allowing users to review previous program content.\n5. Barrage function: Users can send barrage messages during the live broadcast process. Bullet comments can be text messages or emoticons, which can be displayed in real-time on the video screen.\n6. Subscription function: Users can subscribe to their favorite TV channels or programs, and the system will promptly push updates on related content.\n7. Social interaction function: Users can interact in real-time with other viewers during the live broadcast, such as commenting, liking, sharing, etc.\n8. Account management function: The system should provide user account management function, where users can perform registration, login, password modification, logout and other operations.\nIn summary, I hope this TV live streaming software can provide users with high-quality live content, as well as rich interactive and social functions, allowing users to enjoy high-quality TV programs anytime and anywhere.\n"
+}

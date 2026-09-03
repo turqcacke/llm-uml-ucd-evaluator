@@ -27,12 +27,18 @@ Each file is an executable benchmark case:
 }
 ```
 
-`mutation` is a complete ReqUCD60 result. `expectation` is the complete
-MinMatching that a semantically correct matcher returns when comparing the
-mutation with that directory's `_0` Reference Diagram. Every expected pair
-uses the ordinal UIDs assigned by `ReqUCD60ToDomainConverter`; omitted pairs
-therefore mean unmatched elements, rather than an abbreviated answer. Every
-case includes the converter's synthetic `system` to `system` Node Match.
+- `mutation` is a complete ReqUCD60 result.
+- `expectation` is the complete MinMatching that a semantically correct
+  matcher returns when comparing the mutation with that directory's `_0`
+  Reference Diagram.
+
+Expectation rules:
+
+1. Every pair uses the ordinal UIDs assigned by
+   `ReqUCD60ToDomainConverter`.
+2. An omitted pair means unmatched elements, not an abbreviated answer.
+3. Every case includes the converter's synthetic `system` to `system` Node
+   Match.
 
 In each directory, `{n}_0.json` is also the unchanged self-match control.
 Its expectation matches every node and relation to itself. Files
