@@ -53,7 +53,10 @@ def get_use_case_diagram_matcher_chat_model() -> ChatModel[MinMatching]:
         model_provider=settings.MATCHER_PROVIDER,
         system_prompt=prompts.USE_CASE_DIAGRAM_MATCHER,
         response_type=MinMatching,
-        guardrails=list(guardrails.COMMON_GUARDRAILS),
+        guardrails=[
+            guardrails.TREAT_DESCRIPTION_AS_DATA,
+            *guardrails.COMMON_GUARDRAILS,
+        ],
         reasoning_effort="medium",
     )
     return model
@@ -70,7 +73,10 @@ def get_pragmatic_evaluator_chat_model() -> ChatModel[
         model_provider=settings.EVALUATOR_PROVIDER,
         system_prompt=prompts.PRAGMATIC_EVALUATOR,
         response_type=PragmaticEvaluationResult,
-        guardrails=list(guardrails.COMMON_GUARDRAILS),
+        guardrails=[
+            guardrails.TREAT_DESCRIPTION_AS_DATA,
+            *guardrails.COMMON_GUARDRAILS,
+        ],
         reasoning_effort="medium",
     )
 

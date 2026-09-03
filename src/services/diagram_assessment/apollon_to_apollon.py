@@ -32,6 +32,7 @@ from .repository import AssessmentWriteRepository
 class ApollonToApollonAssessmentInput:
     reference: ApollonJson
     candidate: ApollonJson
+    description: str | None = None
 
 
 class ApollonToApollonAssessment(
@@ -81,7 +82,12 @@ class ApollonToApollonAssessment(
             ApollonJsonExtractorInput(data.candidate)
         )
         async with aclosing(
-            stream_assess_diagrams(reference, candidate, self._dependencies)
+            stream_assess_diagrams(
+                reference,
+                candidate,
+                self._dependencies,
+                description=data.description,
+            )
         ) as stream:
             async for progress in stream:
                 yield progress

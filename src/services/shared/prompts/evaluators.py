@@ -25,9 +25,13 @@ Apply first matching score, from {NamingUnderstandabilityScore.LOW} to {NamingUn
 """
 
 PRAGMATIC_EVALUATOR_REQUEST = """
-# Candidate diagram and context
+# Context description
+<description>
+{description}
+</description>
 
-<input>
-{context}
-</input>
+# Candidate diagram
+<candidate>
+{candidate}
+</candidate>
 """

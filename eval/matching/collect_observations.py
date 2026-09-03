@@ -22,6 +22,7 @@ from src.services.matcher import (
 )
 
 DATASET_PATH = BASE_URL / "datasets" / "10_match_mutations"
+DESCRIPTIONS_PATH = BASE_URL / "datasets" / "60_artificial" / "51-60"
 CHECKPOINTS_PATH = BASE_URL / "eval_out"
 DATASET_ID = "10_match_mutations"
 COLLECTION_NAME = "matching_eval"
@@ -180,6 +181,10 @@ async def _run(
                             UseCaseDiagramMatcherInput(
                                 reference=case.reference,
                                 candidate=case.candidate,
+                                description=(
+                                    DESCRIPTIONS_PATH
+                                    / f"{case.sample + 50}.txt"
+                                ).read_text("utf-8"),
                             )
                         )
             actual = MinMatching(

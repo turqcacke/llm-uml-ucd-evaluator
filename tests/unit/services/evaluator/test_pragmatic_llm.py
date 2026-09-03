@@ -1,5 +1,3 @@
-import json
-
 import pytest
 
 from src.model.domain import (
@@ -24,6 +22,7 @@ from src.services.exceptions import (
     UseCaseError,
 )
 from src.services.ports import LLMRoles
+from src.services.shared.prompts import PRAGMATIC_EVALUATOR_REQUEST
 
 
 class FakeChatModel:
@@ -42,7 +41,8 @@ class FakeChatModel:
 
 @pytest.mark.anyio
 @pytest.mark.parametrize(
-    "description", [None, "A customer places an order through Payment API."]
+    "description",
+    [None, "", "A customer places an order through Payment API."],
 )
 async def test_evaluator_sends_full_diagram_and_preserves_llm_scores(
     description,
@@ -88,11 +88,10 @@ async def test_evaluator_sends_full_diagram_and_preserves_llm_scores(
     }
     assert all(node.score == 3 for node in response.nodes)
     [(prompt, role)] = chat_model.calls
-    payload = json.loads(prompt.split("<input>", 1)[1].split("</input>", 1)[0])
-    assert payload == {
-        "diagram": diagram.model_dump(mode="json"),
-        "description": description,
-    }
+    assert prompt == PRAGMATIC_EVALUATOR_REQUEST.format(
+        candidate=diagram.model_dump_json(),
+        description=description or "",
+    )
     assert role == LLMRoles.USER
     assert await evaluator.execute(PragmaticInput(diagram)) == result
 

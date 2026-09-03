@@ -51,6 +51,7 @@ async def create_assessment(
             ApollonToApollonAssessmentInput(
                 reference=data.reference.to_service(),
                 candidate=data.candidate.to_service(),
+                description=data.description,
             )
         )
     else:
@@ -91,6 +92,7 @@ async def stream_assessment(
                 ApollonToApollonAssessmentInput(
                     reference=data.reference.to_service(),
                     candidate=data.candidate.to_service(),
+                    description=data.description,
                 )
             )
         else:

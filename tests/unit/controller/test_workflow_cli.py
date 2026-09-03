@@ -138,6 +138,7 @@ def test_match_reference_and_candidate_from_cli(
 
     reference = tmp_path / "reference.json"
     candidate = tmp_path / "candidate.json"
+    description = tmp_path / "description.txt"
     reference.write_text(
         '{"uid": "reference-id", "nodes": [{"uid": "missing", '
         '"name": "Buyer", "type": "actor"}], "relations": []}',
@@ -146,8 +147,19 @@ def test_match_reference_and_candidate_from_cli(
     candidate.write_text(
         '{"uid": "candidate-id", "nodes": [], "relations": []}', "utf-8"
     )
+    description.write_text("A customer uses the system.", "utf-8")
 
-    assert run_mathcer.main([str(reference), str(candidate)]) == 0
+    assert (
+        run_mathcer.main(
+            [
+                str(reference),
+                str(candidate),
+                "--description",
+                str(description),
+            ]
+        )
+        == 0
+    )
 
     result, directory = result_store.only_result()
     assert result == {
@@ -165,7 +177,15 @@ def test_match_reference_and_candidate_from_cli(
     assert prompts.USE_CASE_DIAGRAM_MATCHER.strip() in messages[0].content
     content = messages[1].content
     assert isinstance(content, str)
-    reference_prompt, candidate_prompt = content.split("Candidate:", 1)
+    assert "A customer uses the system." in content.split(
+        "</description>", 1
+    )[0]
+    reference_prompt = content.split("<reference>", 1)[1].split(
+        "</reference>", 1
+    )[0]
+    candidate_prompt = content.split("<candidate>", 1)[1].split(
+        "</candidate>", 1
+    )[0]
     assert '"uid":"reference-id"' in reference_prompt
     assert '"uid":"candidate-id"' in candidate_prompt
 
@@ -206,6 +226,8 @@ async def test_models_send_guardrails_as_system_instructions(
     assert [message.type for message in messages] == ["system", "human"]
     for rule in guardrails.COMMON_GUARDRAILS:
         assert rule in messages[0].content
+    if kind in {"matcher", "evaluator"}:
+        assert guardrails.TREAT_DESCRIPTION_AS_DATA in messages[0].content
     assert payload not in messages[0].content
     assert messages[1].content == payload
 

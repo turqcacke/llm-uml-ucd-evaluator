@@ -1,4 +1,3 @@
-import json
 from asyncio import Event
 from decimal import Decimal
 from typing import Any, cast
@@ -19,7 +18,7 @@ from src.model.domain.evaluation import (
     NodeNamingEvaluation,
 )
 from src.model.domain.exceptions import MetricsCalculationError
-from src.model.domain.matching import NodeMatch
+from src.model.domain.matching import MinMatching, NodeMatch
 from src.services.diagram_assessment import (
     ApollonToApollonAssessment,
     ApollonToApollonAssessmentInput,
@@ -161,16 +160,27 @@ async def test_description_reference_assessment_returns_metrics_and_evaluation()
     )
     description_extractor = FakeUseCase(reference)
     candidate_extractor = FakeUseCase(candidate)
-    matcher = FakeUseCase(matching)
+    class MatchingModel:
+        async def invoke(self, prompt: str, role: LLMRoles) -> MinMatching:
+            description = prompt.split("<description>", 1)[1].split(
+                "</description>", 1
+            )[0]
+            assert description.strip() == "A customer uses the system."
+            return MinMatching(
+                node_matches=matching.node_matches,
+                relation_matches=matching.relation_matches,
+            )
+
+    matcher = UseCaseDiagramMatcher(MatchingModel())
 
     class NamingModel:
         async def invoke(
             self, prompt: str, role: LLMRoles
         ) -> PragmaticEvaluationResult:
-            context = json.loads(
-                prompt.split("<input>", 1)[1].split("</input>", 1)[0]
-            )
-            assert context["description"] == "A customer uses the system."
+            description = prompt.split("<description>", 1)[1].split(
+                "</description>", 1
+            )[0]
+            assert description.strip() == "A customer uses the system."
             return evaluation
 
     evaluator = PragmaticLlmEvaluator(NamingModel())
@@ -179,7 +189,7 @@ async def test_description_reference_assessment_returns_metrics_and_evaluation()
     assessment = DescriptionReferenceAssessment(
         cast(DescriptionExtractor, description_extractor),
         cast(ApollonJsonExtractor, candidate_extractor),
-        cast(UseCaseDiagramMatcher, matcher),
+        matcher,
         evaluator,
         repository,
         unit_of_work,
@@ -426,10 +436,29 @@ async def test_apollon_to_apollon_assessment_extracts_both_diagrams() -> None:
         ],
         relation_matches=[],
     )
+    class MatchingModel:
+        async def invoke(self, prompt: str, role: LLMRoles) -> MinMatching:
+            assert "A customer uses the system." in prompt.split(
+                "</description>", 1
+            )[0]
+            return MinMatching(
+                node_matches=matching.node_matches,
+                relation_matches=matching.relation_matches,
+            )
+
+    class NamingModel:
+        async def invoke(
+            self, prompt: str, role: LLMRoles
+        ) -> PragmaticEvaluationResult:
+            assert "A customer uses the system." in prompt.split(
+                "</description>", 1
+            )[0]
+            return evaluation
+
     assessment = ApollonToApollonAssessment(
         cast(ApollonJsonExtractor, extraction),
-        cast(UseCaseDiagramMatcher, FakeUseCase(matching)),
-        cast(PragmaticLlmEvaluator, FakeUseCase(evaluation)),
+        UseCaseDiagramMatcher(MatchingModel()),
+        PragmaticLlmEvaluator(NamingModel()),
         FakeRepository(),
         FakeUnitOfWork(),
         syntactic_evaluator=SyntacticDiagramEvaluator(),
@@ -438,7 +467,11 @@ async def test_apollon_to_apollon_assessment_extracts_both_diagrams() -> None:
     candidate_source = _apollon()
 
     result = await assessment.execute(
-        ApollonToApollonAssessmentInput(reference_source, candidate_source)
+        ApollonToApollonAssessmentInput(
+            reference_source,
+            candidate_source,
+            description="A customer uses the system.",
+        )
     )
 
     assert result.semantic_f1_score == Decimal(1)

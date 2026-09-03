@@ -73,10 +73,12 @@ def test_assessment_cli_reads_inputs_and_saves_result(
     reference = tmp_path / "reference input"
     candidate = tmp_path / "candidate.json"
     results_path = tmp_path / "results"
+    description = tmp_path / "description.txt"
     reference.write_text(reference_content, "utf-8")
     candidate.write_text(
         '{"model": {"elements": {}, "relationships": {}}}', "utf-8"
     )
+    description.write_text("A customer uses the system.", "utf-8")
     use_case = FakeUseCase()
     saved: list[tuple[str, Path]] = []
     monkeypatch.setattr(module, "app_container", FakeContainer(use_case))
@@ -84,17 +86,15 @@ def test_assessment_cli_reads_inputs_and_saves_result(
         module, "save_result", lambda value, path: saved.append((value, path))
     )
 
-    assert (
-        module.main(
-            [
-                str(reference),
-                str(candidate),
-                "--results-path",
-                str(results_path),
-            ]
-        )
-        == 0
-    )
+    args = [
+        str(reference),
+        str(candidate),
+        "--results-path",
+        str(results_path),
+    ]
+    if script == "run_apollon_to_apollon_assessment":
+        args.extend(["--description", str(description)])
+    assert module.main(args) == 0
 
     assert len(use_case.calls) == 1
     [data] = use_case.calls
@@ -102,6 +102,7 @@ def test_assessment_cli_reads_inputs_and_saves_result(
         assert data.reference_description == reference_content
     else:
         assert data.reference.model.elements == {}
+        assert data.description == "A customer uses the system."
     assert data.candidate.model.elements == {}
     assert len(saved) == 1
     assert saved[0][1] == results_path

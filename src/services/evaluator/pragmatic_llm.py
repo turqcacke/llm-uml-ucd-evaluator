@@ -1,4 +1,3 @@
-import json
 from collections import Counter
 from dataclasses import dataclass
 
@@ -32,14 +31,8 @@ class PragmaticLlmEvaluator(
         ]
         result = await self._chat_model.invoke(
             PRAGMATIC_EVALUATOR_REQUEST.format(
-                context=json.dumps(
-                    {
-                        "diagram": data.use_case_diagram.model_dump(
-                            mode="json"
-                        ),
-                        "description": data.description,
-                    }
-                )
+                candidate=data.use_case_diagram.model_dump_json(),
+                description=data.description or "",
             ),
             LLMRoles.USER,
         )

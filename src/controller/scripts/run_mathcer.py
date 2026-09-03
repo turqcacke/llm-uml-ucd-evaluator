@@ -21,6 +21,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Match two use case diagrams")
     parser.add_argument("reference", type=Path)
     parser.add_argument("candidate", type=Path)
+    parser.add_argument("--description", type=Path)
     parser.add_argument(
         "--results-path",
         type=Path,
@@ -42,6 +43,11 @@ def main(argv: list[str] | None = None) -> int:
             ),
             candidate=UseCaseDiagramPresentation.model_validate_json(
                 args.candidate.read_text("utf-8")
+            ),
+            description=(
+                args.description.read_text("utf-8")
+                if args.description
+                else None
             ),
         )
         with app_container:

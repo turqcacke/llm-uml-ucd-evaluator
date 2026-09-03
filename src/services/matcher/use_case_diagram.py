@@ -14,6 +14,7 @@ from src.services.use_case import UseCase, map_use_case_exceptions
 class UseCaseDiagramMatcherInput:
     reference: UseCaseDiagramPresentation
     candidate: UseCaseDiagramPresentation
+    description: str | None = None
 
 
 class UseCaseDiagramMatcher(
@@ -38,6 +39,7 @@ class UseCaseDiagramMatcher(
             USE_CASE_DIAGRAM_MATCHER_REQUEST.format(
                 reference=data.reference.model_dump_json(),
                 candidate=data.candidate.model_dump_json(),
+                description=data.description or "",
             ),
             LLMRoles.USER,
         )

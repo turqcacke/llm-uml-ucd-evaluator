@@ -101,6 +101,7 @@ class ApollonAssessmentInput(BaseModel):
     type: Literal["apollon"]
     reference: ApollonInput
     candidate: ApollonInput
+    description: StrictStr | None = None
 
 
 AssessmentInput = Annotated[

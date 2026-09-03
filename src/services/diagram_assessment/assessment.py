@@ -84,7 +84,9 @@ async def stream_assess_diagrams(
             async with TaskGroup() as tasks:
                 matching_task = tasks.create_task(
                     dependencies.matcher.execute(
-                        UseCaseDiagramMatcherInput(reference, candidate)
+                        UseCaseDiagramMatcherInput(
+                            reference, candidate, description
+                        )
                     )
                 )
                 pragmatic_task = tasks.create_task(

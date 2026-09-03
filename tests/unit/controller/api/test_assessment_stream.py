@@ -32,6 +32,7 @@ from src.model.domain.evaluation import (
 from src.model.domain.matching import NodeMatch
 from src.services.diagram_assessment import (
     ApollonToApollonAssessment,
+    ApollonToApollonAssessmentInput,
     AssessmentWriteRepository,
     DescriptionReferenceAssessment,
 )
@@ -72,11 +73,14 @@ def _candidate() -> dict[str, Any]:
 
 
 def _request(kind: str) -> dict[str, Any]:
-    return {
+    request = {
         "type": kind,
         "reference": _candidate() if kind == "apollon" else "x" * 100,
         "candidate": _candidate(),
     }
+    if kind == "apollon":
+        request["description"] = "A customer uses the system."
+    return request
 
 
 def _metrics() -> MetricsWithEvaluation:
@@ -338,6 +342,12 @@ async def test_stream_supports_both_inputs_and_projects_result(
         type(call).__name__.startswith(kind.capitalize())
         for call in selected.calls
     )
+    if kind == "apollon":
+        assert all(
+            isinstance(call, ApollonToApollonAssessmentInput)
+            and call.description == "A customer uses the system."
+            for call in selected.calls
+        )
     assert unselected.calls == []
 
 

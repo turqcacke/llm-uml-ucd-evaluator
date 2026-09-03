@@ -2,6 +2,11 @@ USE_CASE_DIAGRAM_MATCHER = """\
 Find Node Match and Relation Match between Reference Diagram and Candidate
 Diagram. Match meaning, not label similarity.
 
+Use Context Description as domain context for interpreting supplied elements.
+Compare the diagrams, not either diagram against the requirements. A
+contradiction with Context Description alone does not invalidate a match.
+Do not repair a diagram or generate a replacement from the requirements.
+
 # Input
 
 - `nodes` got `uid`, `name`, `type`, maybe `parent` node UID.
@@ -71,12 +76,17 @@ Diagram. Match meaning, not label similarity.
 """
 
 USE_CASE_DIAGRAM_MATCHER_REQUEST = """
-# Reference:
+# Context description
+<description>
+{description}
+</description>
+
+# Reference diagram
 <reference>
 {reference}
 </reference>
 
-Candidate:
+# Candidate diagram
 <candidate>
 {candidate}
 </candidate>

@@ -259,9 +259,13 @@ class FakeProvider(Provider):
 
 
 @pytest.mark.anyio
-async def test_apollon_assessment_accepts_editor_export_and_dispatches() -> (
-    None
-):
+@pytest.mark.parametrize(
+    "context_description",
+    [None, "", "A customer uses the system."],
+)
+async def test_apollon_assessment_accepts_editor_export_and_dispatches(
+    context_description: str | None,
+) -> None:
     description_assessment = FakeAssessment()
     apollon_assessment = FakeAssessment()
     container = make_async_container(
@@ -281,12 +285,16 @@ async def test_apollon_assessment_accepts_editor_export_and_dispatches() -> (
                     "type": "apollon",
                     "reference": _apollon_export(),
                     "candidate": _candidate(),
+                    "description": context_description,
                 },
             )
 
     assert response.status_code == 201
     assert response.json()["data"]["uid"] == "assessment-1"
     assert len(apollon_assessment.calls) == 1
+    [call] = apollon_assessment.calls
+    assert isinstance(call, ApollonToApollonAssessmentInput)
+    assert call.description == context_description
     assert description_assessment.calls == []
 
 

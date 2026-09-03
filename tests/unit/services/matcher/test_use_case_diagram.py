@@ -38,8 +38,13 @@ class FailingChatModel:
 
 @pytest.mark.anyio
 @pytest.mark.parametrize("match_relation", [True, False])
+@pytest.mark.parametrize(
+    "description",
+    [None, "", "A customer places an order through Payment API."],
+)
 async def test_matcher_finalizes_semantic_matches(
     match_relation: bool,
+    description: str | None,
 ) -> None:
     result = MinMatching(
         node_matches=[
@@ -92,7 +97,11 @@ async def test_matcher_finalizes_semantic_matches(
     )
 
     actual = await UseCaseDiagramMatcher(chat_model).execute(
-        UseCaseDiagramMatcherInput(reference=reference, candidate=candidate)
+        UseCaseDiagramMatcherInput(
+            reference=reference,
+            candidate=candidate,
+            description=description,
+        )
     )
 
     assert actual.model_dump() == {
@@ -120,6 +129,7 @@ async def test_matcher_finalizes_semantic_matches(
     assert prompt == USE_CASE_DIAGRAM_MATCHER_REQUEST.format(
         reference=reference.model_dump_json(),
         candidate=candidate.model_dump_json(),
+        description=description or "",
     )
 
 

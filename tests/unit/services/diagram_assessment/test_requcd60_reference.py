@@ -1,4 +1,3 @@
-import json
 from decimal import Decimal
 from types import TracebackType
 
@@ -248,11 +247,15 @@ async def test_assessment_returns_and_atomically_saves_agreed_diagram_roles():
         },
     }
     assert len(extraction.prompts) == len(evaluation.prompts) == 1
-    naming_context = json.loads(
-        evaluation.prompts[0].split("<input>", 1)[1].split("</input>", 1)[0]
-    )
-    assert naming_context["description"] == "A customer places an order."
+    description = evaluation.prompts[0].split("<description>", 1)[1].split(
+        "</description>", 1
+    )[0]
+    assert description.strip() == "A customer places an order."
     assert len(matching.prompts) == 1
+    matching_description = matching.prompts[0].split("<description>", 1)[
+        1
+    ].split("</description>", 1)[0]
+    assert matching_description.strip() == "A customer places an order."
 
 
 @pytest.mark.anyio
