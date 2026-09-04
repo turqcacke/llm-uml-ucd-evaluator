@@ -9,6 +9,7 @@ from dishka import Provider, Scope, make_async_container, provide
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.database import AsyncDatabase
 from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
+from tqdm import tqdm
 
 from eval.pragmatic.models import PragmaticMutationCase, load_dataset
 from src.app_logging import logger
@@ -166,14 +167,21 @@ async def _run(
         ):
             raise ValueError(f"Experiment already exists: {experiment_name}")
 
-        steps = (
+        steps = [
             (case, repetition)
             for case in cases
             for repetition in range(1, repetitions + 1)
+        ]
+        remaining_steps = tqdm(
+            steps[start_iteration - 1 :],
+            total=len(steps),
+            initial=start_iteration - 1,
+            desc="Pragmatic naming",
+            unit="observation",
         )
-        for iteration, (case, repetition) in enumerate(steps, start=1):
-            if iteration < start_iteration:
-                continue
+        for iteration, (case, repetition) in enumerate(
+            remaining_steps, start=start_iteration
+        ):
             temporary = checkpoint.with_suffix(".tmp")
             temporary.write_text(
                 json.dumps(

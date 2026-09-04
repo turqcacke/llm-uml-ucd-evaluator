@@ -6,6 +6,7 @@ from pathlib import Path
 
 from dishka import Provider, Scope, make_async_container, provide
 from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
+from tqdm import tqdm
 
 from src.app_logging import logger
 from src.config import BASE_URL
@@ -156,13 +157,18 @@ async def _run(
     checkpoint: Path,
 ) -> None:
     async with app_container:
+        remaining_steps = tqdm(
+            steps[start_iteration - 1 :],
+            total=len(steps),
+            initial=start_iteration - 1,
+            desc="Gold standard",
+            unit="assessment",
+        )
         for iteration, (
             sample,
             annotation_path,
             description_path,
-        ) in enumerate(steps, start=1):
-            if iteration < start_iteration:
-                continue
+        ) in enumerate(remaining_steps, start=start_iteration):
             # Replace atomically so interruption cannot leave partial JSON.
             temporary = checkpoint.with_suffix(".tmp")
             temporary.write_text(

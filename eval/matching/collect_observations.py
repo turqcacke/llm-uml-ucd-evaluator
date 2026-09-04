@@ -9,6 +9,7 @@ from dishka import Provider, Scope, make_async_container, provide
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.database import AsyncDatabase
 from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
+from tqdm import tqdm
 
 from eval.matching.models import MutationCase, load_dataset
 from src.app_logging import logger
@@ -56,7 +57,9 @@ def main(argv: list[str] | None = None) -> int:
         description="Evaluate matcher behavior against controlled mutations"
     )
     parser.add_argument("--experiment-name", required=True)
-    parser.add_argument("--repetitions", type=int, choices=range(1, 4), default=3)
+    parser.add_argument(
+        "--repetitions", type=int, choices=range(1, 4), default=3
+    )
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args(argv)
     try:
@@ -135,14 +138,21 @@ async def _run(
         ):
             raise ValueError(f"Experiment already exists: {experiment_name}")
 
-        steps = (
+        steps = [
             (case, repetition)
             for case in cases
             for repetition in range(1, repetitions + 1)
+        ]
+        remaining_steps = tqdm(
+            steps[start_iteration - 1 :],
+            total=len(steps),
+            initial=start_iteration - 1,
+            desc="Matching",
+            unit="observation",
         )
-        for iteration, (case, repetition) in enumerate(steps, start=1):
-            if iteration < start_iteration:
-                continue
+        for iteration, (case, repetition) in enumerate(
+            remaining_steps, start=start_iteration
+        ):
             temporary = checkpoint.with_suffix(".tmp")
             temporary.write_text(
                 json.dumps(
