@@ -93,8 +93,17 @@ uv run python -m eval.pragmatic.collect_observations \
   --experiment-name pragmatic_context_once_2026-09-18 --repetitions 1
 ```
 
-Each experiment name must be new. Resume behavior is reserved for the
-follow-up recovery work and is not available yet.
+Resume an interrupted run with the original experiment name and repetition
+count:
+
+```sh
+uv run python -m eval.pragmatic.collect_observations \
+  --experiment-name pragmatic_context_2026-09-18 --repetitions 3 --resume
+```
+
+The checkpoint's context mode controls the resumed run. Omitting
+`--with-context` uses it silently; supplying a different value warns and still
+uses the checkpoint value. Fresh runs require a new experiment name.
 
 ## Exact mutations
 

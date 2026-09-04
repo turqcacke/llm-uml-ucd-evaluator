@@ -150,6 +150,19 @@ stores observations in the `pragmatic_naming_eval` MongoDB collection. Use
 to change the repetition count. Experiment names may contain only letters,
 digits, underscores, and hyphens and cannot be reused.
 
+Resume an interrupted run with its original experiment name and repetition
+count:
+
+```sh
+uv run python -m eval.pragmatic.collect_observations \
+  --experiment-name pragmatic_context_2026-09-18 --repetitions 3 --resume
+```
+
+Resume uses the context mode saved in
+`eval_out/<experiment-name>_pragmatic.json`. Omitting `--with-context` is
+silent; an explicit conflicting value produces a warning and is overridden by
+the checkpoint.
+
 ## Gold Standard Evaluation
 
 Run the six-sample gold-standard comparison from the repository root. It uses
