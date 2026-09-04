@@ -1,5 +1,13 @@
 # LLM UML Evaluator
 
+## Datasets
+
+- `datasets/23_exercises/`: 23 Apollon exercises and an example document.
+- `datasets/60_artificial/`: 60 textual requirements samples.
+- `datasets/60_ideal_UCD/`: ideal use case diagrams for those samples.
+- `datasets/10_match_mutations/`: controlled semantic matching mutations.
+- `datasets/10_pragmatic_mutations/`: controlled naming mutations.
+
 ## HTTP API
 
 Set a nonempty `API_SECRET` in `.env`, then start the development API:

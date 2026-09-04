@@ -8,8 +8,8 @@ from src.config import BASE_URL
 from src.model.apollon import ApollonJson, ApollonJsonModel
 
 EXERCISE_URLS = [
-    BASE_URL / f"exercises/exercise_{n}/exercise_{n}.json"
-    for n in range(1, 23)
+    BASE_URL / f"datasets/23_exercises/exercise_{n}/exercise_{n}.json"
+    for n in range(1, 24)
 ]
 
 
@@ -21,7 +21,7 @@ def test_json_parse(json_path: Path) -> None:
 
 
 def test_example_json_parse() -> None:
-    json_path = BASE_URL / "exercises/example.json"
+    json_path = BASE_URL / "datasets/23_exercises/example.json"
 
     with open(json_path, "r", encoding="utf-8") as file:
         json_file = cast(dict[str, object], json.load(file))

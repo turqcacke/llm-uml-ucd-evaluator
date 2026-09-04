@@ -28,4 +28,4 @@ line-length = 79
 
 [tool.ty.src]
 include = ["src", "tests"]
-exclude = ["exercises", "graphify-out"]
+exclude = ["graphify-out"]
