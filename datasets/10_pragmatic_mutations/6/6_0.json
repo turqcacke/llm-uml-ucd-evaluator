@@ -1,0 +1,141 @@
+{
+  "mutation": {
+    "actors": [
+      "User",
+      "Administrator"
+    ],
+    "usecases": [
+      "Log In",
+      "Register Account",
+      "Browse Products",
+      "Select Products",
+      "Generate Order",
+      "Choose Payment Method",
+      "Query Logistics Information",
+      "Add Product Information",
+      "Modify Product Information",
+      "Delete Product Information",
+      "Set Product Price",
+      "Set Product Inventory",
+      "View Order Status",
+      "Confirm Payment",
+      "Initiate Shipping",
+      "Cancel Order",
+      "Create Promotional Activity",
+      "Manage Promotional Activity"
+    ],
+    "association_relationships": {
+      "User": [
+        "Log In",
+        "Register Account",
+        "Browse Products",
+        "Select Products",
+        "Generate Order",
+        "Choose Payment Method",
+        "Query Logistics Information"
+      ],
+      "Administrator": [
+        "Add Product Information",
+        "Modify Product Information",
+        "Delete Product Information",
+        "Set Product Price",
+        "Set Product Inventory",
+        "View Order Status",
+        "Confirm Payment",
+        "Initiate Shipping",
+        "Cancel Order",
+        "Create Promotional Activity",
+        "Manage Promotional Activity"
+      ]
+    },
+    "inclusion_relationships": {},
+    "extension_relationships": {},
+    "generalization_relationships_for_usecases": {},
+    "generalization_relationships_for_actors": {}
+  },
+  "expectation": {
+    "nodes": [
+      {
+        "uid": "actor-0",
+        "score": 3
+      },
+      {
+        "uid": "actor-1",
+        "score": 3
+      },
+      {
+        "uid": "usecase-0",
+        "score": 3
+      },
+      {
+        "uid": "usecase-1",
+        "score": 3
+      },
+      {
+        "uid": "usecase-2",
+        "score": 3
+      },
+      {
+        "uid": "usecase-3",
+        "score": 3
+      },
+      {
+        "uid": "usecase-4",
+        "score": 3
+      },
+      {
+        "uid": "usecase-5",
+        "score": 3
+      },
+      {
+        "uid": "usecase-6",
+        "score": 3
+      },
+      {
+        "uid": "usecase-7",
+        "score": 3
+      },
+      {
+        "uid": "usecase-8",
+        "score": 3
+      },
+      {
+        "uid": "usecase-9",
+        "score": 3
+      },
+      {
+        "uid": "usecase-10",
+        "score": 3
+      },
+      {
+        "uid": "usecase-11",
+        "score": 3
+      },
+      {
+        "uid": "usecase-12",
+        "score": 3
+      },
+      {
+        "uid": "usecase-13",
+        "score": 3
+      },
+      {
+        "uid": "usecase-14",
+        "score": 3
+      },
+      {
+        "uid": "usecase-15",
+        "score": 3
+      },
+      {
+        "uid": "usecase-16",
+        "score": 3
+      },
+      {
+        "uid": "usecase-17",
+        "score": 3
+      }
+    ]
+  },
+  "description": "The e-commerce management system should be able to meet the following requirements:\nUser login and registration function: Users can log in to the system with their username and password, and register new accounts.\nProduct management function: Administrators can add, modify, and delete product information, and set attributes such as price and inventory of products.\nOrder management function: Users can browse and select purchased products, and generate orders. Administrators can view and manage the status of orders, such as confirming payment, shipping, cancellation, and other operations.\nMarketing activity function: Administrators can create and manage promotional activities, such as discounts and promotions, to attract users to purchase products.\nPayment and logistics functions: Users can choose appropriate payment methods and query the logistics information of orders."
+}

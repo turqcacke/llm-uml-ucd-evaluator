@@ -1,0 +1,165 @@
+{
+  "mutation": {
+    "actors": [
+      "Kelvot",
+      "Administrator"
+    ],
+    "usecases": [
+      "Download Software",
+      "Log In",
+      "Browse Museum Information",
+      "Search Museums",
+      "Search Exhibitions",
+      "Navigate Using Indoor Map",
+      "Find Location of Exhibition",
+      "Find Location of Cultural Relic",
+      "Receive Text Guidance",
+      "Plimza",
+      "Collect Favorite Exhibitions",
+      "Collect Favorite Cultural Relics",
+      "Access Collected Content",
+      "Leave Comments",
+      "Rate Exhibitions",
+      "Share Views and Feelings",
+      "Add Exhibition Information",
+      "Modify Exhibition Information",
+      "Delete Exhibition Information",
+      "Add Artifact Information",
+      "Modify Artifact Information",
+      "Delete Artifact Information"
+    ],
+    "association_relationships": {
+      "Kelvot": [
+        "Download Software",
+        "Log In",
+        "Browse Museum Information",
+        "Search Museums",
+        "Search Exhibitions",
+        "Navigate Using Indoor Map",
+        "Find Location of Exhibition",
+        "Find Location of Cultural Relic",
+        "Receive Text Guidance",
+        "Plimza",
+        "Collect Favorite Exhibitions",
+        "Collect Favorite Cultural Relics",
+        "Access Collected Content",
+        "Leave Comments",
+        "Rate Exhibitions",
+        "Share Views and Feelings"
+      ],
+      "Administrator": [
+        "Add Exhibition Information",
+        "Modify Exhibition Information",
+        "Delete Exhibition Information",
+        "Add Artifact Information",
+        "Modify Artifact Information",
+        "Delete Artifact Information"
+      ]
+    },
+    "inclusion_relationships": {},
+    "extension_relationships": {},
+    "generalization_relationships_for_usecases": {},
+    "generalization_relationships_for_actors": {}
+  },
+  "expectation": {
+    "nodes": [
+      {
+        "uid": "actor-0",
+        "score": 1
+      },
+      {
+        "uid": "actor-1",
+        "score": 3
+      },
+      {
+        "uid": "usecase-0",
+        "score": 3
+      },
+      {
+        "uid": "usecase-1",
+        "score": 3
+      },
+      {
+        "uid": "usecase-2",
+        "score": 3
+      },
+      {
+        "uid": "usecase-3",
+        "score": 3
+      },
+      {
+        "uid": "usecase-4",
+        "score": 3
+      },
+      {
+        "uid": "usecase-5",
+        "score": 3
+      },
+      {
+        "uid": "usecase-6",
+        "score": 3
+      },
+      {
+        "uid": "usecase-7",
+        "score": 3
+      },
+      {
+        "uid": "usecase-8",
+        "score": 3
+      },
+      {
+        "uid": "usecase-9",
+        "score": 1
+      },
+      {
+        "uid": "usecase-10",
+        "score": 3
+      },
+      {
+        "uid": "usecase-11",
+        "score": 3
+      },
+      {
+        "uid": "usecase-12",
+        "score": 3
+      },
+      {
+        "uid": "usecase-13",
+        "score": 3
+      },
+      {
+        "uid": "usecase-14",
+        "score": 3
+      },
+      {
+        "uid": "usecase-15",
+        "score": 3
+      },
+      {
+        "uid": "usecase-16",
+        "score": 3
+      },
+      {
+        "uid": "usecase-17",
+        "score": 3
+      },
+      {
+        "uid": "usecase-18",
+        "score": 3
+      },
+      {
+        "uid": "usecase-19",
+        "score": 3
+      },
+      {
+        "uid": "usecase-20",
+        "score": 3
+      },
+      {
+        "uid": "usecase-21",
+        "score": 3
+      }
+    ]
+  },
+  "description": "I hope to develop a museum tour guide software with the following features:\nUsers can download the software and log in to the system using their own mobile phones.\nMuseum navigation software needs to provide a user interface that allows users to browse information about different museums, including exhibition content, opening hours, locations, etc.\nUsers can search for specific museums or exhibitions to quickly find content of interest.\nThe navigation function requires an indoor map that allows users to find their location and the location of the exhibition or cultural relic they wish to visit.\nThe navigation function should also provide text and audio guidance, allowing users to understand the relevant background knowledge of exhibitions and cultural relics by reading or listening to the navigation information.\nUsers can also collect their favorite exhibitions or cultural relics for quick access and browsing in the future.\nMuseum navigation software should also provide an interactive feature where users can leave comments and ratings on the software, and share their views and feelings with other users.\nAdministrators also need an interface to manage museum information, including adding, modifying, and deleting information on exhibitions and artifacts."
+}

@@ -1,0 +1,117 @@
+{
+  "mutation": {
+    "actors": [
+      "Varnok",
+      "Administrator"
+    ],
+    "usecases": [
+      "Log In",
+      "Crindle",
+      "Fill In Form",
+      "Submit Form",
+      "View Submitted Form Data",
+      "Edit Submitted Form Data",
+      "Delete Submitted Form Data",
+      "Export Form Data",
+      "Generate Data Statistics",
+      "Query Form Data",
+      "Add User Permissions",
+      "Modify User Permissions",
+      "Delete User Permissions",
+      "View System Logs"
+    ],
+    "association_relationships": {
+      "Varnok": [
+        "Log In",
+        "Crindle",
+        "Fill In Form",
+        "Submit Form",
+        "View Submitted Form Data",
+        "Edit Submitted Form Data",
+        "Delete Submitted Form Data",
+        "Export Form Data",
+        "Generate Data Statistics",
+        "Query Form Data"
+      ],
+      "Administrator": [
+        "Add User Permissions",
+        "Modify User Permissions",
+        "Delete User Permissions",
+        "View System Logs"
+      ]
+    },
+    "inclusion_relationships": {},
+    "extension_relationships": {},
+    "generalization_relationships_for_usecases": {},
+    "generalization_relationships_for_actors": {}
+  },
+  "expectation": {
+    "nodes": [
+      {
+        "uid": "actor-0",
+        "score": 1
+      },
+      {
+        "uid": "actor-1",
+        "score": 3
+      },
+      {
+        "uid": "usecase-0",
+        "score": 3
+      },
+      {
+        "uid": "usecase-1",
+        "score": 1
+      },
+      {
+        "uid": "usecase-2",
+        "score": 3
+      },
+      {
+        "uid": "usecase-3",
+        "score": 3
+      },
+      {
+        "uid": "usecase-4",
+        "score": 3
+      },
+      {
+        "uid": "usecase-5",
+        "score": 3
+      },
+      {
+        "uid": "usecase-6",
+        "score": 3
+      },
+      {
+        "uid": "usecase-7",
+        "score": 3
+      },
+      {
+        "uid": "usecase-8",
+        "score": 3
+      },
+      {
+        "uid": "usecase-9",
+        "score": 3
+      },
+      {
+        "uid": "usecase-10",
+        "score": 3
+      },
+      {
+        "uid": "usecase-11",
+        "score": 3
+      },
+      {
+        "uid": "usecase-12",
+        "score": 3
+      },
+      {
+        "uid": "usecase-13",
+        "score": 3
+      }
+    ]
+  },
+  "description": "I hope to develop an electronic form software to help users manage and track form data. The following are specific requirements:\n1. User login function: Users can log in to the system using their username and password.\n2. Form creation function: Users can create custom forms, including input fields and options.\n3. Form filling function: Users can fill in the created form and enter the corresponding data.\n4. Form submission function: Users can submit completed form data and save it to the system.\n5. Form viewing function: Users can view submitted form data for further processing and analysis.\n6. Form editing function: Users can edit and modify the submitted form data.\n7. Form deletion function: Users can delete submitted form data to clean up invalid or expired data.\n8. Data export function: Users can export form data to Excel or other formats for further processing and analysis.\n9. Data statistics function: The system can perform data statistics, generate charts and reports based on the fields and conditions selected by the user.\n10. Data query function: Users can quickly query specific form data by entering keywords or selecting criteria.\n11. User management function: Administrators can manage users, including adding, modifying, and deleting user permissions.\n12. System logging function: The system will record user operation logs for tracking and reviewing user behavior.\n13. Interface friendliness: The system should have a simple and intuitive user interface, which is convenient for users to operate and use.\nOverall, I hope to develop a feature rich and easy-to-use electronic form software aimed at improving users' work efficiency and data management level.\n"
+}

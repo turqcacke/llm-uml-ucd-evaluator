@@ -1,0 +1,99 @@
+{
+  "mutation": {
+    "actors": [
+      "Person",
+      "Administrator"
+    ],
+    "usecases": [
+      "Log In",
+      "View Exhibition Information",
+      "Use Map",
+      "Access Voice Guidance",
+      "Search Exhibits or Exhibitions",
+      "View High-Quality Images",
+      "View Multi-Angle Displays",
+      "Manage Exhibition Information",
+      "Manage Exhibit Information",
+      "View Visitors' Browsing History",
+      "View Visitors' Feedback"
+    ],
+    "association_relationships": {
+      "Person": [
+        "Log In",
+        "View Exhibition Information",
+        "Use Map",
+        "Access Voice Guidance",
+        "Search Exhibits or Exhibitions",
+        "View High-Quality Images",
+        "View Multi-Angle Displays"
+      ],
+      "Administrator": [
+        "Manage Exhibition Information",
+        "Manage Exhibit Information",
+        "View Visitors' Browsing History",
+        "View Visitors' Feedback"
+      ]
+    },
+    "inclusion_relationships": {},
+    "extension_relationships": {},
+    "generalization_relationships_for_usecases": {},
+    "generalization_relationships_for_actors": {}
+  },
+  "expectation": {
+    "nodes": [
+      {
+        "uid": "actor-0",
+        "score": 2
+      },
+      {
+        "uid": "actor-1",
+        "score": 3
+      },
+      {
+        "uid": "usecase-0",
+        "score": 3
+      },
+      {
+        "uid": "usecase-1",
+        "score": 3
+      },
+      {
+        "uid": "usecase-2",
+        "score": 2
+      },
+      {
+        "uid": "usecase-3",
+        "score": 3
+      },
+      {
+        "uid": "usecase-4",
+        "score": 3
+      },
+      {
+        "uid": "usecase-5",
+        "score": 3
+      },
+      {
+        "uid": "usecase-6",
+        "score": 3
+      },
+      {
+        "uid": "usecase-7",
+        "score": 3
+      },
+      {
+        "uid": "usecase-8",
+        "score": 3
+      },
+      {
+        "uid": "usecase-9",
+        "score": 3
+      },
+      {
+        "uid": "usecase-10",
+        "score": 3
+      }
+    ]
+  },
+  "description": "The requirements for the electronic museum navigation system are as follows:\nThe system requires a user login interface where visitors can log in to the system using their username and password.\nThe system should be able to provide detailed information about all exhibitions in the museum, including exhibition names, exhibit introductions, author information, etc.\nThe system needs a map function that can clearly display the layout of the museum and various exhibition areas, making it convenient for visitors to locate and navigate.\nThe system should provide voice guidance function, allowing visitors to hear detailed explanations and background knowledge about various exhibits through headphones.\nThe system needs to have a search function where visitors can search for exhibits or exhibitions that interest them through keywords.\nThe system should provide high-quality images and multi angle displays of exhibits, allowing visitors to better observe and appreciate the exhibits.\nAdministrators should be able to manage exhibition and exhibit information in the system, including adding, modifying, and deleting.\nAdministrators should also be able to view visitors' browsing history and feedback in order to understand their needs and improve the system.\n"
+}

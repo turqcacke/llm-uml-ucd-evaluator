@@ -1,0 +1,105 @@
+{
+  "mutation": {
+    "actors": [
+      "Bexar",
+      "Administrator"
+    ],
+    "usecases": [
+      "Log In",
+      "Record Insurance Information",
+      "Check Policy Information",
+      "Glompit",
+      "View Claim Progress",
+      "Browse Insurance Products",
+      "Select Insurance Product",
+      "Make Online Payment",
+      "Use Insurance Calculator",
+      "Access Online Consultation",
+      "Submit Complaint Suggestions",
+      "Manage Insurance Products"
+    ],
+    "association_relationships": {
+      "Bexar": [
+        "Log In",
+        "Record Insurance Information",
+        "Check Policy Information",
+        "Glompit",
+        "View Claim Progress",
+        "Browse Insurance Products",
+        "Select Insurance Product",
+        "Make Online Payment",
+        "Use Insurance Calculator",
+        "Access Online Consultation",
+        "Submit Complaint Suggestions"
+      ],
+      "Administrator": [
+        "Manage Insurance Products"
+      ]
+    },
+    "inclusion_relationships": {},
+    "extension_relationships": {},
+    "generalization_relationships_for_usecases": {},
+    "generalization_relationships_for_actors": {}
+  },
+  "expectation": {
+    "nodes": [
+      {
+        "uid": "actor-0",
+        "score": 1
+      },
+      {
+        "uid": "actor-1",
+        "score": 3
+      },
+      {
+        "uid": "usecase-0",
+        "score": 3
+      },
+      {
+        "uid": "usecase-1",
+        "score": 3
+      },
+      {
+        "uid": "usecase-2",
+        "score": 3
+      },
+      {
+        "uid": "usecase-3",
+        "score": 1
+      },
+      {
+        "uid": "usecase-4",
+        "score": 3
+      },
+      {
+        "uid": "usecase-5",
+        "score": 3
+      },
+      {
+        "uid": "usecase-6",
+        "score": 3
+      },
+      {
+        "uid": "usecase-7",
+        "score": 3
+      },
+      {
+        "uid": "usecase-8",
+        "score": 3
+      },
+      {
+        "uid": "usecase-9",
+        "score": 3
+      },
+      {
+        "uid": "usecase-10",
+        "score": 3
+      },
+      {
+        "uid": "usecase-11",
+        "score": 3
+      }
+    ]
+  },
+  "description": "I hope to develop an electronic insurance service aimed at providing a comprehensive, efficient, and easy-to-use insurance management solution. The system should have the following functions:\n1. User login function: Users can log in to the system using their username and password.\n2. Insurance information management: The system needs to be able to record users' insurance information, including insurance type, insured amount, insurance period, etc.\n3. Policy inquiry function: Users can check their policy information at any time, including insurance details, insurance period, premium, etc.\n4. Claims management: Users can submit claims applications online, and the system needs to be able to record claim information and provide the function of viewing claim progress.\n5. Insurance purchase function: Users can purchase insurance online, and the system needs to provide browsing and selection functions for insurance products, as well as support online payment.\n6. Insurance Calculator: The system needs to provide an insurance calculator to help users calculate the amount of insurance they need to purchase based on their personal situation.\n7. Customer service function: The system needs to provide customer service channels, including online consultation, complaint suggestions, etc.\n8. System management function: Administrators can manage insurance products, including adding, modifying, and deleting insurance products.\nBy developing this electronic insurance service, I hope to simplify the insurance management process, provide a better user experience, and improve the management efficiency and service quality of insurance companies.\n"
+}

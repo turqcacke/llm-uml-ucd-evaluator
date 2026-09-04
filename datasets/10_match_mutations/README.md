@@ -1,9 +1,20 @@
 # Match mutations
 
 This dataset tests semantic matching between a Reference Diagram and a
-Candidate Diagram across different models. Directories `1`–`10` correspond to
-source annotations `51_result.json`–`60_result.json` from
-`datasets/60_ideal_UCD/51-60`.
+Candidate Diagram across different models.
+
+| Directory | Reference Diagram | Context Description | Cases |
+|---|---|---|---:|
+| `1` | `datasets/60_ideal_UCD/51-60/51_result.json` | `datasets/60_artificial/51-60/51.txt` | 6 |
+| `2` | `datasets/60_ideal_UCD/51-60/52_result.json` | `datasets/60_artificial/51-60/52.txt` | 6 |
+| `3` | `datasets/60_ideal_UCD/51-60/53_result.json` | `datasets/60_artificial/51-60/53.txt` | 6 |
+| `4` | `datasets/60_ideal_UCD/51-60/54_result.json` | `datasets/60_artificial/51-60/54.txt` | 6 |
+| `5` | `datasets/60_ideal_UCD/51-60/55_result.json` | `datasets/60_artificial/51-60/55.txt` | 6 |
+| `6` | `datasets/60_ideal_UCD/51-60/56_result.json` | `datasets/60_artificial/51-60/56.txt` | 6 |
+| `7` | `datasets/60_ideal_UCD/51-60/57_result.json` | `datasets/60_artificial/51-60/57.txt` | 6 |
+| `8` | `datasets/60_ideal_UCD/51-60/58_result.json` | `datasets/60_artificial/51-60/58.txt` | 6 |
+| `9` | `datasets/60_ideal_UCD/51-60/59_result.json` | `datasets/60_artificial/51-60/59.txt` | 6 |
+| `10` | `datasets/60_ideal_UCD/51-60/60_result.json` | `datasets/60_artificial/51-60/60.txt` | 6 |
 
 Each file is an executable benchmark case:
 

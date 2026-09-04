@@ -1,0 +1,105 @@
+{
+  "mutation": {
+    "actors": [
+      "Morzap",
+      "Administrator"
+    ],
+    "usecases": [
+      "Log In",
+      "Flibber",
+      "Upload Attachments",
+      "Set and Manage Reimbursement Classifications",
+      "View Reimbursement Requests",
+      "Approve Reimbursement Requests",
+      "Reject Reimbursement Requests",
+      "Generate Reimbursement Statistics Reports",
+      "Handle Abnormal Reimbursement Situations",
+      "Manage Reimbursement Documents",
+      "Manage Employee Accounts",
+      "Set and Manage Reimbursement Approval Process"
+    ],
+    "association_relationships": {
+      "Morzap": [
+        "Log In",
+        "Flibber",
+        "Upload Attachments"
+      ],
+      "Administrator": [
+        "Set and Manage Reimbursement Classifications",
+        "View Reimbursement Requests",
+        "Approve Reimbursement Requests",
+        "Reject Reimbursement Requests",
+        "Generate Reimbursement Statistics Reports",
+        "Handle Abnormal Reimbursement Situations",
+        "Manage Reimbursement Documents",
+        "Manage Employee Accounts",
+        "Set and Manage Reimbursement Approval Process"
+      ]
+    },
+    "inclusion_relationships": {},
+    "extension_relationships": {},
+    "generalization_relationships_for_usecases": {},
+    "generalization_relationships_for_actors": {}
+  },
+  "expectation": {
+    "nodes": [
+      {
+        "uid": "actor-0",
+        "score": 1
+      },
+      {
+        "uid": "actor-1",
+        "score": 3
+      },
+      {
+        "uid": "usecase-0",
+        "score": 3
+      },
+      {
+        "uid": "usecase-1",
+        "score": 1
+      },
+      {
+        "uid": "usecase-2",
+        "score": 3
+      },
+      {
+        "uid": "usecase-3",
+        "score": 3
+      },
+      {
+        "uid": "usecase-4",
+        "score": 3
+      },
+      {
+        "uid": "usecase-5",
+        "score": 3
+      },
+      {
+        "uid": "usecase-6",
+        "score": 3
+      },
+      {
+        "uid": "usecase-7",
+        "score": 3
+      },
+      {
+        "uid": "usecase-8",
+        "score": 3
+      },
+      {
+        "uid": "usecase-9",
+        "score": 3
+      },
+      {
+        "uid": "usecase-10",
+        "score": 3
+      },
+      {
+        "uid": "usecase-11",
+        "score": 3
+      }
+    ]
+  },
+  "description": "The requirements for the reimbursement management system are as follows:\n1. Employee login: Employees can log in to the system using their username and password.\n2. Reimbursement records: Employees can access the system and submit reimbursement requests, including reimbursement amounts, dates, and related attachments.\n3. Reimbursement classification: Administrators can set and manage reimbursement classifications so that employees can choose appropriate categories for reimbursement.\n4. Reimbursement Review: Administrators can view and approve employee reimbursement requests, including the status of approved, rejected, and pending approval.\n5. Reimbursement statistics: Administrators can generate reimbursement statistics reports, including filtering and statistical analysis by employee, date, reimbursement category, etc.\n6. Abnormal reimbursement handling: Administrators can handle abnormal reimbursement situations, such as reminding employees to modify applications, rejecting reimbursement applications, etc., and record relevant information.\n7. Reimbursement Document Management: The system should be able to manage reimbursement related documents and attachments, such as storage, viewing, and downloading.\n8. Employee account management: Administrators can manage employee accounts, including adding, modifying, and deleting accounts, to ensure system security and data accuracy.\n9. Reimbursement approval process: Administrators can set and manage the approval process for reimbursement applications, including approvers, approval sequence, and approval permissions.\n10. User permission management: The system should have permission management functions for different user roles to ensure that different users can only access and modify the information they need.\n\n"
+}
