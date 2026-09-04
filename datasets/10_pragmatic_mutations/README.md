@@ -69,6 +69,33 @@ FN. All runs use the full-context expectations as the single oracle.
 `eval.pragmatic.models.load_dataset` loads four cases from every numeric
 directory.
 
+## Collect observations
+
+Start MongoDB, configure the evaluator as described in the root README, and
+run the contextual experiment from the repository root:
+
+```sh
+uv run python -m eval.pragmatic.collect_observations \
+  --experiment-name pragmatic_context_2026-09-18
+```
+
+Run without the Context Description:
+
+```sh
+uv run python -m eval.pragmatic.collect_observations \
+  --experiment-name pragmatic_no_context_2026-09-18 --with-context 0
+```
+
+Use one, two, or three repetitions (the default is three):
+
+```sh
+uv run python -m eval.pragmatic.collect_observations \
+  --experiment-name pragmatic_context_once_2026-09-18 --repetitions 1
+```
+
+Each experiment name must be new. Resume behavior is reserved for the
+follow-up recovery work and is not available yet.
+
 ## Exact mutations
 
 `[CD]` marks an original name whose HIGH interpretation depends on the Context

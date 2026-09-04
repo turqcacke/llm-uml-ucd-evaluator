@@ -124,6 +124,32 @@ Observations are stored in the `matching_eval` MongoDB collection. Resume
 positions are stored in `eval_out/<experiment-name>_matching.json`. Completed
 experiment names cannot be reused; choose a new name for another run.
 
+## Pragmatic Naming Mutation Evaluation
+
+Start MongoDB and configure `EVALUATOR_MODEL`, `EVALUATOR_API_KEY`, and the
+matching optional `EVALUATOR_BASE_URL` and `EVALUATOR_PROVIDER` values. Then
+run a contextual experiment from the repository root:
+
+```sh
+uv run python -m eval.pragmatic.collect_observations \
+  --experiment-name "pragmatic_context_$(date +%Y-%m-%d)"
+```
+
+Run without the Context Description, or select one repetition:
+
+```sh
+uv run python -m eval.pragmatic.collect_observations \
+  --experiment-name "pragmatic_no_context_$(date +%Y-%m-%d)" --with-context 0
+uv run python -m eval.pragmatic.collect_observations \
+  --experiment-name "pragmatic_context_once_$(date +%Y-%m-%d)" --repetitions 1
+```
+
+The command evaluates all 40 controlled mutations three times by default and
+stores observations in the `pragmatic_naming_eval` MongoDB collection. Use
+`--with-context 0` for a context-free run and `--repetitions 1`, `2`, or `3`
+to change the repetition count. Experiment names may contain only letters,
+digits, underscores, and hyphens and cannot be reused.
+
 ## Gold Standard Evaluation
 
 Run the six-sample gold-standard comparison from the repository root. It uses
