@@ -1,5 +1,16 @@
 # LLM UML Evaluator
 
+## Contents
+
+- [Datasets](#datasets)
+- [HTTP API](#http-api)
+- [Development MongoDB](#development-mongodb)
+- [JupyterLab](#jupyterlab)
+- [Workflow CLI](#workflow-cli)
+- [Matching Mutation Evaluation](#matching-mutation-evaluation)
+- [Pragmatic Naming Mutation Evaluation](#pragmatic-naming-mutation-evaluation)
+- [Gold Standard Evaluation](#gold-standard-evaluation)
+
 ## Datasets
 
 - `datasets/23_exercises/`: 23 Apollon exercises and an example document.
@@ -53,6 +64,19 @@ Integration tests start an isolated MongoDB replica set with Testcontainers:
 ```sh
 PYTHONPATH=. uv run pytest tests/integration
 ```
+
+## JupyterLab
+
+Install the evaluation dependencies, then start JupyterLab from the repository
+root:
+
+```sh
+uv sync --group eval
+uv run --env-file .env --group eval jupyter lab
+```
+
+The analysis notebooks are in `eval/notebooks/`. The `.env` file supplies the
+`MONGODB_URI` used by the notebooks.
 
 ## Workflow CLI
 
