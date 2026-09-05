@@ -41,6 +41,13 @@ def test_llm_exceptions_are_application_exceptions(
             400,
         ),
         (NotFoundError, "Error code: 404 - {'code': 'model_not_found'}", 404),
+        (
+            BadRequestError,
+            "reference to undefined schema at properties.nodes.items",
+            400,
+        ),
+        (BadRequestError, "Invalid request.", 400),
+        (NotFoundError, "Not found.", 404),
     ],
 )
 async def test_invocation_falls_back_to_function_calling(

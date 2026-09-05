@@ -86,8 +86,6 @@ class LangChainChatModel[TResponse](ChatModel[TResponse]):
             try:
                 return await self._invoke_structured(context, "json_schema")
             except (BadRequestError, NotFoundError) as exc:
-                if not _should_use_function_calling(exc):
-                    raise
                 logger.info(
                     "LLM retry model={} method=function_calling reason={}",
                     self._model,
@@ -187,13 +185,6 @@ def _redact_url(url: str) -> str:
     return urlunsplit(
         (parts.scheme, parts.netloc, parts.path, query, parts.fragment)
     )
-
-
-def _should_use_function_calling(
-    exc: BadRequestError | NotFoundError,
-) -> bool:
-    message = str(exc).lower()
-    return "response_format" in message or "model_not_found" in message
 
 
 def _as_llm_exception(
