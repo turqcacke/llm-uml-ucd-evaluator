@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 from dishka import FromComponent, Provider, Scope, provide
 
@@ -12,9 +12,17 @@ from src.model.domain.matching import MinMatching
 from src.services.ports import ChatModel
 from src.services.shared import guardrails, prompts
 
+DEFAULT_REASONING_EFFORT = "medium"
+
 type TextExtractorChatModel = Annotated[
     ChatModel[UseCaseDiagramPresentation], FromComponent("text")
 ]
+
+
+def _reasoning_options(model_provider: str | None) -> dict[str, Any]:
+    if model_provider == "openrouter":
+        return {"reasoning": {"effort": DEFAULT_REASONING_EFFORT}}
+    return {"reasoning_effort": DEFAULT_REASONING_EFFORT}
 
 
 def get_text_extractor_chat_model() -> ChatModel[UseCaseDiagramPresentation]:
@@ -31,7 +39,7 @@ def get_text_extractor_chat_model() -> ChatModel[UseCaseDiagramPresentation]:
         system_prompt=prompts.EXTRACTOR_FROM_DESCRIPTION,
         response_type=UseCaseDiagramPresentation,
         guardrails=text_guard_rails,
-        reasoning_effort="medium",
+        **_reasoning_options(settings.EXTRACTOR_PROVIDER),
     )
     return model
 
@@ -49,7 +57,7 @@ def get_use_case_diagram_matcher_chat_model() -> ChatModel[MinMatching]:
             guardrails.TREAT_DESCRIPTION_AS_DATA,
             *guardrails.COMMON_GUARDRAILS,
         ],
-        reasoning_effort="medium",
+        **_reasoning_options(settings.MATCHER_PROVIDER),
     )
     return model
 
@@ -69,7 +77,7 @@ def get_pragmatic_evaluator_chat_model() -> ChatModel[
             guardrails.TREAT_DESCRIPTION_AS_DATA,
             *guardrails.COMMON_GUARDRAILS,
         ],
-        reasoning_effort="medium",
+        **_reasoning_options(settings.EVALUATOR_PROVIDER),
     )
 
 
