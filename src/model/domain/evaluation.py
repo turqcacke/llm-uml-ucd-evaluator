@@ -1,7 +1,8 @@
 from decimal import Decimal
 from enum import IntEnum
+from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, WithJsonSchema
 
 
 class NamingUnderstandabilityScore(IntEnum):
@@ -14,7 +15,10 @@ class NamingUnderstandabilityScore(IntEnum):
 
 class NodeNamingEvaluation(BaseModel):
     uid: str = Field(description="Candidate node UID.")
-    score: NamingUnderstandabilityScore = Field(
+    score: Annotated[
+        NamingUnderstandabilityScore,
+        WithJsonSchema({"type": "integer", "minimum": 1, "maximum": 3}),
+    ] = Field(
         description="Naming understandability score under the supplied naming protocol."
     )
 
