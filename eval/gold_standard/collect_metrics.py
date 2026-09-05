@@ -6,10 +6,17 @@ from functools import partial
 from pathlib import Path
 
 from dishka import Provider, Scope, make_async_container, provide
+from pymongo.asynchronous.database import AsyncDatabase
 from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
 from tqdm import tqdm
 
 from eval.batching import add_batch_arguments, run_in_batches
+from eval.gold_standard.models import GoldStandardMode
+from eval.gold_standard.repository import (
+    COLLECTION_NAME,
+    GoldStandardObservationContext,
+    GoldStandardRepositoryProvider,
+)
 from src.app_logging import logger
 from src.config import BASE_URL
 from src.controller.di import (
@@ -77,6 +84,7 @@ app_container = make_async_container(
     MongoProvider(),
     DiagramAssessmentProvider(),
     ReqUCD60Provider(),
+    GoldStandardRepositoryProvider(),
 )
 
 
@@ -152,6 +160,7 @@ async def _main(args: argparse.Namespace) -> None:
         args.experiment_name,
         mode,
         checkpoint,
+        args.resume,
         args.batch_size,
         args.requests_per_minute,
     )
@@ -162,7 +171,7 @@ async def _write_checkpoint(
     iteration: int,
     *,
     checkpoint: Path,
-    mode: str,
+    mode: GoldStandardMode,
 ) -> None:
     temporary = checkpoint.with_suffix(".tmp")
     content = (
@@ -184,18 +193,19 @@ async def _collect_assessment(
     step: tuple[int, Path, Path],
     *,
     experiment_name: str,
-    mode: str,
+    mode: GoldStandardMode,
     total_steps: int,
     progress: tqdm,
 ) -> None:
     sample, annotation_path, description_path = step
+    observation_id = f"{experiment_name}_requcd60_{mode}_{sample}"
     annotation = await asyncio.to_thread(
         annotation_path.read_text,
         "utf-8",
     )
     reference = GoldStandardReference(
         **ReqUCD60Result.model_validate_json(annotation).model_dump(),
-        uid=(f"{experiment_name}_requcd60_{mode}_{sample}"),
+        uid=observation_id,
     )
     description = await asyncio.to_thread(description_path.read_text, "utf-8")
     async for attempt in AsyncRetrying(
@@ -213,7 +223,18 @@ async def _collect_assessment(
                 sample,
                 attempt.retry_state.attempt_number,
             )
-            async with app_container() as request_container:
+            context = GoldStandardObservationContext(
+                id=observation_id,
+                experiment_name=experiment_name,
+                mode=mode,
+                sample=sample,
+                description_path=description_path.relative_to(
+                    BASE_URL
+                ).as_posix(),
+            )
+            async with app_container(
+                {GoldStandardObservationContext: context}
+            ) as request_container:
                 assessment = await request_container.get(
                     ReqUCD60ReferenceAssessment
                 )
@@ -239,10 +260,19 @@ async def _run(
     experiment_name: str,
     mode: str,
     checkpoint: Path,
+    resume: bool,
     batch_size: int,
     requests_per_minute: int,
 ) -> None:
     async with app_container:
+        database = await app_container.get(AsyncDatabase)
+        collection = database[COLLECTION_NAME]
+        if not resume and (
+            await collection.find_one({"experiment_name": experiment_name})
+            is not None
+        ):
+            raise ValueError(f"Experiment already exists: {experiment_name}")
+
         progress = tqdm(
             total=len(steps),
             initial=start_iteration - 1,
