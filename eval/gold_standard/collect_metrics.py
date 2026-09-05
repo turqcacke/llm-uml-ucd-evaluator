@@ -4,8 +4,10 @@ import json
 import re
 from functools import partial
 from pathlib import Path
+from typing import Any
 
 from dishka import Provider, Scope, make_async_container, provide
+from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.database import AsyncDatabase
 from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
 from tqdm import tqdm
@@ -192,13 +194,21 @@ async def _collect_assessment(
     iteration: int,
     step: tuple[int, Path, Path],
     *,
+    collection: AsyncCollection[dict[str, Any]],
     experiment_name: str,
     mode: GoldStandardMode,
+    resume: bool,
     total_steps: int,
     progress: tqdm,
 ) -> None:
     sample, annotation_path, description_path = step
     observation_id = f"{experiment_name}_requcd60_{mode}_{sample}"
+    if (
+        resume
+        and await collection.find_one({"_id": observation_id}) is not None
+    ):
+        progress.update()
+        return
     annotation = await asyncio.to_thread(
         annotation_path.read_text,
         "utf-8",
@@ -292,8 +302,10 @@ async def _run(
                 ),
                 worker=partial(
                     _collect_assessment,
+                    collection=collection,
                     experiment_name=experiment_name,
                     mode=mode,
+                    resume=resume,
                     total_steps=len(steps),
                     progress=progress,
                 ),
