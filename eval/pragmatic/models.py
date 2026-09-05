@@ -1,8 +1,9 @@
 import asyncio
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
+from eval.models import ClassificationCounts
 from src.model.domain.evaluation import PragmaticEvaluationResult
 from src.model.requcd60.result import ReqUCD60Result
 
@@ -21,6 +22,15 @@ class PragmaticMutationCase(BaseModel):
     mutation: ReqUCD60Result
     expectation: PragmaticEvaluationResult
     description: str
+
+
+class PragmaticObservation(BaseModel):
+    id: str = Field(serialization_alias="_id")
+    experiment_name: str
+    sample: int
+    mutation: int
+    actual: PragmaticEvaluationResult
+    nodes: ClassificationCounts
 
 
 async def load_dataset(path: Path) -> list[PragmaticMutationCase]:

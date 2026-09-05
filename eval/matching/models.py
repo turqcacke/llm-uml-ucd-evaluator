@@ -2,8 +2,9 @@ import asyncio
 from pathlib import Path
 from typing import Self
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from eval.models import ClassificationCounts
 from src.infrastructure.requcd60.converter import ReqUCD60ToDomainConverter
 from src.model.domain import ExtendedMatching, MinMatching
 from src.model.domain.diagram_presentation import UseCaseDiagramPresentation
@@ -52,6 +53,16 @@ class MutationCase(BaseModel):
             candidate=candidate_diagram,
             expectation=expectation,
         )
+
+
+class MatchingObservation(BaseModel):
+    id: str = Field(serialization_alias="_id")
+    experiment_name: str
+    sample: int
+    mutation: int
+    actual: MinMatching
+    nodes: ClassificationCounts
+    relations: ClassificationCounts
 
 
 async def load_dataset(path: Path) -> list[MutationCase]:

@@ -15,7 +15,12 @@ from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
 from tqdm import tqdm
 
 from eval.batching import add_batch_arguments, run_in_batches
-from eval.pragmatic.models import PragmaticMutationCase, load_dataset
+from eval.models import ClassificationCounts
+from eval.pragmatic.models import (
+    PragmaticMutationCase,
+    PragmaticObservation,
+    load_dataset,
+)
 from src.app_logging import logger
 from src.config import BASE_URL, Settings, get_settings
 from src.controller.di import ChatModelProvider, EvaluatorProvider
@@ -207,14 +212,14 @@ async def _collect_observation(
                     ),
                 )
     await collection.insert_one(
-        {
-            "_id": document_id,
-            "experiment_name": experiment_name,
-            "sample": case.sample,
-            "mutation": case.mutation_number,
-            "actual": actual.model_dump(),
-            "nodes": _counts(case.expectation.nodes, actual.nodes),
-        }
+        PragmaticObservation(
+            id=document_id,
+            experiment_name=experiment_name,
+            sample=case.sample,
+            mutation=case.mutation_number,
+            actual=actual,
+            nodes=_counts(case.expectation.nodes, actual.nodes),
+        ).model_dump(by_alias=True)
     )
     progress.update()
 
@@ -280,14 +285,14 @@ async def _run(
 def _counts(
     expected: Sequence[NodeNamingEvaluation],
     actual: Sequence[NodeNamingEvaluation],
-) -> dict[str, int]:
+) -> ClassificationCounts:
     expected_pairs = {(node.uid, node.score) for node in expected}
     actual_pairs = {(node.uid, node.score) for node in actual}
-    return {
-        "true_positive": len(expected_pairs & actual_pairs),
-        "false_positive": len(actual_pairs - expected_pairs),
-        "false_negative": len(expected_pairs - actual_pairs),
-    }
+    return ClassificationCounts(
+        true_positive=len(expected_pairs & actual_pairs),
+        false_positive=len(actual_pairs - expected_pairs),
+        false_negative=len(expected_pairs - actual_pairs),
+    )
 
 
 if __name__ == "__main__":

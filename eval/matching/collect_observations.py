@@ -15,7 +15,12 @@ from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
 from tqdm import tqdm
 
 from eval.batching import add_batch_arguments, run_in_batches
-from eval.matching.models import MutationCase, load_dataset
+from eval.matching.models import (
+    MatchingObservation,
+    MutationCase,
+    load_dataset,
+)
+from eval.models import ClassificationCounts
 from src.app_logging import logger
 from src.config import BASE_URL, Settings, get_settings
 from src.controller.di import ChatModelProvider, MatcherProvider
@@ -194,21 +199,21 @@ async def _collect_observation(
         relation_matches=result.relation_matches,
     )
     await collection.insert_one(
-        {
-            "_id": document_id,
-            "experiment_name": experiment_name,
-            "sample": case.sample,
-            "mutation": case.mutation_number,
-            "actual": actual.model_dump(),
-            "nodes": _counts(
+        MatchingObservation(
+            id=document_id,
+            experiment_name=experiment_name,
+            sample=case.sample,
+            mutation=case.mutation_number,
+            actual=actual,
+            nodes=_counts(
                 case.expectation.node_matches,
                 actual.node_matches,
             ),
-            "relations": _counts(
+            relations=_counts(
                 case.expectation.relation_matches,
                 actual.relation_matches,
             ),
-        }
+        ).model_dump(by_alias=True)
     )
     progress.update()
 
@@ -269,18 +274,18 @@ async def _run(
 def _counts(
     expected: Sequence[NodeMatch | RelationMatch],
     actual: Sequence[NodeMatch | RelationMatch],
-) -> dict[str, int]:
+) -> ClassificationCounts:
     expected_pairs = {
         (match.reference_uid, match.candidate_uid) for match in expected
     }
     actual_pairs = {
         (match.reference_uid, match.candidate_uid) for match in actual
     }
-    return {
-        "true_positive": len(expected_pairs & actual_pairs),
-        "false_positive": len(actual_pairs - expected_pairs),
-        "false_negative": len(expected_pairs - actual_pairs),
-    }
+    return ClassificationCounts(
+        true_positive=len(expected_pairs & actual_pairs),
+        false_positive=len(actual_pairs - expected_pairs),
+        false_negative=len(expected_pairs - actual_pairs),
+    )
 
 
 if __name__ == "__main__":
