@@ -3,14 +3,18 @@ import asyncio
 import json
 import re
 from collections.abc import AsyncIterable, Sequence
+from functools import partial
 from pathlib import Path
+from typing import Any
 
 from dishka import Provider, Scope, make_async_container, provide
 from pymongo import AsyncMongoClient
+from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.database import AsyncDatabase
 from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
 from tqdm import tqdm
 
+from eval.batching import add_batch_arguments, run_in_batches
 from eval.pragmatic.models import PragmaticMutationCase, load_dataset
 from src.app_logging import logger
 from src.config import BASE_URL, Settings, get_settings
@@ -58,71 +62,69 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--with-context", type=int, choices=(0, 1))
     parser.add_argument("--resume", action="store_true")
+    add_batch_arguments(parser)
     args = parser.parse_args(argv)
     try:
         if not re.fullmatch(r"[A-Za-z0-9_-]+", args.experiment_name):
             raise ValueError(
                 "Experiment name must contain only letters, digits, _ or -"
             )
-        cases = load_dataset(DATASET_PATH)
-        checkpoint = (
-            CHECKPOINTS_PATH / f"{args.experiment_name}_pragmatic.json"
-        )
-        requested_context = (
-            None if args.with_context is None else bool(args.with_context)
-        )
-        start_iteration = 1
-        if args.resume:
-            start_iteration, with_context = _load_checkpoint(
-                checkpoint,
-                args.repetitions,
-                len(cases) * args.repetitions,
-            )
-            if (
-                requested_context is not None
-                and requested_context != with_context
-            ):
-                logger.warning(
-                    "Checkpoint context mode {} overrides requested mode {}",
-                    int(with_context),
-                    int(requested_context),
-                )
-        elif checkpoint.exists():
-            raise ValueError(
-                f"Checkpoint exists: {checkpoint}; use --resume "
-                "or a different --experiment-name"
-            )
-        else:
-            with_context = (
-                True if requested_context is None else requested_context
-            )
-        checkpoint.parent.mkdir(parents=True, exist_ok=True)
-        asyncio.run(
-            _run(
-                cases,
-                args.experiment_name,
-                args.repetitions,
-                with_context,
-                start_iteration,
-                checkpoint,
-                args.resume,
-            )
-        )
-        checkpoint.unlink()
+        asyncio.run(_main(args))
     except Exception as exc:
         logger.error("{}: error: {}", parser.prog, exc)
         return 1
     return 0
 
 
-def _load_checkpoint(
+async def _main(args: argparse.Namespace) -> None:
+    cases = await load_dataset(DATASET_PATH)
+    checkpoint = CHECKPOINTS_PATH / f"{args.experiment_name}_pragmatic.json"
+    requested_context = (
+        None if args.with_context is None else bool(args.with_context)
+    )
+    start_iteration = 1
+    if args.resume:
+        start_iteration, with_context = await _load_checkpoint(
+            checkpoint,
+            args.repetitions,
+            len(cases) * args.repetitions,
+        )
+        if requested_context is not None and requested_context != with_context:
+            logger.warning(
+                "Checkpoint context mode {} overrides requested mode {}",
+                int(with_context),
+                int(requested_context),
+            )
+    elif checkpoint.exists():
+        raise ValueError(
+            f"Checkpoint exists: {checkpoint}; use --resume "
+            "or a different --experiment-name"
+        )
+    else:
+        with_context = True if requested_context is None else requested_context
+    checkpoint.parent.mkdir(parents=True, exist_ok=True)
+    await _run(
+        cases,
+        args.experiment_name,
+        args.repetitions,
+        with_context,
+        start_iteration,
+        checkpoint,
+        args.resume,
+        args.batch_size,
+        args.requests_per_minute,
+    )
+    checkpoint.unlink()
+
+
+async def _load_checkpoint(
     checkpoint: Path,
     repetitions: int,
     last_iteration: int,
 ) -> tuple[int, bool]:
     if not checkpoint.exists():
         raise ValueError(f"Checkpoint does not exist: {checkpoint}")
-    config = json.loads(checkpoint.read_text("utf-8"))
+    config = json.loads(await asyncio.to_thread(checkpoint.read_text, "utf-8"))
     if not isinstance(config, dict) or set(config) != {
         "dataset",
         "repetitions",
@@ -148,6 +150,75 @@ def _load_checkpoint(
     return iteration, config["with_context"]
 
 
+async def _write_checkpoint(
+    iteration: int,
+    *,
+    checkpoint: Path,
+    repetitions: int,
+    with_context: bool,
+) -> None:
+    temporary = checkpoint.with_suffix(".tmp")
+    content = (
+        json.dumps(
+            {
+                "dataset": DATASET_ID,
+                "repetitions": repetitions,
+                "iteration": iteration,
+                "with_context": with_context,
+            }
+        )
+        + "\n"
+    )
+    await asyncio.to_thread(temporary.write_text, content, "utf-8")
+    await asyncio.to_thread(temporary.replace, checkpoint)
+
+
+async def _collect_observation(
+    _iteration: int,
+    step: tuple[PragmaticMutationCase, int],
+    *,
+    collection: AsyncCollection[dict[str, Any]],
+    experiment_name: str,
+    resume: bool,
+    progress: tqdm,
+    with_context: bool,
+    converter: ReqUCD60ToDomainConverter,
+) -> None:
+    case, repetition = step
+    document_id = (
+        f"{experiment_name}_{case.sample}_{case.mutation_number}_{repetition}"
+    )
+    if resume and await collection.find_one({"_id": document_id}) is not None:
+        progress.update()
+        return
+    async for attempt in AsyncRetrying(
+        stop=stop_after_attempt(4),
+        wait=wait_exponential(multiplier=2, max=30),
+        sleep=asyncio.sleep,
+        reraise=True,
+    ):
+        with attempt:
+            async with app_container() as request_container:
+                evaluator = await request_container.get(PragmaticLlmEvaluator)
+                actual = await evaluator.execute(
+                    PragmaticInput(
+                        use_case_diagram=converter.convert(case.mutation),
+                        description=case.description if with_context else None,
+                    ),
+                )
+    await collection.insert_one(
+        {
+            "_id": document_id,
+            "experiment_name": experiment_name,
+            "sample": case.sample,
+            "mutation": case.mutation_number,
+            "actual": actual.model_dump(),
+            "nodes": _counts(case.expectation.nodes, actual.nodes),
+        }
+    )
+    progress.update()
+
+
 async def _run(
     cases: list[PragmaticMutationCase],
     experiment_name: str,
@@ -156,6 +227,8 @@ async def _run(
     start_iteration: int,
     checkpoint: Path,
     resume: bool,
+    batch_size: int,
+    requests_per_minute: int,
 ) -> None:
     converter = ReqUCD60ToDomainConverter()
     async with app_container:
@@ -172,71 +245,36 @@ async def _run(
             for case in cases
             for repetition in range(1, repetitions + 1)
         ]
-        remaining_steps = tqdm(
-            steps[start_iteration - 1 :],
+        progress = tqdm(
             total=len(steps),
             initial=start_iteration - 1,
             desc="Pragmatic naming",
             unit="observation",
         )
-        for iteration, (case, repetition) in enumerate(
-            remaining_steps, start=start_iteration
-        ):
-            temporary = checkpoint.with_suffix(".tmp")
-            temporary.write_text(
-                json.dumps(
-                    {
-                        "dataset": DATASET_ID,
-                        "repetitions": repetitions,
-                        "iteration": iteration,
-                        "with_context": with_context,
-                    }
-                )
-                + "\n",
-                "utf-8",
+        try:
+            await run_in_batches(
+                steps,
+                start_iteration=start_iteration,
+                batch_size=batch_size,
+                requests_per_minute=requests_per_minute,
+                before_batch=partial(
+                    _write_checkpoint,
+                    checkpoint=checkpoint,
+                    repetitions=repetitions,
+                    with_context=with_context,
+                ),
+                worker=partial(
+                    _collect_observation,
+                    collection=collection,
+                    experiment_name=experiment_name,
+                    resume=resume,
+                    progress=progress,
+                    with_context=with_context,
+                    converter=converter,
+                ),
             )
-            temporary.replace(checkpoint)
-            document_id = (
-                f"{experiment_name}_{case.sample}_"
-                f"{case.mutation_number}_{repetition}"
-            )
-            if (
-                resume
-                and iteration == start_iteration
-                and await collection.find_one({"_id": document_id}) is not None
-            ):
-                continue
-            async for attempt in AsyncRetrying(
-                stop=stop_after_attempt(4),
-                wait=wait_exponential(multiplier=2, max=30),
-                sleep=asyncio.sleep,
-                reraise=True,
-            ):
-                with attempt:
-                    async with app_container() as request_container:
-                        evaluator = await request_container.get(
-                            PragmaticLlmEvaluator
-                        )
-                        actual = await evaluator.execute(
-                            PragmaticInput(
-                                use_case_diagram=converter.convert(
-                                    case.mutation
-                                ),
-                                description=(
-                                    case.description if with_context else None
-                                ),
-                            ),
-                        )
-            await collection.insert_one(
-                {
-                    "_id": document_id,
-                    "experiment_name": experiment_name,
-                    "sample": case.sample,
-                    "mutation": case.mutation_number,
-                    "actual": actual.model_dump(),
-                    "nodes": _counts(case.expectation.nodes, actual.nodes),
-                }
-            )
+        finally:
+            progress.close()
 
 
 def _counts(

@@ -102,6 +102,10 @@ Diagram Assessment commands persist both diagrams and each distinct result in
 one MongoDB transaction. The returned result `uid` identifies the stored
 assessment.
 
+Evaluation collectors process three samples concurrently and start at most ten
+samples per minute by default. Use `--batch-size` and
+`--requests-per-minute` to tune these limits for the configured API provider.
+
 ## Matching Mutation Evaluation
 
 Start MongoDB, configure `MATCHER_MODEL` and `MATCHER_API_KEY`, then run the

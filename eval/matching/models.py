@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from typing import Self
 
@@ -53,13 +54,16 @@ class MutationCase(BaseModel):
         )
 
 
-def load_dataset(path: Path) -> list[MutationCase]:
+async def load_dataset(path: Path) -> list[MutationCase]:
     cases: list[MutationCase] = []
     for sample in range(1, 11):
         envelopes = [
             MutationEnvelope.model_validate_json(
-                (path / str(sample) / f"{sample}_{mutation}.json").read_text(
-                    "utf-8"
+                await asyncio.to_thread(
+                    (
+                        path / str(sample) / f"{sample}_{mutation}.json"
+                    ).read_text,
+                    "utf-8",
                 )
             )
             for mutation in range(6)

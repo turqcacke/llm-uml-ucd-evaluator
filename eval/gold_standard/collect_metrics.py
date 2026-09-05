@@ -2,12 +2,14 @@ import argparse
 import asyncio
 import json
 import re
+from functools import partial
 from pathlib import Path
 
 from dishka import Provider, Scope, make_async_container, provide
 from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
 from tqdm import tqdm
 
+from eval.batching import add_batch_arguments, run_in_batches
 from src.app_logging import logger
 from src.config import BASE_URL
 from src.controller.di import (
@@ -85,68 +87,150 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--experiment-name", default="gold_standard")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--size", choices=("short", "full"), default="short")
+    add_batch_arguments(parser)
     args = parser.parse_args(argv)
     try:
         if not re.fullmatch(r"[A-Za-z0-9_-]+", args.experiment_name):
             raise ValueError(
                 "Experiment name must contain only letters, digits, _ or -"
             )
-        mode = args.size
-        samples = range(1, 61) if mode == "full" else (1, 11, 21, 31, 41, 51)
-        steps = []
-        for sample in samples:
-            lower = (sample - 1) // 10 * 10 + 1
-            group = f"{lower}-{lower + 9}"
-            steps.append(
-                (
-                    sample,
-                    ANNOTATIONS_PATH / group / f"{sample}_result.json",
-                    DESCRIPTIONS_PATH / group / f"{sample}.txt",
-                )
-            )
-        checkpoint = (
-            CHECKPOINTS_PATH / f"{args.experiment_name}_requcd60_{mode}.json"
-        )
-        start_iteration = 1
-        if args.resume:
-            config = json.loads(checkpoint.read_text("utf-8"))
-            if not isinstance(config, dict) or set(config) != {
-                "dataset",
-                "mode",
-                "iteration",
-            }:
-                raise ValueError(
-                    "Resume config must contain dataset, mode, and iteration"
-                )
-            if config["dataset"] != "requcd60" or config["mode"] != mode:
-                raise ValueError("Resume config does not match this run")
-            start_iteration = config["iteration"]
-            if type(
-                start_iteration
-            ) is not int or not 1 <= start_iteration <= len(steps):
-                raise ValueError(
-                    f"iteration must be an integer from 1 to {len(steps)}"
-                )
-        elif checkpoint.exists():
-            raise ValueError(
-                f"Checkpoint exists: {checkpoint}; use --resume "
-                "or a different --experiment-name"
-            )
-        checkpoint.parent.mkdir(parents=True, exist_ok=True)
-        asyncio.run(
-            _run(
-                steps,
-                start_iteration,
-                args.experiment_name,
-                mode,
-                checkpoint,
-            )
-        )
-        checkpoint.unlink()
+        asyncio.run(_main(args))
     except Exception as exc:
         logger.error("{}: error: {}", parser.prog, exc)
         return 1
     return 0
+
+
+async def _main(args: argparse.Namespace) -> None:
+    mode = args.size
+    samples = range(1, 61) if mode == "full" else (1, 11, 21, 31, 41, 51)
+    steps = []
+    for sample in samples:
+        lower = (sample - 1) // 10 * 10 + 1
+        group = f"{lower}-{lower + 9}"
+        steps.append(
+            (
+                sample,
+                ANNOTATIONS_PATH / group / f"{sample}_result.json",
+                DESCRIPTIONS_PATH / group / f"{sample}.txt",
+            )
+        )
+    checkpoint = (
+        CHECKPOINTS_PATH / f"{args.experiment_name}_requcd60_{mode}.json"
+    )
+    start_iteration = 1
+    if args.resume:
+        config = json.loads(
+            await asyncio.to_thread(checkpoint.read_text, "utf-8")
+        )
+        if not isinstance(config, dict) or set(config) != {
+            "dataset",
+            "mode",
+            "iteration",
+        }:
+            raise ValueError(
+                "Resume config must contain dataset, mode, and iteration"
+            )
+        if config["dataset"] != "requcd60" or config["mode"] != mode:
+            raise ValueError("Resume config does not match this run")
+        start_iteration = config["iteration"]
+        if type(start_iteration) is not int or not 1 <= start_iteration <= len(
+            steps
+        ):
+            raise ValueError(
+                f"iteration must be an integer from 1 to {len(steps)}"
+            )
+    elif checkpoint.exists():
+        raise ValueError(
+            f"Checkpoint exists: {checkpoint}; use --resume "
+            "or a different --experiment-name"
+        )
+    checkpoint.parent.mkdir(parents=True, exist_ok=True)
+    await _run(
+        steps,
+        start_iteration,
+        args.experiment_name,
+        mode,
+        checkpoint,
+        args.batch_size,
+        args.requests_per_minute,
+    )
+    checkpoint.unlink()
+
+
+async def _write_checkpoint(
+    iteration: int,
+    *,
+    checkpoint: Path,
+    mode: str,
+) -> None:
+    temporary = checkpoint.with_suffix(".tmp")
+    content = (
+        json.dumps(
+            {
+                "dataset": "requcd60",
+                "mode": mode,
+                "iteration": iteration,
+            }
+        )
+        + "\n"
+    )
+    await asyncio.to_thread(temporary.write_text, content, "utf-8")
+    await asyncio.to_thread(temporary.replace, checkpoint)
+
+
+async def _collect_assessment(
+    iteration: int,
+    step: tuple[int, Path, Path],
+    *,
+    experiment_name: str,
+    mode: str,
+    total_steps: int,
+    progress: tqdm,
+) -> None:
+    sample, annotation_path, description_path = step
+    annotation = await asyncio.to_thread(
+        annotation_path.read_text,
+        "utf-8",
+    )
+    reference = GoldStandardReference(
+        **ReqUCD60Result.model_validate_json(annotation).model_dump(),
+        uid=(f"{experiment_name}_requcd60_{mode}_{sample}"),
+    )
+    description = await asyncio.to_thread(description_path.read_text, "utf-8")
+    async for attempt in AsyncRetrying(
+        stop=stop_after_attempt(4),
+        wait=wait_exponential(multiplier=2, max=30),
+        sleep=asyncio.sleep,
+        reraise=True,
+    ):
+        with attempt:
+            logger.info(
+                "Iteration {}/{} mode={} sample={} attempt={}",
+                iteration,
+                total_steps,
+                mode,
+                sample,
+                attempt.retry_state.attempt_number,
+            )
+            async with app_container() as request_container:
+                assessment = await request_container.get(
+                    ReqUCD60ReferenceAssessment
+                )
+                result = await assessment.execute(
+                    ReqUCD60ReferenceAssessmentInput(
+                        reference=reference,
+                        candidate_description=description,
+                    )
+                )
+            logger.info(
+                "Iteration {} sample={} reference={} saved result={}",
+                iteration,
+                sample,
+                reference.uid,
+                result.uid,
+            )
+    progress.update()
 
 
 async def _run(
@@ -155,73 +239,37 @@ async def _run(
     experiment_name: str,
     mode: str,
     checkpoint: Path,
+    batch_size: int,
+    requests_per_minute: int,
 ) -> None:
     async with app_container:
-        remaining_steps = tqdm(
-            steps[start_iteration - 1 :],
+        progress = tqdm(
             total=len(steps),
             initial=start_iteration - 1,
             desc="Gold standard",
             unit="assessment",
         )
-        for iteration, (
-            sample,
-            annotation_path,
-            description_path,
-        ) in enumerate(remaining_steps, start=start_iteration):
-            # Replace atomically so interruption cannot leave partial JSON.
-            temporary = checkpoint.with_suffix(".tmp")
-            temporary.write_text(
-                json.dumps(
-                    {
-                        "dataset": "requcd60",
-                        "mode": mode,
-                        "iteration": iteration,
-                    }
-                )
-                + "\n",
-                "utf-8",
+        try:
+            await run_in_batches(
+                steps,
+                start_iteration=start_iteration,
+                batch_size=batch_size,
+                requests_per_minute=requests_per_minute,
+                before_batch=partial(
+                    _write_checkpoint,
+                    checkpoint=checkpoint,
+                    mode=mode,
+                ),
+                worker=partial(
+                    _collect_assessment,
+                    experiment_name=experiment_name,
+                    mode=mode,
+                    total_steps=len(steps),
+                    progress=progress,
+                ),
             )
-            temporary.replace(checkpoint)
-            reference = GoldStandardReference(
-                **ReqUCD60Result.model_validate_json(
-                    annotation_path.read_text("utf-8")
-                ).model_dump(),
-                uid=(f"{experiment_name}_requcd60_{mode}_{sample}"),
-            )
-            description = description_path.read_text("utf-8")
-            async for attempt in AsyncRetrying(
-                stop=stop_after_attempt(4),
-                wait=wait_exponential(multiplier=2, max=30),
-                sleep=asyncio.sleep,
-                reraise=True,
-            ):
-                with attempt:
-                    logger.info(
-                        "Iteration {}/{} mode={} sample={} attempt={}",
-                        iteration,
-                        len(steps),
-                        mode,
-                        sample,
-                        attempt.retry_state.attempt_number,
-                    )
-                    async with app_container() as request_container:
-                        assessment = await request_container.get(
-                            ReqUCD60ReferenceAssessment
-                        )
-                        result = await assessment.execute(
-                            ReqUCD60ReferenceAssessmentInput(
-                                reference=reference,
-                                candidate_description=description,
-                            )
-                        )
-                    logger.info(
-                        "Iteration {} sample={} reference={} saved result={}",
-                        iteration,
-                        sample,
-                        reference.uid,
-                        result.uid,
-                    )
+        finally:
+            progress.close()
 
 
 if __name__ == "__main__":

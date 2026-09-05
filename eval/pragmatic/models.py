@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
@@ -22,7 +23,7 @@ class PragmaticMutationCase(BaseModel):
     description: str
 
 
-def load_dataset(path: Path) -> list[PragmaticMutationCase]:
+async def load_dataset(path: Path) -> list[PragmaticMutationCase]:
     cases: list[PragmaticMutationCase] = []
 
     for sample_path in sorted(
@@ -36,8 +37,11 @@ def load_dataset(path: Path) -> list[PragmaticMutationCase]:
         sample = int(sample_path.name)
         for mutation_number in range(4):
             envelope = PragmaticMutationEnvelope.model_validate_json(
-                (sample_path / f"{sample}_{mutation_number}.json").read_text(
-                    "utf-8"
+                await asyncio.to_thread(
+                    (
+                        sample_path / f"{sample}_{mutation_number}.json"
+                    ).read_text,
+                    "utf-8",
                 )
             )
             cases.append(
