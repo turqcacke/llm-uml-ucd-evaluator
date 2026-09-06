@@ -4,13 +4,14 @@ from decimal import Decimal
 from typing import Any, cast
 
 import pytest
-from dishka import Provider, Scope, make_async_container, provide
+from dishka import Provider, Scope, provide
 from fastapi import HTTPException
 from httpx import ASGITransport, AsyncClient
 from pydantic import ValidationError
 
 from src.config import ApiSettings, Environment, Settings
 from src.controller.api.app import create_app
+from src.controller.di import make_api_container
 from src.model.domain import (
     ElementSyntacticEvaluation,
     EvaluationResult,
@@ -51,6 +52,15 @@ from src.services.exceptions import (
 from src.services.extractor import ApollonJsonExtractor, DescriptionExtractor
 from src.services.matcher import UseCaseDiagramMatcher
 from src.services.ports import UnitOfWork
+
+
+def make_async_container(
+    *providers: Provider,
+    settings: ApiSettings | None = None,
+):
+    return make_api_container(
+        *providers, settings=settings or ApiSettings(API_SECRET="secret")
+    )
 
 
 def _candidate() -> dict[str, Any]:
@@ -271,9 +281,7 @@ async def test_apollon_assessment_accepts_editor_export_and_dispatches(
     container = make_async_container(
         FakeProvider(description_assessment, apollon_assessment)
     )
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
     async with app.router.lifespan_context(app):
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
@@ -336,9 +344,7 @@ async def test_discriminator_and_variant_mismatches_are_rejected(
 ) -> None:
     assessment = FakeAssessment()
     container = make_async_container(FakeProvider(assessment))
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         async with AsyncClient(
@@ -376,9 +382,7 @@ async def test_apollon_string_values_outside_boundaries_are_rejected(
 ) -> None:
     assessment = FakeAssessment()
     container = make_async_container(FakeProvider(assessment))
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
     reference = _apollon_export()
     node = reference["model"]["elements"]["actor"]
     relation = reference["model"]["relationships"]["relation"]
@@ -419,9 +423,7 @@ async def test_apollon_string_boundaries_and_disallowed_result_succeed() -> (
 ):
     assessment = FakeAssessment(candidate_is_allowed=False)
     container = make_async_container(FakeProvider(assessment))
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
     reference = _apollon_export()
     node = reference["model"]["elements"]["actor"]
     relation = reference["model"]["relationships"]["relation"]
@@ -466,10 +468,7 @@ async def test_description_assessment_returns_detailed_result() -> (
 ):
     assessment = FakeAssessment()
     container = make_async_container(FakeProvider(assessment))
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret", ENVIRONMENT=Environment.DEV),
-        container=container,
-    )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         async with AsyncClient(
@@ -561,9 +560,7 @@ async def test_description_assessment_returns_detailed_result() -> (
 async def test_authentication_rejects_request_before_assessment() -> None:
     assessment = FakeAssessment()
     container = make_async_container(FakeProvider(assessment))
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         async with AsyncClient(
@@ -621,9 +618,7 @@ async def test_service_failures_use_safe_error_contract(
     error: BaseAppException, status_code: int, error_code: str
 ) -> None:
     container = make_async_container(FakeProvider(FailingAssessment(error)))
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         async with AsyncClient(
@@ -649,9 +644,7 @@ async def test_framework_and_internal_failures_use_error_contract() -> None:
     container = make_async_container(
         FakeProvider(FailingAssessment(RuntimeError("secret traceback")))
     )
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
 
     @app.get("/invalid-response", response_model=int)
     async def invalid_response() -> str:
@@ -713,9 +706,7 @@ async def test_invalid_request_does_not_run_assessment(
 ) -> None:
     assessment = FakeAssessment()
     container = make_async_container(FakeProvider(assessment))
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
     request = _request()
     request.update(changes)
 
@@ -743,9 +734,7 @@ async def test_reference_accepts_non_whitespace_boundaries(
 ) -> None:
     assessment = FakeAssessment()
     container = make_async_container(FakeProvider(assessment))
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         async with AsyncClient(
@@ -766,9 +755,7 @@ async def test_missing_reference_and_malformed_json_are_validation_errors() -> (
 ):
     assessment = FakeAssessment()
     container = make_async_container(FakeProvider(assessment))
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
     headers = {"X-API-Key": "secret", "Content-Type": "application/json"}
 
     async with app.router.lifespan_context(app):
@@ -811,9 +798,7 @@ async def test_response_waits_for_assessment_completion() -> None:
 
     assessment.execute = execute  # type: ignore[method-assign]
     container = make_async_container(FakeProvider(assessment))
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         async with AsyncClient(
@@ -892,9 +877,7 @@ async def test_http_success_observes_persisted_assessment() -> None:
         syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
     container = make_async_container(FakeProvider(assessment))
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         async with AsyncClient(
@@ -944,9 +927,7 @@ class LifecycleProvider(Provider):
 async def test_dependencies_are_request_scoped_and_cleaned_up() -> None:
     provider = LifecycleProvider()
     container = make_async_container(provider)
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         async with AsyncClient(
@@ -971,7 +952,7 @@ async def test_api_requires_secret_at_startup(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("API_SECRET", "")
-    container = make_async_container(FakeProvider(FakeAssessment()))
+    container = make_api_container(FakeProvider(FakeAssessment()))
     original_close = type(container).close
     close_calls = 0
 
@@ -994,14 +975,14 @@ async def test_api_requires_secret_at_startup(
 async def test_development_documentation_is_public(
     environment: Environment | None,
 ) -> None:
-    container = make_async_container(FakeProvider(FakeAssessment()))
     values = {"API_SECRET": "secret"}
     if environment is not None:
         values["ENVIRONMENT"] = environment
-    app = create_app(
+    container = make_async_container(
+        FakeProvider(FakeAssessment()),
         settings=ApiSettings.model_validate(values),
-        container=container,
     )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         async with AsyncClient(
@@ -1020,13 +1001,13 @@ async def test_production_disables_docs_and_keeps_assessment_protected() -> (
     None
 ):
     assessment = FakeAssessment()
-    container = make_async_container(FakeProvider(assessment))
-    app = create_app(
+    container = make_async_container(
+        FakeProvider(assessment),
         settings=ApiSettings(
             API_SECRET="secret", ENVIRONMENT=Environment.PROD
         ),
-        container=container,
     )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         async with AsyncClient(

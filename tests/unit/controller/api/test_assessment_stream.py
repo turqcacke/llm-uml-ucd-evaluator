@@ -5,12 +5,13 @@ from decimal import Decimal
 from typing import Any, cast
 
 import pytest
-from dishka import Provider, Scope, make_async_container, provide
+from dishka import Provider, Scope, provide
 from httpx import ASGITransport, AsyncClient
 from starlette.requests import ClientDisconnect
 
 from src.config import ApiSettings
 from src.controller.api.app import create_app
+from src.controller.di import make_api_container
 from src.model.domain import (
     AssessmentState,
     ElementSyntacticEvaluation,
@@ -53,6 +54,15 @@ from src.services.exceptions import (
 from src.services.extractor import ApollonJsonExtractor, DescriptionExtractor
 from src.services.matcher import UseCaseDiagramMatcher
 from src.services.ports import UnitOfWork
+
+
+def make_async_container(
+    *providers: Provider,
+    settings: ApiSettings | None = None,
+):
+    return make_api_container(
+        *providers, settings=settings or ApiSettings(API_SECRET="secret")
+    )
 
 
 def _candidate() -> dict[str, Any]:
@@ -240,9 +250,7 @@ async def test_stream_supports_both_inputs_and_projects_result(
     description = FakeAssessment()
     apollon = FakeAssessment()
     container = make_async_container(FakeProvider(description, apollon))
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         async with AsyncClient(
@@ -356,9 +364,7 @@ async def test_stream_supports_both_inputs_and_projects_result(
 async def test_stream_rejects_auth_and_input_before_opening(kind: str) -> None:
     assessment = FakeAssessment()
     container = make_async_container(FakeProvider(assessment))
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
     invalid = _request(kind)
     invalid["candidate"] = {"model": {}}
 
@@ -434,9 +440,7 @@ async def test_stream_reports_service_failure_as_terminal_error(
 ) -> None:
     assessment = FailingAssessment(error)
     container = make_async_container(FakeProvider(assessment))
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         async with AsyncClient(
@@ -467,9 +471,7 @@ async def test_stream_reports_service_failure_as_terminal_error(
 async def test_stream_reports_unexpected_failure_as_terminal_error() -> None:
     assessment = FailingAssessment(RuntimeError("secret traceback"))
     container = make_async_container(FakeProvider(assessment))
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         async with AsyncClient(
@@ -498,9 +500,7 @@ async def test_result_projection_failure_is_a_terminal_internal_error() -> (
     None
 ):
     container = make_async_container(FakeProvider(InvalidResultAssessment()))
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         async with AsyncClient(
@@ -736,9 +736,7 @@ async def test_stream_delivers_incrementally_and_completes_after_commit() -> (
     )
     provider = LifecycleProvider(assessment)
     container = make_async_container(provider)
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         stream = AsgiStream(app, _request("description"))
@@ -807,9 +805,7 @@ async def test_disallowed_candidate_streams_persisted_result_without_analysis() 
     )
     provider = LifecycleProvider(assessment)
     container = make_async_container(provider)
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         async with AsyncClient(
@@ -860,9 +856,7 @@ async def test_disallowed_reference_ends_stream_without_persistence() -> None:
         syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
     container = make_async_container(LifecycleProvider(assessment))
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         async with AsyncClient(
@@ -900,9 +894,7 @@ async def test_commit_failure_rolls_back_and_ends_stream_with_error() -> None:
     )
     provider = LifecycleProvider(assessment)
     container = make_async_container(provider)
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         async with AsyncClient(
@@ -945,9 +937,7 @@ async def test_analysis_failure_cancels_sibling_before_persistence() -> None:
         syntactic_evaluator=SyntacticDiagramEvaluator(),
     )
     container = make_async_container(LifecycleProvider(assessment))
-    app = create_app(
-        settings=ApiSettings(API_SECRET="secret"), container=container
-    )
+    app = create_app(container=container)
 
     async with app.router.lifespan_context(app):
         async with AsyncClient(
@@ -1005,7 +995,6 @@ async def test_disconnect_closes_suspended_stream_before_request_cleanup() -> (
                 raise OSError("client disconnected")
 
     app = create_app(
-        settings=ApiSettings(API_SECRET="secret"),
         container=make_async_container(ClosingProvider(SuspendedAssessment())),
     )
     async with app.router.lifespan_context(app), asyncio.timeout(2):

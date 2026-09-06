@@ -31,6 +31,11 @@ class ApiSettings(BaseSettings):
     GRAPHVIZ_CONCURRENCY_LIMIT: int = Field(default=4, ge=1)
 
 
+@lru_cache(maxsize=1)
+def get_api_settings() -> ApiSettings:
+    return ApiSettings.model_validate({})
+
+
 class Settings(LoggingSettings):
     MONGODB_URI: str = Field(
         default=(
