@@ -28,6 +28,7 @@ class ApiSettings(BaseSettings):
 
     API_SECRET: str = Field(min_length=1)
     ENVIRONMENT: Environment = Environment.DEV
+    GRAPHVIZ_CONCURRENCY_LIMIT: int = Field(default=4, ge=1)
 
 
 class Settings(LoggingSettings):
