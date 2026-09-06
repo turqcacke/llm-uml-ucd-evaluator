@@ -21,6 +21,9 @@
 
 ## HTTP API
 
+Install the Graphviz system package before starting the API; the `dot -V`
+command must succeed. The Python Graphviz binding is installed by `uv sync`.
+
 Set a nonempty `API_SECRET` in `.env`, then start the development API:
 
 ```sh
