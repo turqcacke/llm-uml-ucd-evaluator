@@ -3,9 +3,8 @@ from dataclasses import dataclass
 from src.app_logging import logger
 from src.model.apollon import ApollonJson
 from src.model.domain import UseCaseDiagramPresentation
+from src.services.converter import BaseConverter
 from src.services.use_case import UseCase, map_use_case_exceptions
-
-from .converter import BaseConverter
 
 
 @dataclass

@@ -32,11 +32,11 @@ from src.controller.di.mongo import MongoProvider
 from src.infrastructure.requcd60.converter import ReqUCD60ToDomainConverter
 from src.model.domain import UseCaseDiagramPresentation
 from src.model.requcd60.result import ReqUCD60Result
+from src.services.converter import BaseConverter
 from src.services.diagram_assessment.requcd60_reference import (
     ReqUCD60ReferenceAssessment,
     ReqUCD60ReferenceAssessmentInput,
 )
-from src.services.extractor.converter import BaseConverter
 from src.services.extractor.requcd60 import (
     ReqUCD60Extractor,
     ReqUCD60ExtractorInput,

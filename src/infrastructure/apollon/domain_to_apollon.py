@@ -25,8 +25,8 @@ from src.model.domain import (
     NodeType,
     UseCaseDiagramPresentation,
 )
+from src.services.converter import BaseConverter
 from src.services.exceptions import ConversionError
-from src.services.extractor import BaseConverter
 
 _PADDING = 40.0
 _POINTS_PER_INCH = 72.0

@@ -3,9 +3,9 @@ from dishka import Provider, Scope, provide
 from src.infrastructure.apollon import ApollonToDomainConverter
 from src.model.apollon import ApollonJson
 from src.model.domain import UseCaseDiagramPresentation
+from src.services.converter import BaseConverter
 from src.services.extractor import (
     ApollonJsonExtractor,
-    BaseConverter,
     DescriptionExtractor,
 )
 

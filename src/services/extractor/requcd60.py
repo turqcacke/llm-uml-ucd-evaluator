@@ -2,9 +2,8 @@ from dataclasses import dataclass
 
 from src.model.domain import UseCaseDiagramPresentation
 from src.model.requcd60.result import ReqUCD60Result
+from src.services.converter import BaseConverter
 from src.services.use_case import UseCase, map_use_case_exceptions
-
-from .converter import BaseConverter
 
 
 @dataclass(frozen=True)

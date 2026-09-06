@@ -8,8 +8,8 @@ from src.model.domain import (
     UseCaseDiagramPresentation,
 )
 from src.model.requcd60.result import ReqUCD60Result
+from src.services.converter import BaseConverter
 from src.services.exceptions import ConversionError
-from src.services.extractor.converter import BaseConverter
 
 
 class ReqUCD60ToDomainConverter(
