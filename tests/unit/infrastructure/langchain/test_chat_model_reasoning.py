@@ -34,7 +34,7 @@ from src.services.ports import LLMRoles
         ("qwen/qwen3.8-flash", "openai", False),
     ],
 )
-async def test_role_sends_reasoning_options_to_provider(
+async def test_role_uses_provider_specific_reasoning_options(
     monkeypatch,
     factory,
     role,

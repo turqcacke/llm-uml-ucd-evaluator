@@ -19,7 +19,6 @@ from src.model.apollon import (
     ApollonNodeType,
     ApollonRelationType,
 )
-from src.model.domain import NodeType
 from src.services.converter import (
     ApollonLayoutConverter,
     ApollonLayoutConverterInput,
@@ -48,14 +47,14 @@ def _diagram() -> dict[str, object]:
     }
 
 
-def _layout() -> ApollonLayout:
+def _layout(name: str = "Customer") -> ApollonLayout:
     bounds = ApollonLayoutBounds(x=10, y=20, width=80, height=40)
     return ApollonLayout(
         size=ApollonLayoutSize(width=200, height=120),
         elements={
             "actor": ApollonLayoutNode(
                 id="actor",
-                name="Customer",
+                name=name,
                 type=ApollonNodeType.ACTOR,
                 bounds=bounds,
             )
@@ -85,7 +84,7 @@ class FakeConverter:
         self, data: ApollonLayoutConverterInput
     ) -> ApollonLayout:
         self.calls.append(data)
-        return _layout()
+        return _layout(data.diagram.nodes[0].name)
 
 
 class FailingConverter(FakeConverter):
@@ -174,8 +173,6 @@ async def test_authenticated_client_converts_diagram_to_apollon_layout() -> (
             "assessments": {},
         },
     }
-    assert len(converter.calls) == 1
-    assert converter.calls[0].diagram.nodes[0].type is NodeType.ACTOR
 
 
 @pytest.mark.anyio

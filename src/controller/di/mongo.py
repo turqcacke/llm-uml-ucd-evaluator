@@ -1,17 +1,20 @@
 from collections.abc import AsyncIterable
 
-from dishka import Provider, Scope, provide
+from dishka import Provider, Scope, alias, provide
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.asynchronous.database import AsyncDatabase
 
 from src.config import Settings, get_settings
 from src.infrastructure.mongo import (
-    MongoAssessmentWriteRepository,
+    MongoAssessmentRepository,
     MongoUnitOfWork,
     prepare_database,
 )
-from src.services.diagram_assessment import AssessmentWriteRepository
+from src.services.diagram_assessment import (
+    AssessmentReadRepository,
+    AssessmentWriteRepository,
+)
 from src.services.ports import UnitOfWork
 
 
@@ -48,8 +51,17 @@ class MongoProvider(Provider):
         self,
         database: AsyncDatabase,
         session: AsyncClientSession,
-    ) -> AssessmentWriteRepository:
-        return MongoAssessmentWriteRepository(database, session)
+    ) -> MongoAssessmentRepository:
+        return MongoAssessmentRepository(database, session)
+
+    assessment_write_repository = alias(
+        MongoAssessmentRepository,
+        provides=AssessmentWriteRepository,
+    )
+    assessment_read_repository = alias(
+        MongoAssessmentRepository,
+        provides=AssessmentReadRepository,
+    )
 
     @provide(scope=Scope.REQUEST)
     def unit_of_work(self, session: AsyncClientSession) -> UnitOfWork:

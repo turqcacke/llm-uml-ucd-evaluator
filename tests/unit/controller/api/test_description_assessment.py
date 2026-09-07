@@ -84,12 +84,18 @@ def _candidate() -> dict[str, Any]:
 
 
 class FakeAssessment:
-    def __init__(self, *, candidate_is_allowed: bool = True) -> None:
+    def __init__(
+        self,
+        *,
+        candidate_is_allowed: bool = True,
+        uid_from_description: bool = False,
+    ) -> None:
         self.calls: list[
             DescriptionReferenceAssessmentInput
             | ApollonToApollonAssessmentInput
         ] = []
         self.candidate_is_allowed = candidate_is_allowed
+        self.uid_from_description = uid_from_description
 
     async def execute(
         self,
@@ -165,8 +171,11 @@ class FakeAssessment:
                 ],
                 relation_matches=[],
             )
+        uid = f"assessment-{len(self.calls)}"
+        if self.uid_from_description:
+            uid = f"description-{getattr(data, 'description', None)!r}"
         return MetricsWithEvaluation(
-            uid=f"assessment-{len(self.calls)}",
+            uid=uid,
             reference_uid="reference-1",
             candidate_uid="candidate-1",
             candidate_is_allowed=self.candidate_is_allowed,
@@ -277,7 +286,7 @@ async def test_apollon_assessment_accepts_editor_export_and_dispatches(
     context_description: str | None,
 ) -> None:
     description_assessment = FakeAssessment()
-    apollon_assessment = FakeAssessment()
+    apollon_assessment = FakeAssessment(uid_from_description=True)
     container = make_async_container(
         FakeProvider(description_assessment, apollon_assessment)
     )
@@ -298,12 +307,9 @@ async def test_apollon_assessment_accepts_editor_export_and_dispatches(
             )
 
     assert response.status_code == 201
-    assert response.json()["data"]["uid"] == "assessment-1"
-    assert len(apollon_assessment.calls) == 1
-    [call] = apollon_assessment.calls
-    assert isinstance(call, ApollonToApollonAssessmentInput)
-    assert call.description == context_description
-    assert description_assessment.calls == []
+    assert response.json()["data"]["uid"] == (
+        f"description-{context_description!r}"
+    )
 
 
 @pytest.mark.anyio

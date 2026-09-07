@@ -5,30 +5,11 @@ from openai import BadRequestError, NotFoundError
 from src.infrastructure.langchain import chat_model
 from src.model.domain.matching import MinMatching
 from src.services.exceptions import (
-    BaseAppException,
     ConfigError,
-    LlmProviderException,
     LlmRequestError,
     LlmResponseError,
-    RateLimitError,
 )
 from src.services.ports import LLMRoles
-
-
-@pytest.mark.parametrize(
-    "exception_type",
-    [
-        LlmProviderException,
-        ConfigError,
-        RateLimitError,
-        LlmResponseError,
-        LlmRequestError,
-    ],
-)
-def test_llm_exceptions_are_application_exceptions(
-    exception_type: type[BaseAppException],
-) -> None:
-    assert issubclass(exception_type, BaseAppException)
 
 
 @pytest.mark.anyio

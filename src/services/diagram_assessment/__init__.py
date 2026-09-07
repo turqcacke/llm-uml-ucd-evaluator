@@ -6,12 +6,16 @@ from .description_reference import (
     DescriptionReferenceAssessment,
     DescriptionReferenceAssessmentInput,
 )
-from .repository import AssessmentWriteRepository
+from .query import GetAssessmentByCandidateId, GetAssessmentByUid
+from .repository import AssessmentReadRepository, AssessmentWriteRepository
 
 __all__ = [
     "ApollonToApollonAssessment",
     "ApollonToApollonAssessmentInput",
     "AssessmentWriteRepository",
+    "AssessmentReadRepository",
+    "GetAssessmentByCandidateId",
+    "GetAssessmentByUid",
     "DescriptionReferenceAssessment",
     "DescriptionReferenceAssessmentInput",
 ]

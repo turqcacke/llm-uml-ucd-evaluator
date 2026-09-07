@@ -9,7 +9,7 @@ from pymongo.errors import DuplicateKeyError
 
 from src.infrastructure.mongo import (
     MetricsWithEvaluationModel,
-    MongoAssessmentWriteRepository,
+    MongoAssessmentRepository,
     MongoUnitOfWork,
     UseCaseDiagramPresentationModel,
     prepare_database,
@@ -82,6 +82,32 @@ def _result(
 
 
 @pytest.mark.anyio
+async def test_repository_reads_assessment_by_candidate_uid(
+    mongo_database: AsyncDatabase[Any],
+) -> None:
+    reference = _diagram("reference", "r1")
+    candidate = _diagram("candidate", "c1")
+    previous = _result("previous-assessment", reference, candidate)
+    expected = _result("latest-assessment", reference, candidate)
+
+    async with mongo_database.client.start_session() as session:
+        repository = MongoAssessmentRepository(mongo_database, session)
+        async with MongoUnitOfWork(session) as unit_of_work:
+            await repository.save_diagram_presentation(reference)
+            await repository.save_diagram_presentation(candidate)
+            await repository.save_metrics(previous)
+            await repository.save_metrics(expected)
+            await unit_of_work.commit()
+
+        assert (
+            await repository.get_by_candidate_uid(candidate.uid) == expected
+        )
+        assert await repository.get_by_uid(previous.uid) == previous
+        assert await repository.get_by_candidate_uid("unknown") is None
+        assert await repository.get_by_uid("unknown") is None
+
+
+@pytest.mark.anyio
 async def test_repository_persists_complete_assessment_and_identity_rules(
     mongo_database: AsyncDatabase[Any],
 ) -> None:
@@ -98,7 +124,7 @@ async def test_repository_persists_complete_assessment_and_identity_rules(
     result.matching = matching
 
     async with database.client.start_session() as session:
-        repository = MongoAssessmentWriteRepository(database, session)
+        repository = MongoAssessmentRepository(database, session)
         async with MongoUnitOfWork(session) as unit_of_work:
             await repository.save_diagram_presentation(reference)
             await repository.save_diagram_presentation(candidate)
@@ -126,7 +152,7 @@ async def test_repository_persists_complete_assessment_and_identity_rules(
         relation_matches=[],
     )
     async with database.client.start_session() as session:
-        repository = MongoAssessmentWriteRepository(database, session)
+        repository = MongoAssessmentRepository(database, session)
         async with MongoUnitOfWork(session) as unit_of_work:
             empty_result = _result("empty-matching", reference, candidate)
             empty_result.matching = empty_matching
@@ -149,7 +175,7 @@ async def test_repository_persists_complete_assessment_and_identity_rules(
     ] is None
 
     async with database.client.start_session() as session:
-        repository = MongoAssessmentWriteRepository(database, session)
+        repository = MongoAssessmentRepository(database, session)
         async with MongoUnitOfWork(session) as unit_of_work:
             await repository.save_diagram_presentation(reference)
             await repository.save_diagram_presentation(
@@ -167,13 +193,13 @@ async def test_repository_persists_complete_assessment_and_identity_rules(
         update={"nodes": [Node(uid="r1", name="Other", type=NodeType.ACTOR)]}
     )
     async with database.client.start_session() as session:
-        repository = MongoAssessmentWriteRepository(database, session)
+        repository = MongoAssessmentRepository(database, session)
         with pytest.raises(ValueError, match="different content"):
             async with MongoUnitOfWork(session):
                 await repository.save_diagram_presentation(conflicting)
 
     async with database.client.start_session() as session:
-        repository = MongoAssessmentWriteRepository(database, session)
+        repository = MongoAssessmentRepository(database, session)
         with pytest.raises(DuplicateKeyError):
             async with MongoUnitOfWork(session):
                 await repository.save_metrics(result)
@@ -187,7 +213,7 @@ async def test_failed_and_cancelled_transactions_do_not_affect_commits(
     started = asyncio.Event()
 
     async with database.client.start_session() as session:
-        repository = MongoAssessmentWriteRepository(database, session)
+        repository = MongoAssessmentRepository(database, session)
         with pytest.raises(RuntimeError, match="write failed"):
             async with MongoUnitOfWork(session):
                 await repository.save_diagram_presentation(
@@ -197,7 +223,7 @@ async def test_failed_and_cancelled_transactions_do_not_affect_commits(
 
     async def cancelled_write() -> None:
         async with database.client.start_session() as session:
-            repository = MongoAssessmentWriteRepository(database, session)
+            repository = MongoAssessmentRepository(database, session)
             async with MongoUnitOfWork(session):
                 await repository.save_diagram_presentation(
                     _diagram("cancelled", "c")
@@ -208,7 +234,7 @@ async def test_failed_and_cancelled_transactions_do_not_affect_commits(
     task = asyncio.create_task(cancelled_write())
     await started.wait()
     async with database.client.start_session() as session:
-        repository = MongoAssessmentWriteRepository(database, session)
+        repository = MongoAssessmentRepository(database, session)
         async with MongoUnitOfWork(session) as unit_of_work:
             await repository.save_diagram_presentation(
                 _diagram("committed", "ok")

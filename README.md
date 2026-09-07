@@ -21,58 +21,54 @@
 
 ## HTTP API
 
-Install the Graphviz system package before starting the API; startup fails
-unless the `dot -V` command succeeds. The Python Graphviz binding is installed
-by `uv sync`. `GRAPHVIZ_CONCURRENCY_LIMIT` controls concurrent layout jobs and
-defaults to `4`.
-
-Set a nonempty `API_SECRET` in `.env`, then start the development API:
+The Graphviz system package is required; API startup fails unless `dot -V`
+succeeds. Install it for the current operating system:
 
 ```sh
-uv run uvicorn src.controller.api.app:app
+# macOS (Homebrew)
+brew install graphviz
+
+# Windows (Windows Package Manager)
+winget install graphviz
+
+# Ubuntu or Debian
+sudo apt install graphviz
+
+# Fedora, Rocky Linux, RHEL, or CentOS
+sudo dnf install graphviz
 ```
 
-Development is the default environment. Open `/docs`, authorize with the
-configured secret as `X-API-Key`, then use these versioned operations:
-
-- `POST /api/v1/assessments`
-- `POST /api/v1/assessments/streams`
-- `POST /api/v1/converters/apollon`
-
-API configuration is loaded only when the API starts, so the CLI commands do
-not require `API_SECRET`.
+See the [official Graphviz download page](https://graphviz.org/download/) for
+installers, alternative package managers, and other operating systems. Verify
+the installation:
 
 ```sh
-curl -X POST http://127.0.0.1:8000/api/v1/assessments \
-  -H 'Content-Type: application/json' \
-  -H 'X-API-Key: replace-with-a-nonempty-secret' \
-  --data @assessment.json
+dot -V
 ```
 
-The converter accepts a serialized `UseCaseDiagramPresentation` directly and
-returns an Apollon Layout inside the standard success envelope:
+Then install the Python dependencies, create the local configuration, and
+start MongoDB from the repository root:
 
 ```sh
-curl -X POST http://127.0.0.1:8000/api/v1/converters/apollon \
-  -H 'Content-Type: application/json' \
-  -H 'X-API-Key: replace-with-a-nonempty-secret' \
-  --data '{"nodes": [], "relations": []}'
+uv sync
+cp .env.example .env
+docker compose -f docker-compose-infra.yml up -d --wait mongodb
 ```
 
-```json
-{
-  "ok": true,
-  "data": {
-    "version": "3.0.0",
-    "type": "UseCaseDiagram",
-    "size": {"width": 80, "height": 80},
-    "interactive": {"elements": {}, "relationships": {}},
-    "elements": {},
-    "relationships": {},
-    "assessments": {}
-  }
-}
+Edit `.env`: set a nonempty `API_SECRET` and configure the extractor, matcher,
+and evaluator model credentials. Start the development API with auto-reload:
+
+```sh
+uv run uvicorn src.controller.api.app:app --reload
 ```
+
+The API listens on `http://127.0.0.1:8000` by default. Open
+`http://127.0.0.1:8000/docs`, authorize with the configured secret as
+`X-API-Key`, and use the interactive API documentation.
+
+Development is the default environment. `GRAPHVIZ_CONCURRENCY_LIMIT` controls
+concurrent layout jobs and defaults to `4`. API configuration is loaded only
+when the API starts, so the CLI commands do not require `API_SECRET`.
 
 ## Development MongoDB
 

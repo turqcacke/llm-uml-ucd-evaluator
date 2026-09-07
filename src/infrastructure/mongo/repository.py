@@ -29,7 +29,17 @@ def to_bson(value: Any) -> Any:
     return value
 
 
-class MongoAssessmentWriteRepository(AssessmentWriteRepository):
+def from_bson(value: Any) -> Any:
+    if isinstance(value, Decimal128):
+        return value.to_decimal()
+    if isinstance(value, Mapping):
+        return {key: from_bson(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [from_bson(item) for item in value]
+    return value
+
+
+class MongoAssessmentRepository(AssessmentWriteRepository):
     def __init__(
         self, database: AsyncDatabase, session: AsyncClientSession
     ) -> None:
@@ -58,6 +68,38 @@ class MongoAssessmentWriteRepository(AssessmentWriteRepository):
         await MetricsWithEvaluationModel.collection(self._database).insert_one(
             document, session=self._session
         )
+
+    async def get_by_candidate_uid(
+        self, candidate_uid: str
+    ) -> MetricsWithEvaluation | None:
+        document = await MetricsWithEvaluationModel.collection(
+            self._database
+        ).find_one(
+            {"candidate_uid": candidate_uid},
+            sort=[("_id", -1)],
+            session=self._session,
+        )
+        return await self._hydrate(document)
+
+    async def get_by_uid(self, uid: str) -> MetricsWithEvaluation | None:
+        document = await MetricsWithEvaluationModel.collection(
+            self._database
+        ).find_one({"uid": uid}, session=self._session)
+        return await self._hydrate(document)
+
+    async def _hydrate(
+        self, document: dict[str, Any] | None
+    ) -> MetricsWithEvaluation | None:
+        if document is None:
+            return None
+        document.pop("_id")
+        reference = await UseCaseDiagramPresentationModel.collection(
+            self._database
+        ).find_one({"uid": document["reference_uid"]}, session=self._session)
+        if reference is not None:
+            reference.pop("_id")
+        document["reference"] = reference
+        return MetricsWithEvaluation.model_validate(from_bson(document))
 
 
 def _document(model: BaseModel) -> dict[str, Any]:
