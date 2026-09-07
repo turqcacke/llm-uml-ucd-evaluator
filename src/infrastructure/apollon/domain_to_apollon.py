@@ -33,14 +33,12 @@ _POINTS_PER_INCH = 72.0
 _NODE_SIZES: dict[NodeType, tuple[float, float]] = {
     NodeType.ACTOR: (80.0, 140.0),
     NodeType.USECASE: (160.0, 100.0),
-    NodeType.EXTERNAL_SYSTEM: (240.0, 160.0),
 }
 _BOUNDARY_SIZE = (240.0, 160.0)
 _NODE_TYPE_MAP: dict[NodeType, ApollonNodeType] = {
     NodeType.ACTOR: ApollonNodeType.ACTOR,
-    NodeType.SYSTEM: ApollonNodeType.SYSTEM,
+    NodeType.SYSTEM_BOUNDARY: ApollonNodeType.SYSTEM,
     NodeType.USECASE: ApollonNodeType.USECASE,
-    NodeType.EXTERNAL_SYSTEM: ApollonNodeType.EXTERNAL_SYSTEM,
 }
 _RELATION_TYPE_MAP: dict[NodeRelationType, ApollonRelationType] = {
     NodeRelationType.ASSOCIATION: ApollonRelationType.ASSOCIATION,
@@ -76,7 +74,8 @@ class DomainToApollonConverter(
         renderable = {
             uid: node
             for uid, node in renderable.items()
-            if node.type is not NodeType.SYSTEM or uid in used_boundaries
+            if node.type is not NodeType.SYSTEM_BOUNDARY
+            or uid in used_boundaries
         }
         if not renderable:
             return ApollonLayout()
@@ -107,7 +106,7 @@ class DomainToApollonConverter(
         boundaries = {
             uid: node
             for uid, node in renderable.items()
-            if node.type is NodeType.SYSTEM
+            if node.type is NodeType.SYSTEM_BOUNDARY
         }
         clusters: dict[str, Digraph] = {}
         for boundary in boundaries.values():
@@ -120,7 +119,7 @@ class DomainToApollonConverter(
             clusters[boundary.uid] = cluster
 
         for node in renderable.values():
-            if node.type is NodeType.SYSTEM:
+            if node.type is NodeType.SYSTEM_BOUNDARY:
                 continue
             destination = graph
             if node.type is NodeType.USECASE and node.parent is not None:
@@ -151,7 +150,7 @@ class DomainToApollonConverter(
             target = nodes[relation.target]
             if source.uid not in renderable or target.uid not in renderable:
                 continue
-            if NodeType.SYSTEM in {source.type, target.type}:
+            if NodeType.SYSTEM_BOUNDARY in {source.type, target.type}:
                 raise _DiagramError(
                     f"Relation {relation.uid!r} uses a System Boundary endpoint."
                 )
@@ -301,14 +300,14 @@ def _to_element(
     data: Mapping[str, Any],
     graph_bounds: tuple[float, float, float, float],
 ) -> ApollonLayoutNode:
-    if node.type is NodeType.SYSTEM:
+    if node.type is NodeType.SYSTEM_BOUNDARY:
         x1, y1, x2, y2 = _parse_bounds(_required(data, "bb"))
     else:
         x1, y1, x2, y2 = _node_bounds(data)
     top_left = _to_layout_point(x1, y2, graph_bounds)
     minimum_width, minimum_height = (
         _BOUNDARY_SIZE
-        if node.type is NodeType.SYSTEM
+        if node.type is NodeType.SYSTEM_BOUNDARY
         else _NODE_SIZES[node.type]
     )
     width = max(x2 - x1, minimum_width)

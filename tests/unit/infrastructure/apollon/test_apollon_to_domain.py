@@ -7,6 +7,7 @@ from src.infrastructure.apollon import (
     ApollonToDomainConverter,
 )
 from src.model.apollon import ApollonJson
+from src.services.evaluator import SyntacticDiagramEvaluator
 from src.services.exceptions import ConversionError
 
 
@@ -63,13 +64,18 @@ def test_converter_returns_domain_presentation() -> None:
     assert result.model_dump(exclude={"uid"}) == {
         "nodes": [
             {"uid": "1", "name": "Node 1", "parent": None, "type": "actor"},
-            {"uid": "2", "name": "Node 2", "parent": None, "type": "system"},
+            {
+                "uid": "2",
+                "name": "Node 2",
+                "parent": None,
+                "type": "system_boundary",
+            },
             {"uid": "3", "name": "Node 3", "parent": "2", "type": "usecase"},
             {
                 "uid": "4",
                 "name": "Node 4",
                 "parent": None,
-                "type": "external_system",
+                "type": "system_boundary",
             },
             {"uid": "5", "name": "Node 5", "parent": None, "type": "note"},
             {"uid": "6", "name": "Node 6", "parent": None, "type": "other"},
@@ -95,8 +101,25 @@ def test_converter_returns_domain_presentation() -> None:
         "usecases": ["3"],
         "notes": ["5"],
         "others": ["6"],
-        "systems": ["2"],
-        "external_systems": ["4"],
+        "system_boundaries": ["2", "4"],
+    }
+
+
+@pytest.mark.anyio
+async def test_legacy_external_system_association_remains_invalid() -> None:
+    source = _apollon_json()
+    source.model.relationships["7"].source.element = "4"
+
+    diagram = ApollonToDomainConverter().convert(source)
+    result = await SyntacticDiagramEvaluator().execute(diagram)
+
+    relation = next(item for item in diagram.relations if item.uid == "7")
+    assert (relation.source, relation.target) == ("4", "3")
+    assert next(
+        item for item in result.relations if item.uid == "7"
+    ).checks == {
+        "endpoints_exist": True,
+        "endpoint_types_valid": False,
     }
 
 

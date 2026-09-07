@@ -73,7 +73,8 @@ def _apollon(node_uid: str, name: str = "Customer") -> str:
 
 
 @pytest.mark.parametrize(
-    "name, syntax_rate, naming_score", [("Customer", 0, 3), (" \t", 0.5, 1)]
+    "name, syntax_rate, naming_score",
+    [("Customer", 0, 3), (" \t", 0.5, 1)],
 )
 def test_real_di_cli_persists_result_by_returned_uid(
     tmp_path: Path,

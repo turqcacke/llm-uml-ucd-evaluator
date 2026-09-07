@@ -129,7 +129,7 @@ def _candidate() -> UseCaseDiagramPresentation:
             Node(
                 uid="c-payment",
                 name="Payment API",
-                type=NodeType.EXTERNAL_SYSTEM,
+                type=NodeType.ACTOR,
             ),
             Node(uid="c-note", name="Generated note", type=NodeType.NOTE),
         ],
@@ -157,8 +157,7 @@ def _workflow(candidate: UseCaseDiagramPresentation, store: FakePersistence):
                     score=NamingUnderstandabilityScore.HIGH,
                 )
                 for node in candidate.nodes
-                if node.type
-                in {NodeType.ACTOR, NodeType.EXTERNAL_SYSTEM, NodeType.USECASE}
+                if node.type in {NodeType.ACTOR, NodeType.USECASE}
             ],
         )
     )
@@ -235,7 +234,7 @@ async def test_assessment_returns_and_atomically_saves_agreed_diagram_roles():
     assert result.matching is not None
     assert result.matching.reference == saved_reference
     assert result.matching.candidate == saved_candidate
-    assert result.matching.missing_nodes == reference.systems
+    assert result.matching.missing_nodes == reference.system_boundaries
     assert result.matching.redundant_nodes == ["c-payment"]
     assert result.evaluation is not None
     assert result.evaluation.pragmatic == evaluation.result
@@ -247,14 +246,18 @@ async def test_assessment_returns_and_atomically_saves_agreed_diagram_roles():
         },
     }
     assert len(extraction.prompts) == len(evaluation.prompts) == 1
-    description = evaluation.prompts[0].split("<description>", 1)[1].split(
-        "</description>", 1
-    )[0]
+    description = (
+        evaluation.prompts[0]
+        .split("<description>", 1)[1]
+        .split("</description>", 1)[0]
+    )
     assert description.strip() == "A customer places an order."
     assert len(matching.prompts) == 1
-    matching_description = matching.prompts[0].split("<description>", 1)[
-        1
-    ].split("</description>", 1)[0]
+    matching_description = (
+        matching.prompts[0]
+        .split("<description>", 1)[1]
+        .split("</description>", 1)[0]
+    )
     assert matching_description.strip() == "A customer places an order."
 
 
@@ -385,7 +388,9 @@ async def test_structural_violations_preserve_analysis_and_saved_evidence():
     candidate = _candidate()
     candidate.nodes[0].name = " \t"
     candidate.nodes[1].parent = "missing"
-    candidate.nodes.append(Node(uid="boundary", name="", type=NodeType.SYSTEM))
+    candidate.nodes.append(
+        Node(uid="boundary", name="", type=NodeType.SYSTEM_BOUNDARY)
+    )
     candidate.relations.extend(
         [
             NodeRelation(
@@ -413,7 +418,10 @@ async def test_structural_violations_preserve_analysis_and_saved_evidence():
         "nodes": [
             {
                 "uid": "c-actor",
-                "checks": {"name_present": False, "parent_exists": True},
+                "checks": {
+                    "name_present": False,
+                    "parent_exists": True,
+                },
             },
             {
                 "uid": "c-order",
@@ -421,11 +429,17 @@ async def test_structural_violations_preserve_analysis_and_saved_evidence():
             },
             {
                 "uid": "c-payment",
-                "checks": {"name_present": True, "parent_exists": True},
+                "checks": {
+                    "name_present": True,
+                    "parent_exists": True,
+                },
             },
             {
                 "uid": "boundary",
-                "checks": {"name_present": False, "parent_exists": True},
+                "checks": {
+                    "name_present": False,
+                    "parent_exists": True,
+                },
             },
         ],
         "relations": [

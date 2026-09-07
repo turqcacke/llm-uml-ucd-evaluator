@@ -191,8 +191,10 @@ def test_match_reference_and_candidate_from_cli(
     candidate_prompt = content.split("<candidate>", 1)[1].split(
         "</candidate>", 1
     )[0]
-    assert '"uid":"reference-id"' in reference_prompt
-    assert '"uid":"candidate-id"' in candidate_prompt
+    assert '"uid":"reference-id"' not in reference_prompt
+    assert '"uid":"candidate-id"' not in candidate_prompt
+    assert '"nodes"' in reference_prompt
+    assert '"nodes"' in candidate_prompt
 
 
 @pytest.mark.anyio

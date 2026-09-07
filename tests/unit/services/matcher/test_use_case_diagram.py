@@ -64,7 +64,7 @@ async def test_matcher_finalizes_semantic_matches(
     reference = UseCaseDiagramPresentation(
         nodes=[
             Node(uid="reference", name="Buyer", type=NodeType.ACTOR),
-            Node(uid="missing", name="Shop", type=NodeType.SYSTEM),
+            Node(uid="missing", name="Shop", type=NodeType.SYSTEM_BOUNDARY),
             Node(uid="note", name="Note", type=NodeType.NOTE),
         ],
         relations=[
@@ -127,8 +127,8 @@ async def test_matcher_finalizes_semantic_matches(
     prompt, role = chat_model.calls[0]
     assert role is LLMRoles.USER
     assert prompt == USE_CASE_DIAGRAM_MATCHER_REQUEST.format(
-        reference=reference.model_dump_json(),
-        candidate=candidate.model_dump_json(),
+        reference=reference.model_dump_json(include={"nodes", "relations"}),
+        candidate=candidate.model_dump_json(include={"nodes", "relations"}),
         description=description or "",
     )
 
@@ -178,7 +178,9 @@ async def test_matcher_maps_unexpected_error_to_use_case_error() -> None:
     error = RuntimeError("Broken matcher dependency")
     diagram = UseCaseDiagramPresentation(nodes=[], relations=[])
 
-    with pytest.raises(UseCaseError, match="Broken matcher dependency") as info:
+    with pytest.raises(
+        UseCaseError, match="Broken matcher dependency"
+    ) as info:
         await UseCaseDiagramMatcher(FailingChatModel(error)).execute(
             UseCaseDiagramMatcherInput(
                 reference=diagram,

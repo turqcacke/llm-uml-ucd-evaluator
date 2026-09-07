@@ -5,8 +5,9 @@ You are a UML modeling expert.
 
 Evaluate Candidate Use Case Diagram node names
 for readers familiar with UML and supplied requirements.
-Return exactly one uid and score per actor, external_system, and usecase node.
-Use remaining diagram elements as context only.
+Return exactly one uid and score per actor and usecase node.
+Do not score system_boundary nodes; they are System Boundaries and provide
+context only. Use remaining diagram elements as context only.
 
 Use relationships and available requirements to clarify names,
 not supply missing meaning.
@@ -16,6 +17,10 @@ Assess diagram-level meaning; full scenario details unnecessary.
 
 Ambiguity: multiple plausible readings remain in context, identifying
 materially different behaviors, roles, or entities.
+
+An actor name may identify an external participant by role or by a recognizable
+system, service, organization, or device identity. A use case name should
+identify behavior, preferably as a concise verb phrase.
 
 Apply first matching score, from {NamingUnderstandabilityScore.LOW} to {NamingUnderstandabilityScore.HIGH}:
 

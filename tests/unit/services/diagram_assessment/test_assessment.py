@@ -160,6 +160,7 @@ async def test_description_reference_assessment_returns_metrics_and_evaluation()
     )
     description_extractor = FakeUseCase(reference)
     candidate_extractor = FakeUseCase(candidate)
+
     class MatchingModel:
         async def invoke(self, prompt: str, role: LLMRoles) -> MinMatching:
             description = prompt.split("<description>", 1)[1].split(
@@ -436,11 +437,13 @@ async def test_apollon_to_apollon_assessment_extracts_both_diagrams() -> None:
         ],
         relation_matches=[],
     )
+
     class MatchingModel:
         async def invoke(self, prompt: str, role: LLMRoles) -> MinMatching:
-            assert "A customer uses the system." in prompt.split(
-                "</description>", 1
-            )[0]
+            assert (
+                "A customer uses the system."
+                in prompt.split("</description>", 1)[0]
+            )
             return MinMatching(
                 node_matches=matching.node_matches,
                 relation_matches=matching.relation_matches,
@@ -450,9 +453,10 @@ async def test_apollon_to_apollon_assessment_extracts_both_diagrams() -> None:
         async def invoke(
             self, prompt: str, role: LLMRoles
         ) -> PragmaticEvaluationResult:
-            assert "A customer uses the system." in prompt.split(
-                "</description>", 1
-            )[0]
+            assert (
+                "A customer uses the system."
+                in prompt.split("</description>", 1)[0]
+            )
             return evaluation
 
     assessment = ApollonToApollonAssessment(

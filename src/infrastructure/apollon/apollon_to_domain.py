@@ -21,9 +21,9 @@ from src.services.exceptions import ConversionError
 class _NodeConverter(BaseConverter[ApollonNode, Node]):
     _TYPES_MAP = {
         ApollonNodeType.ACTOR: NodeType.ACTOR,
-        ApollonNodeType.SYSTEM: NodeType.SYSTEM,
+        ApollonNodeType.SYSTEM: NodeType.SYSTEM_BOUNDARY,
         ApollonNodeType.USECASE: NodeType.USECASE,
-        ApollonNodeType.EXTERNAL_SYSTEM: NodeType.EXTERNAL_SYSTEM,
+        ApollonNodeType.EXTERNAL_SYSTEM: NodeType.SYSTEM_BOUNDARY,
         ApollonNodeType.NOTE: NodeType.NOTE,
         ApollonNodeType.INVALID: NodeType.OTHER,
     }

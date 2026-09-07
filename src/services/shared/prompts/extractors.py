@@ -24,15 +24,16 @@ Complete following steps before returning graph.
 
 - Identify modeled system and assigned functionality.
 - One system boundary unless task explicitly requests multiple subjects.
-- Boundary = system node; place use cases through parent. Records applicable subject, not UML ownership.
+- System Boundary = `system_boundary` node. It represents the modeled subject/container only; never use it for an external participant.
+- Only use cases may have `parent`; set it to the containing System Boundary UID. All other nodes must have `parent = null`.
 - Internal modules, databases, interfaces, background processes = system parts, not actors.
-- Another system = external_system only if outside boundary and interacting with retained use case.
+- Another software system, service, or device outside the boundary = actor only if interacting with retained use case.
 - Exclude real-world activities outside system scope from its use cases.
 - Ambiguous placement: retain only text-supported boundary assignments.
 
-Actor = role played by external entity interacting with system. One entity may play multiple roles; multiple entities may play same role.
+Actor = role played by any external participant interacting with system, including a person, organization, device, software system, or service. One entity may play multiple roles; multiple entities may play same role. Actor and System Boundary are never interchangeable.
 - Retain actors participating in retained use case through described interaction, directly or through supported actor generalization.
-- Name human actors by role, not identity.
+- Name human actors by role. Name non-human actors by their interaction role or recognizable system or service identity.
 - Merge synonymous names for same role.
 - Separate roles with distinct described responsibilities or interactions.
 - Stakeholder, data subject, owner, or mentioned organization not automatically actor.
@@ -42,7 +43,7 @@ Actor = role played by external entity interacting with system. One entity may p
 
 Primary use case = system-provided goal or service with observable result valuable to actor or other stakeholder.
 - Identify goals of all described participants, not only primary actor.
-- Retain goals initiated or participated in by actor or external_system.
+- Retain goals initiated or participated in by actor.
 - Name use cases with concise verb phrases; merge synonymous descriptions of same goal.
 
 Business subfunction = coherent service within larger goal, delivering distinguishable business result meaningful to participant.
@@ -65,7 +66,7 @@ Scenario details = how goal or service runs.
 - Relationships express participation, mandatory incorporation, behavioral extension, specialization; not workflow order or data flow.
 
 Association:
-- Connect actor or external_system to use case only for requirements-supported participation.
+- Connect actor to use case only for requirements-supported participation.
 - Participation concerning extracted subfunction: associate participant with subfunction. Parent association needs separate evidence of parent-level participation.
 - Subfunction reached through another use case needs no direct association. Associate for described participation, not merely node connectivity.
 
@@ -100,7 +101,7 @@ Before returning graph:
 - Coverage: revisit each described participant goal and business service. Represent all qualifying under step 3, including subfunctions hidden by broad parent names.
 - Granularity: merge duplicate goals; fold scenario details into supporting use cases per step 3.
 - Relationships: check each retained relationship and direction against step 4. Associations-only graph acceptable when no other relationship supported.
-- Boundary: check use case placement, external status and participation of actors and external systems.
+- Boundary: check that `system_boundary` nodes are modeled boundaries, every external participant is an actor, each retained actor's participation is supported, and only use cases have a System Boundary parent.
 
 # 6. Return the graph
 

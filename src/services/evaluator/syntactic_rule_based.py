@@ -75,16 +75,14 @@ class EndpointTypesValid(ValidationRule[NodeRelation]):
     def __call__(self, data: NodeRelation) -> bool:
         source = self._nodes[data.source].type
         target = self._nodes[data.target].type
-        actor_like = {NodeType.ACTOR, NodeType.EXTERNAL_SYSTEM}
-
         if data.type == NodeRelationType.ASSOCIATION:
-            return (source in actor_like and target == NodeType.USECASE) or (
-                target in actor_like and source == NodeType.USECASE
-            )
+            return (
+                source == NodeType.ACTOR and target == NodeType.USECASE
+            ) or (target == NodeType.ACTOR and source == NodeType.USECASE)
         if data.type in {NodeRelationType.INCLUDE, NodeRelationType.EXTEND}:
             return source == target == NodeType.USECASE
         return (source == target == NodeType.USECASE) or (
-            source in actor_like and target in actor_like
+            source == target == NodeType.ACTOR
         )
 
 

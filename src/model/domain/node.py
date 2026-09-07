@@ -14,8 +14,7 @@ class NodeType(StrEnum):
 
     USECASE = "usecase"
     ACTOR = "actor"
-    SYSTEM = "system"
-    EXTERNAL_SYSTEM = "external_system"
+    SYSTEM_BOUNDARY = "system_boundary"
     NOTE = "note"
     OTHER = "other"
 
@@ -27,13 +26,11 @@ class Node(BaseModel):
     name: str = Field(description="Node label shown on diagram.")
     parent: str | None = Field(
         default=None,
-        description="Containing or owning node UID, if any.",
-    )
-    type: NodeType = Field(
         description=(
-            "Node role: usecase, actor, system, external system, note, or other."
-        )
+            "System Boundary UID containing this use case; null otherwise."
+        ),
     )
+    type: NodeType = Field(description="Node role.")
 
     @override
     def __hash__(self) -> int:

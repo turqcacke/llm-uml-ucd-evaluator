@@ -11,9 +11,9 @@ the check was not applicable or its prerequisites were unavailable.
   Candidate Diagram.
 - `endpoints_exist`: both relation endpoint UIDs exist in the Candidate Diagram.
 - `endpoint_types_valid`: the relation connects compatible node types.
-  Associations connect an actor or external system with a use case; include and
+  Associations connect an actor with a use case; include and
   extend relations connect two use cases; generalizations connect two use cases
-  or two actor-like nodes.
+  or two actors.
 - `include_acyclic`: the include relation does not participate in an include
   cycle.
 - `generalization_acyclic`: the generalization relation does not participate in

@@ -11,10 +11,8 @@ def test_diagram_derives_and_serializes_node_id_groups() -> None:
         nodes=[
             Node(uid="1", name="Customer", type=NodeType.ACTOR),
             Node(uid="2", name="Place order", type=NodeType.USECASE),
-            Node(uid="3", name="Shop", type=NodeType.SYSTEM),
-            Node(
-                uid="4", name="Payment provider", type=NodeType.EXTERNAL_SYSTEM
-            ),
+            Node(uid="3", name="Shop", type=NodeType.SYSTEM_BOUNDARY),
+            Node(uid="4", name="Payment provider", type=NodeType.ACTOR),
             Node(uid="5", name="Checkout note", type=NodeType.NOTE),
             Node(uid="6", name="Unclassified", type=NodeType.OTHER),
         ],
@@ -28,14 +26,13 @@ def test_diagram_derives_and_serializes_node_id_groups() -> None:
         ],
     )
 
-    assert diagram.actors == ["1"]
+    assert diagram.actors == ["1", "4"]
     assert diagram.usecases == ["2"]
-    assert diagram.systems == ["3"]
-    assert diagram.external_systems == ["4"]
+    assert diagram.system_boundaries == ["3"]
     assert diagram.notes == ["5"]
     assert diagram.others == ["6"]
     assert len(diagram.relations) == 1
-    assert diagram.model_dump(mode="json")["actors"] == ["1"]
+    assert diagram.model_dump(mode="json")["actors"] == ["1", "4"]
 
 
 @pytest.mark.parametrize(
@@ -84,8 +81,7 @@ def test_diagram_rejects_duplicate_graph_element_uids(
     + [
         (
             kind,
-            kind
-            in {NodeType.ACTOR, NodeType.EXTERNAL_SYSTEM, NodeType.USECASE},
+            kind in {NodeType.ACTOR, NodeType.USECASE},
         )
         for kind in NodeType
     ],

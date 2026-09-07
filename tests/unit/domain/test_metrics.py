@@ -40,8 +40,7 @@ def _evaluation_for(candidate: UseCaseDiagramPresentation) -> EvaluationResult:
                     uid=node.uid, score=NamingUnderstandabilityScore.MEDIUM
                 )
                 for node in candidate.nodes
-                if node.type
-                in {NodeType.ACTOR, NodeType.EXTERNAL_SYSTEM, NodeType.USECASE}
+                if node.type in {NodeType.ACTOR, NodeType.USECASE}
             ]
         ),
     )
@@ -161,7 +160,7 @@ def test_semantic_metrics_count_nodes_and_relations_without_annotations() -> (
             NodeMatch(reference_uid=kind.value, candidate_uid=kind.value)
             for kind in (
                 NodeType.ACTOR,
-                NodeType.SYSTEM,
+                NodeType.SYSTEM_BOUNDARY,
                 NodeType.NOTE,
                 NodeType.OTHER,
             )
@@ -183,10 +182,10 @@ def test_semantic_metrics_count_nodes_and_relations_without_annotations() -> (
     )
 
     assert result.candidate_is_allowed is True
-    assert result.completeness_rate == Decimal("0.5")
-    assert result.redundancy_rate == Decimal("0.6")
-    assert result.semantic_precision == Decimal("0.4")
-    assert result.semantic_f1_score == Decimal(4) / Decimal(9)
+    assert result.completeness_rate == Decimal(4) / Decimal(7)
+    assert result.redundancy_rate == Decimal(5) / Decimal(9)
+    assert result.semantic_precision == Decimal(4) / Decimal(9)
+    assert result.semantic_f1_score == Decimal("0.5")
     assert all(
         isinstance(value, Decimal)
         for name, value in result.model_dump().items()
@@ -273,7 +272,8 @@ def test_semantic_metrics_for_perfect_or_zero_matches(matched: bool) -> None:
 
 
 @pytest.mark.parametrize(
-    "node_type", [None, NodeType.SYSTEM, NodeType.NOTE, NodeType.OTHER]
+    "node_type",
+    [None, NodeType.SYSTEM_BOUNDARY, NodeType.NOTE, NodeType.OTHER],
 )
 def test_disallowed_candidate_receives_worst_scores(
     node_type: NodeType | None,
@@ -324,7 +324,8 @@ def test_disallowed_candidate_receives_worst_scores(
 
 @pytest.mark.parametrize("candidate_allowed", [True, False])
 @pytest.mark.parametrize(
-    "node_type", [None, NodeType.SYSTEM, NodeType.NOTE, NodeType.OTHER]
+    "node_type",
+    [None, NodeType.SYSTEM_BOUNDARY, NodeType.NOTE, NodeType.OTHER],
 )
 def test_disallowed_reference_raises_domain_error(
     node_type: NodeType | None, candidate_allowed: bool

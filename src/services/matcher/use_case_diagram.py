@@ -37,8 +37,12 @@ class UseCaseDiagramMatcher(
         )
         llm_result = await self._chat_model.invoke(
             USE_CASE_DIAGRAM_MATCHER_REQUEST.format(
-                reference=data.reference.model_dump_json(),
-                candidate=data.candidate.model_dump_json(),
+                reference=data.reference.model_dump_json(
+                    include={"nodes", "relations"}
+                ),
+                candidate=data.candidate.model_dump_json(
+                    include={"nodes", "relations"}
+                ),
                 description=data.description or "",
             ),
             LLMRoles.USER,

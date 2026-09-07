@@ -85,8 +85,7 @@ async def test_apollon_json_extractor_returns_domain_presentation() -> None:
         "usecases": ["usecase"],
         "notes": [],
         "others": [],
-        "systems": [],
-        "external_systems": [],
+        "system_boundaries": [],
     }
 
 

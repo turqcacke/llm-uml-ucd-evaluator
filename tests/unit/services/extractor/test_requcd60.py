@@ -47,14 +47,14 @@ async def test_extractor_preserves_typed_labels_and_relationship_directions():
     )
     assert annotation.model_dump() == before
     assert [(node.name, node.type) for node in result.nodes] == [
-        ("Main System", NodeType.SYSTEM),
+        ("Main System", NodeType.SYSTEM_BOUNDARY),
         ("Main System", NodeType.ACTOR),
         (" Payment API ", NodeType.ACTOR),
         ("Main System", NodeType.USECASE),
         (" Pay ", NodeType.USECASE),
         ("Pay", NodeType.USECASE),
     ]
-    system = result.systems[0]
+    system = result.system_boundaries[0]
     assert all(
         node.parent == (system if node.type == NodeType.USECASE else None)
         for node in result.nodes
@@ -151,10 +151,14 @@ async def test_all_60_annotations_convert_reproducibly_without_mutation():
         assert [
             node.name for node in result.nodes if node.type == NodeType.USECASE
         ] == original["usecases"], path
-        assert len(result.systems) == 1, path
+        assert len(result.system_boundaries) == 1, path
         assert all(
             node.parent
-            == (result.systems[0] if node.type == NodeType.USECASE else None)
+            == (
+                result.system_boundaries[0]
+                if node.type == NodeType.USECASE
+                else None
+            )
             for node in result.nodes
         ), path
         assert len(result.relations) == sum(

@@ -26,12 +26,13 @@ class PragmaticLlmEvaluator(
         nodes = [
             node
             for node in data.use_case_diagram.nodes
-            if node.type
-            in {NodeType.ACTOR, NodeType.EXTERNAL_SYSTEM, NodeType.USECASE}
+            if node.type in {NodeType.ACTOR, NodeType.USECASE}
         ]
         result = await self._chat_model.invoke(
             PRAGMATIC_EVALUATOR_REQUEST.format(
-                candidate=data.use_case_diagram.model_dump_json(),
+                candidate=data.use_case_diagram.model_dump_json(
+                    include={"nodes", "relations"}
+                ),
                 description=data.description or "",
             ),
             LLMRoles.USER,

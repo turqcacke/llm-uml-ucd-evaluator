@@ -44,7 +44,7 @@ class FakeChatModel:
     "description",
     [None, "", "A customer places an order through Payment API."],
 )
-async def test_evaluator_sends_full_diagram_and_preserves_llm_scores(
+async def test_evaluator_sends_graph_and_preserves_llm_scores(
     description,
 ):
     diagram = UseCaseDiagramPresentation(
@@ -53,11 +53,14 @@ async def test_evaluator_sends_full_diagram_and_preserves_llm_scores(
                 uid="actor",
                 name="Customer",
                 type=NodeType.ACTOR,
-                parent="system",
             ),
             Node(uid="usecase", name=" \t\n", type=NodeType.USECASE),
-            Node(uid="external", name="", type=NodeType.EXTERNAL_SYSTEM),
-            Node(uid="system", name="Shop", type=NodeType.SYSTEM),
+            Node(uid="payment", name="Stripe", type=NodeType.ACTOR),
+            Node(
+                uid="boundary",
+                name="Shop",
+                type=NodeType.SYSTEM_BOUNDARY,
+            ),
             Node(uid="note", name="Note", type=NodeType.NOTE),
             Node(uid="other", name="Other", type=NodeType.OTHER),
         ],
@@ -75,7 +78,7 @@ async def test_evaluator_sends_full_diagram_and_preserves_llm_scores(
             NodeNamingEvaluation(
                 uid=uid, score=NamingUnderstandabilityScore.HIGH
             )
-            for uid in ("external", "actor", "usecase")
+            for uid in ("payment", "actor", "usecase")
         ]
     )
     chat_model = FakeChatModel(response)
@@ -84,12 +87,12 @@ async def test_evaluator_sends_full_diagram_and_preserves_llm_scores(
     assert {node.uid: node.score for node in result.nodes} == {
         "actor": 3,
         "usecase": 3,
-        "external": 3,
+        "payment": 3,
     }
     assert all(node.score == 3 for node in response.nodes)
     [(prompt, role)] = chat_model.calls
     assert prompt == PRAGMATIC_EVALUATOR_REQUEST.format(
-        candidate=diagram.model_dump_json(),
+        candidate=diagram.model_dump_json(include={"nodes", "relations"}),
         description=description or "",
     )
     assert role == LLMRoles.USER
@@ -104,7 +107,7 @@ async def test_evaluator_sends_full_diagram_and_preserves_llm_scores(
         ["foreign"],
         ["actor", "actor"],
         ["actor", "foreign"],
-        ["actor", "system"],
+        ["actor", "boundary"],
     ],
 )
 async def test_evaluator_rejects_missing_duplicate_or_foreign_naming_uids(
@@ -128,7 +131,11 @@ async def test_evaluator_rejects_missing_duplicate_or_foreign_naming_uids(
                         Node(
                             uid="actor", name="Customer", type=NodeType.ACTOR
                         ),
-                        Node(uid="system", name="Shop", type=NodeType.SYSTEM),
+                        Node(
+                            uid="boundary",
+                            name="Shop",
+                            type=NodeType.SYSTEM_BOUNDARY,
+                        ),
                     ],
                     relations=[],
                 )

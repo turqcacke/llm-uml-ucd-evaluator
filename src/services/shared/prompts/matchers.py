@@ -13,7 +13,6 @@ Do not repair a diagram or generate a replacement from the requirements.
 - `relations` got `uid`, `type`, `source`, `target` node UIDs.
 - Resolve parent and endpoint UIDs in own diagram. UID identifies element;
   same UID across diagram = no evidence of match.
-- Node-group list = derived index, not extra node.
 
 # Node matching
 
@@ -22,11 +21,12 @@ Do not repair a diagram or generate a replacement from the requirements.
 - `usecase` vs `usecase`: same behavior, action, object, intended outcome.
   Same topic alone insufficient; create object and delete object = different
   behavior.
-- `actor` and `external_system` = actor-like node, match across these two
-  type OK. Same interaction role toward modeled subject, not just same
-  person, organization, or service name.
-- `system` vs `system`: same modeled subject and scope. System boundary and
-  external participant not interchangeable.
+- `actor` vs `actor`: same external participation role toward the modeled
+  subject. Actors may be human or non-human, including software systems and
+  services. Same person, organization, or service name alone insufficient.
+- `system_boundary` vs `system_boundary`: same modeled subject and scope.
+  System Boundary and actor are never interchangeable, even when the actor's
+  name denotes a software system.
 - No match across other type combination.
 - Synonym, paraphrase, translation, abbreviation OK when same meaning. Same
   name alone no make match.

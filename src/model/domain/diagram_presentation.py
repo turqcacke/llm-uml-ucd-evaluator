@@ -39,20 +39,15 @@ class UseCaseDiagramPresentation(BaseModel):
         default_factory=list,
         description="Other node UIDs; derived during validation.",
     )
-    systems: SkipJsonSchema[list[str]] = Field(
+    system_boundaries: SkipJsonSchema[list[str]] = Field(
         default_factory=list,
-        description="System node UIDs; derived during validation.",
-    )
-    external_systems: SkipJsonSchema[list[str]] = Field(
-        default_factory=list,
-        description="External system node UIDs; derived during validation.",
+        description="System Boundary node UIDs; derived during validation.",
     )
 
     @property
     def is_allowed(self) -> bool:
         return any(
-            node.type
-            in {NodeType.ACTOR, NodeType.EXTERNAL_SYSTEM, NodeType.USECASE}
+            node.type in {NodeType.ACTOR, NodeType.USECASE}
             for node in self.nodes
         )
 
@@ -68,11 +63,8 @@ class UseCaseDiagramPresentation(BaseModel):
     def other_cnt(self) -> int:
         return len(self.others)
 
-    def system_cnt(self) -> int:
-        return len(self.systems)
-
-    def external_system_cnt(self) -> int:
-        return len(self.external_systems)
+    def system_boundary_cnt(self) -> int:
+        return len(self.system_boundaries)
 
     @model_validator(mode="after")
     def distribute_nodes(self) -> Self:
@@ -87,8 +79,7 @@ class UseCaseDiagramPresentation(BaseModel):
             NodeType.ACTOR: self.actors,
             NodeType.USECASE: self.usecases,
             NodeType.NOTE: self.notes,
-            NodeType.SYSTEM: self.systems,
-            NodeType.EXTERNAL_SYSTEM: self.external_systems,
+            NodeType.SYSTEM_BOUNDARY: self.system_boundaries,
             NodeType.OTHER: self.others,
         }
         for store in stores.values():

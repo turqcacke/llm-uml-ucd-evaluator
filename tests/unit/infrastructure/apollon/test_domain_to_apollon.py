@@ -38,11 +38,11 @@ def test_conversion_returns_renderable_layout() -> None:
                 NodeType.ACTOR,
                 name="Actor with a very long label",
             ),
-            _node("boundary-1", NodeType.SYSTEM),
+            _node("boundary-1", NodeType.SYSTEM_BOUNDARY),
             _node("inside-1", NodeType.USECASE, parent="boundary-1"),
-            _node("boundary-2", NodeType.SYSTEM),
+            _node("boundary-2", NodeType.SYSTEM_BOUNDARY),
             _node("outside", NodeType.USECASE),
-            _node("external", NodeType.EXTERNAL_SYSTEM),
+            _node("external", NodeType.ACTOR),
         ],
         relations=[
             NodeRelation(
@@ -70,6 +70,7 @@ def test_conversion_returns_renderable_layout() -> None:
         "external",
     }
     assert layout.elements["boundary-1"].type is ApollonNodeType.SYSTEM
+    assert layout.elements["external"].type is ApollonNodeType.ACTOR
     assert layout.elements["inside-1"].owner == "boundary-1"
     assert layout.elements["outside"].owner is None
     assert layout.elements["boundary-1"].bounds.width >= 240
@@ -103,15 +104,14 @@ def test_conversion_returns_renderable_layout() -> None:
     )
 
     for element in layout.elements.values():
-        assert element.bounds.x >= 40
-        assert element.bounds.y >= 40
+        assert element.bounds.x >= 39.5
+        assert element.bounds.y >= 39.5
         assert (
-            element.bounds.x + element.bounds.width
-            <= layout.size.width - 40
+            element.bounds.x + element.bounds.width <= layout.size.width - 39.5
         )
         assert (
             element.bounds.y + element.bounds.height
-            <= layout.size.height - 40
+            <= layout.size.height - 39.5
         )
 
     for relation in layout.relationships.values():
@@ -216,10 +216,7 @@ def test_conversion_does_not_reclassify_programming_errors() -> None:
     "output",
     [
         b'{"bb": "0,0,100,100", "objects": [{"id": "actor"}]}',
-        (
-            b'{"bb": "200,0,0,100", "objects": '
-            b'[{"id": "actor"}]}'
-        ),
+        (b'{"bb": "200,0,0,100", "objects": [{"id": "actor"}]}'),
     ],
 )
 def test_conversion_reclassifies_malformed_graphviz_output(

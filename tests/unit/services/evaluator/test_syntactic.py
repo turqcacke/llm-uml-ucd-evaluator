@@ -60,7 +60,9 @@ def test_name_present(name: str, expected: bool):
         ("", set(), False),
     ],
 )
-def test_parent_exists(parent: str | None, node_uids: set[str], expected: bool):
+def test_parent_exists(
+    parent: str | None, node_uids: set[str], expected: bool
+):
     rule = ParentExists(node_uids)
 
     assert rule.rule_id == "parent_exists"
@@ -97,18 +99,6 @@ def test_rule_chain_stops_after_missing_endpoints():
     [
         (NodeRelationType.ASSOCIATION, NodeType.ACTOR, NodeType.USECASE, True),
         (NodeRelationType.ASSOCIATION, NodeType.USECASE, NodeType.ACTOR, True),
-        (
-            NodeRelationType.ASSOCIATION,
-            NodeType.EXTERNAL_SYSTEM,
-            NodeType.USECASE,
-            True,
-        ),
-        (
-            NodeRelationType.ASSOCIATION,
-            NodeType.USECASE,
-            NodeType.EXTERNAL_SYSTEM,
-            True,
-        ),
         (NodeRelationType.ASSOCIATION, NodeType.ACTOR, NodeType.ACTOR, False),
         (NodeRelationType.INCLUDE, NodeType.USECASE, NodeType.USECASE, True),
         (NodeRelationType.INCLUDE, NodeType.ACTOR, NodeType.USECASE, False),
@@ -129,31 +119,13 @@ def test_rule_chain_stops_after_missing_endpoints():
         (
             NodeRelationType.GENERALIZATION,
             NodeType.ACTOR,
-            NodeType.EXTERNAL_SYSTEM,
-            True,
-        ),
-        (
-            NodeRelationType.GENERALIZATION,
-            NodeType.EXTERNAL_SYSTEM,
-            NodeType.ACTOR,
-            True,
-        ),
-        (
-            NodeRelationType.GENERALIZATION,
-            NodeType.EXTERNAL_SYSTEM,
-            NodeType.EXTERNAL_SYSTEM,
-            True,
-        ),
-        (
-            NodeRelationType.GENERALIZATION,
-            NodeType.ACTOR,
             NodeType.USECASE,
             False,
         ),
         (
             NodeRelationType.GENERALIZATION,
-            NodeType.SYSTEM,
-            NodeType.SYSTEM,
+            NodeType.SYSTEM_BOUNDARY,
+            NodeType.SYSTEM_BOUNDARY,
             False,
         ),
     ],
@@ -273,9 +245,7 @@ def test_rule_chain_continues_after_invalid_endpoint_types():
         ),
     ],
 )
-def test_find_cycles(
-    relations: list[NodeRelation], closing_uids: set[str]
-):
+def test_find_cycles(relations: list[NodeRelation], closing_uids: set[str]):
     node_uids = {
         endpoint
         for relation in relations
@@ -299,9 +269,7 @@ def test_find_cycles_ignores_other_kinds_and_missing_endpoints():
     ]
 
     assert (
-        find_cycles(
-            relations, NodeRelationType.GENERALIZATION, {"a", "b"}
-        )
+        find_cycles(relations, NodeRelationType.GENERALIZATION, {"a", "b"})
         == set()
     )
 
@@ -362,7 +330,9 @@ async def test_syntactic_evaluator_composes_relation_rules():
         {"name_present": False, "parent_exists": False},
         {"name_present": True, "parent_exists": True},
     ]
-    assert {relation.uid: relation.checks for relation in result.relations} == {
+    assert {
+        relation.uid: relation.checks for relation in result.relations
+    } == {
         "association": {
             "endpoints_exist": True,
             "endpoint_types_valid": True,

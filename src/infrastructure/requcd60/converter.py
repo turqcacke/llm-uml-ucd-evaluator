@@ -18,7 +18,9 @@ class ReqUCD60ToDomainConverter(
     def convert(
         self, from_value: ReqUCD60Result
     ) -> UseCaseDiagramPresentation:
-        system = Node(uid="system", name="Main System", type=NodeType.SYSTEM)
+        system = Node(
+            uid="system", name="Main System", type=NodeType.SYSTEM_BOUNDARY
+        )
         actors = [
             Node(uid=f"actor-{i}", name=name, type=NodeType.ACTOR)
             for i, name in enumerate(from_value.actors)
