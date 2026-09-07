@@ -13,6 +13,12 @@ from src.controller.api.exception_handlers import (
     SERVICE_ERROR_MESSAGE,
 )
 from src.controller.api.security import api_key
+from src.model.apollon import ApollonLayout
+from src.model.domain import UseCaseDiagramPresentation
+from src.services.converter import (
+    ApollonLayoutConverter,
+    ApollonLayoutConverterInput,
+)
 from src.services.diagram_assessment import (
     ApollonToApollonAssessment,
     ApollonToApollonAssessmentInput,
@@ -30,7 +36,21 @@ from src.view.responses import (
     SuccessResponse,
 )
 
-router = APIRouter(prefix="/v1")
+router = APIRouter(prefix="/api/v1")
+
+
+@router.post(
+    "/converters/apollon",
+    response_model=SuccessResponse[ApollonLayout],
+    dependencies=[Security(api_key)],
+)
+@inject
+async def convert_to_apollon_layout(
+    data: UseCaseDiagramPresentation,
+    converter: FromDishka[ApollonLayoutConverter],
+) -> SuccessResponse[ApollonLayout]:
+    layout = await converter.execute(ApollonLayoutConverterInput(data))
+    return SuccessResponse(data=layout)
 
 
 @router.post(

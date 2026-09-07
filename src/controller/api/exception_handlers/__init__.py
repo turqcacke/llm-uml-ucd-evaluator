@@ -20,7 +20,7 @@ from src.services.exceptions import (
 from .validation import validation_error
 
 INTERNAL_ERROR_MESSAGE = "An internal error occurred."
-SERVICE_ERROR_MESSAGE = "The assessment could not be completed."
+SERVICE_ERROR_MESSAGE = "The operation could not be completed."
 
 _SERVICE_ERROR_STATUSES: dict[type[BaseAppException], int] = {
     ConversionError: 422,

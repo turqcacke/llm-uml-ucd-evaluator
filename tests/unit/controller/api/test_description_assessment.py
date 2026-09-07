@@ -287,7 +287,7 @@ async def test_apollon_assessment_accepts_editor_export_and_dispatches(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post(
-                "/v1/assessments",
+                "/api/v1/assessments",
                 headers={"X-API-Key": "secret"},
                 json={
                     "type": "apollon",
@@ -351,7 +351,7 @@ async def test_discriminator_and_variant_mismatches_are_rejected(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post(
-                "/v1/assessments",
+                "/api/v1/assessments",
                 headers={"X-API-Key": "secret"},
                 json=payload,
             )
@@ -404,7 +404,7 @@ async def test_apollon_string_values_outside_boundaries_are_rejected(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post(
-                "/v1/assessments",
+                "/api/v1/assessments",
                 headers={"X-API-Key": "secret"},
                 json={
                     "type": "apollon",
@@ -437,7 +437,7 @@ async def test_apollon_string_boundaries_and_disallowed_result_succeed() -> (
         ) as client:
             responses = [
                 await client.post(
-                    "/v1/assessments",
+                    "/api/v1/assessments",
                     headers={"X-API-Key": "secret"},
                     json={
                         "type": "apollon",
@@ -475,7 +475,7 @@ async def test_description_assessment_returns_detailed_result() -> (
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post(
-                "/v1/assessments",
+                "/api/v1/assessments",
                 headers={"X-API-Key": "secret"},
                 json={
                     "type": "description",
@@ -566,9 +566,9 @@ async def test_authentication_rejects_request_before_assessment() -> None:
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
-            missing = await client.post("/v1/assessments", json=_request())
+            missing = await client.post("/api/v1/assessments", json=_request())
             incorrect = await client.post(
-                "/v1/assessments",
+                "/api/v1/assessments",
                 headers={"X-API-Key": "incorrect"},
                 json=_request(),
             )
@@ -581,6 +581,32 @@ async def test_authentication_rejects_request_before_assessment() -> None:
     assert missing.status_code == incorrect.status_code == 401
     assert missing.json() == incorrect.json() == expected
     assert assessment.calls == []
+
+
+@pytest.mark.anyio
+async def test_assessment_route_is_available_only_under_api_v1() -> None:
+    assessment = FakeAssessment()
+    container = make_async_container(FakeProvider(assessment))
+    app = create_app(container=container)
+    headers = {"X-API-Key": "secret"}
+
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            current = await client.post(
+                "/api/v1/assessments", headers=headers, json=_request()
+            )
+            former = await client.post(
+                "/v1/assessments", headers=headers, json=_request()
+            )
+            former_stream = await client.post(
+                "/v1/assessments/streams", headers=headers, json=_request()
+            )
+
+    assert current.status_code == 201
+    assert former.status_code == former_stream.status_code == 404
+    assert len(assessment.calls) == 1
 
 
 @pytest.mark.anyio
@@ -625,7 +651,7 @@ async def test_service_failures_use_safe_error_contract(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post(
-                "/v1/assessments",
+                "/api/v1/assessments",
                 headers={"X-API-Key": "secret"},
                 json=_request(),
             )
@@ -634,7 +660,7 @@ async def test_service_failures_use_safe_error_contract(
     assert response.json() == {
         "ok": False,
         "error_code": error_code,
-        "error_message": "The assessment could not be completed.",
+        "error_message": "The operation could not be completed.",
     }
     assert "secret" not in response.text
 
@@ -663,11 +689,11 @@ async def test_framework_and_internal_failures_use_error_contract() -> None:
             transport=transport, base_url="http://test"
         ) as client:
             missing = await client.get("/missing", headers=headers)
-            wrong_method = await client.get("/v1/assessments", headers=headers)
+            wrong_method = await client.get("/api/v1/assessments", headers=headers)
             invalid = await client.get("/invalid-response", headers=headers)
             custom = await client.get("/custom-http-error", headers=headers)
             unexpected = await client.post(
-                "/v1/assessments", headers=headers, json=_request()
+                "/api/v1/assessments", headers=headers, json=_request()
             )
 
     assert missing.status_code == 404
@@ -715,7 +741,7 @@ async def test_invalid_request_does_not_run_assessment(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post(
-                "/v1/assessments",
+                "/api/v1/assessments",
                 headers={"X-API-Key": "secret"},
                 json=request,
             )
@@ -741,7 +767,7 @@ async def test_reference_accepts_non_whitespace_boundaries(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post(
-                "/v1/assessments",
+                "/api/v1/assessments",
                 headers={"X-API-Key": "secret"},
                 json=_request(" " + "x" * length + " "),
             )
@@ -763,12 +789,12 @@ async def test_missing_reference_and_malformed_json_are_validation_errors() -> (
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             missing = await client.post(
-                "/v1/assessments",
+                "/api/v1/assessments",
                 headers=headers,
                 json={"type": "description", "candidate": _candidate()},
             )
             malformed = await client.post(
-                "/v1/assessments",
+                "/api/v1/assessments",
                 headers=headers,
                 content='{"secret-input-value":',
             )
@@ -806,7 +832,7 @@ async def test_response_waits_for_assessment_completion() -> None:
         ) as client:
             pending = asyncio.create_task(
                 client.post(
-                    "/v1/assessments",
+                    "/api/v1/assessments",
                     headers={"X-API-Key": "secret"},
                     json=_request(),
                 )
@@ -884,7 +910,7 @@ async def test_http_success_observes_persisted_assessment() -> None:
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post(
-                "/v1/assessments",
+                "/api/v1/assessments",
                 headers={"X-API-Key": "secret"},
                 json=_request(),
             )
@@ -935,7 +961,7 @@ async def test_dependencies_are_request_scoped_and_cleaned_up() -> None:
         ) as client:
             for _ in range(2):
                 response = await client.post(
-                    "/v1/assessments",
+                    "/api/v1/assessments",
                     headers={"X-API-Key": "secret"},
                     json=_request(),
                 )
@@ -1018,10 +1044,10 @@ async def test_production_disables_docs_and_keeps_assessment_protected() -> (
                 for path in ("/docs", "/redoc", "/openapi.json")
             ]
             unauthorized = await client.post(
-                "/v1/assessments", json=_request()
+                "/api/v1/assessments", json=_request()
             )
             success = await client.post(
-                "/v1/assessments",
+                "/api/v1/assessments",
                 headers={"X-API-Key": "secret"},
                 json=_request(),
             )

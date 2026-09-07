@@ -257,12 +257,12 @@ async def test_stream_supports_both_inputs_and_projects_result(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post(
-                "/v1/assessments/streams",
+                "/api/v1/assessments/streams",
                 headers={"X-API-Key": "secret"},
                 json=_request(kind),
             )
             ordinary_response = await client.post(
-                "/v1/assessments",
+                "/api/v1/assessments",
                 headers={"X-API-Key": "secret"},
                 json=_request(kind),
             )
@@ -373,15 +373,15 @@ async def test_stream_rejects_auth_and_input_before_opening(kind: str) -> None:
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             unauthorized = await client.post(
-                "/v1/assessments/streams", json=_request(kind)
+                "/api/v1/assessments/streams", json=_request(kind)
             )
             incorrect = await client.post(
-                "/v1/assessments/streams",
+                "/api/v1/assessments/streams",
                 headers={"X-API-Key": "incorrect"},
                 json=_request(kind),
             )
             malformed = await client.post(
-                "/v1/assessments/streams",
+                "/api/v1/assessments/streams",
                 headers={"X-API-Key": "secret"},
                 json=invalid,
             )
@@ -447,7 +447,7 @@ async def test_stream_reports_service_failure_as_terminal_error(
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post(
-                "/v1/assessments/streams",
+                "/api/v1/assessments/streams",
                 headers={"X-API-Key": "secret"},
                 json=_request(kind),
             )
@@ -460,7 +460,7 @@ async def test_stream_reports_service_failure_as_terminal_error(
             {
                 "ok": False,
                 "error_code": error_code,
-                "error_message": "The assessment could not be completed.",
+                "error_message": "The operation could not be completed.",
             },
         ),
     ]
@@ -478,7 +478,7 @@ async def test_stream_reports_unexpected_failure_as_terminal_error() -> None:
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post(
-                "/v1/assessments/streams",
+                "/api/v1/assessments/streams",
                 headers={"X-API-Key": "secret"},
                 json=_request("description"),
             )
@@ -507,7 +507,7 @@ async def test_result_projection_failure_is_a_terminal_internal_error() -> (
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post(
-                "/v1/assessments/streams",
+                "/api/v1/assessments/streams",
                 headers={"X-API-Key": "secret"},
                 json=_request("description"),
             )
@@ -666,8 +666,8 @@ class AsgiStream:
             "http_version": "1.1",
             "method": "POST",
             "scheme": "http",
-            "path": "/v1/assessments/streams",
-            "raw_path": b"/v1/assessments/streams",
+            "path": "/api/v1/assessments/streams",
+            "raw_path": b"/api/v1/assessments/streams",
             "query_string": b"",
             "root_path": "",
             "headers": [
@@ -812,7 +812,7 @@ async def test_disallowed_candidate_streams_persisted_result_without_analysis() 
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post(
-                "/v1/assessments/streams",
+                "/api/v1/assessments/streams",
                 headers={"X-API-Key": "secret"},
                 json=_request("description"),
             )
@@ -863,7 +863,7 @@ async def test_disallowed_reference_ends_stream_without_persistence() -> None:
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post(
-                "/v1/assessments/streams",
+                "/api/v1/assessments/streams",
                 headers={"X-API-Key": "secret"},
                 json=_request("description"),
             )
@@ -901,7 +901,7 @@ async def test_commit_failure_rolls_back_and_ends_stream_with_error() -> None:
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post(
-                "/v1/assessments/streams",
+                "/api/v1/assessments/streams",
                 headers={"X-API-Key": "secret"},
                 json=_request("description"),
             )
@@ -944,7 +944,7 @@ async def test_analysis_failure_cancels_sibling_before_persistence() -> None:
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             response = await client.post(
-                "/v1/assessments/streams",
+                "/api/v1/assessments/streams",
                 headers={"X-API-Key": "secret"},
                 json=_request("description"),
             )

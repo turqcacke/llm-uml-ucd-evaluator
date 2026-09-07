@@ -21,8 +21,10 @@
 
 ## HTTP API
 
-Install the Graphviz system package before starting the API; the `dot -V`
-command must succeed. The Python Graphviz binding is installed by `uv sync`.
+Install the Graphviz system package before starting the API; startup fails
+unless the `dot -V` command succeeds. The Python Graphviz binding is installed
+by `uv sync`. `GRAPHVIZ_CONCURRENCY_LIMIT` controls concurrent layout jobs and
+defaults to `4`.
 
 Set a nonempty `API_SECRET` in `.env`, then start the development API:
 
@@ -31,15 +33,45 @@ uv run uvicorn src.controller.api.app:app
 ```
 
 Development is the default environment. Open `/docs`, authorize with the
-configured secret as `X-API-Key`, and submit a description assessment to
-`POST /v1/assessments`. API configuration is loaded only when the API starts,
-so the CLI commands do not require `API_SECRET`.
+configured secret as `X-API-Key`, then use these versioned operations:
+
+- `POST /api/v1/assessments`
+- `POST /api/v1/assessments/streams`
+- `POST /api/v1/converters/apollon`
+
+API configuration is loaded only when the API starts, so the CLI commands do
+not require `API_SECRET`.
 
 ```sh
-curl -X POST http://127.0.0.1:8000/v1/assessments \
+curl -X POST http://127.0.0.1:8000/api/v1/assessments \
   -H 'Content-Type: application/json' \
   -H 'X-API-Key: replace-with-a-nonempty-secret' \
   --data @assessment.json
+```
+
+The converter accepts a serialized `UseCaseDiagramPresentation` directly and
+returns an Apollon Layout inside the standard success envelope:
+
+```sh
+curl -X POST http://127.0.0.1:8000/api/v1/converters/apollon \
+  -H 'Content-Type: application/json' \
+  -H 'X-API-Key: replace-with-a-nonempty-secret' \
+  --data '{"nodes": [], "relations": []}'
+```
+
+```json
+{
+  "ok": true,
+  "data": {
+    "version": "3.0.0",
+    "type": "UseCaseDiagram",
+    "size": {"width": 80, "height": 80},
+    "interactive": {"elements": {}, "relationships": {}},
+    "elements": {},
+    "relationships": {},
+    "assessments": {}
+  }
+}
 ```
 
 ## Development MongoDB
