@@ -18,9 +18,14 @@ syntactic and pragmatic evaluation.
 
 ## Setup
 
-Run commands from the repository root. Install Python 3.14+, uv, and Make.
-For local MongoDB, install Docker with Docker Compose and start the Docker
-daemon before running `make up-infra`.
+Run commands from the repository root. Install the prerequisites:
+
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)
+- [GNU Make](https://www.gnu.org/software/make/#download)
+- [Docker with Docker Compose](https://docs.docker.com/get-started/get-docker/)
+  for local MongoDB
+
+Start the Docker daemon before running `make up-infra`.
 
 Install the Graphviz system package for the current operating system:
 
