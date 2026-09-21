@@ -7,7 +7,11 @@ from dishka.integrations.fastapi import FromDishka, inject
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.sse import EventSourceResponse, ServerSentEvent
 
-from src.controller.api.descriptions import ASSESSMENT_DESCRIPTION
+from src.app_logging import logger
+from src.controller.api.descriptions import (
+    ASSESSMENT_DESCRIPTION,
+    ASSESSMENT_STREAM_DESCRIPTION,
+)
 from src.controller.api.exception_handlers import (
     INTERNAL_ERROR_MESSAGE,
     SERVICE_ERROR_MESSAGE,
@@ -39,6 +43,29 @@ from src.view.responses import (
 )
 
 router = APIRouter(prefix="/api/v1")
+
+_ASSESSMENT_ERROR_RESPONSES = {
+    401: {"model": FailResponse, "description": "`UNAUTHORIZED`."},
+    422: {
+        "model": FailResponse,
+        "description": (
+            "`VALIDATION_ERROR`, `CONVERSION_ERROR`, or "
+            "`REFERENCE_NOT_ALLOWED`."
+        ),
+    },
+    500: {
+        "model": FailResponse,
+        "description": "`CONFIG_ERROR`, `USE_CASE_ERROR`, or `INTERNAL_ERROR`.",
+    },
+    502: {
+        "model": FailResponse,
+        "description": "`LLM_REQUEST_ERROR` or `LLM_RESPONSE_ERROR`.",
+    },
+    503: {
+        "model": FailResponse,
+        "description": "`LLM_RATE_LIMIT_ERROR`.",
+    },
+}
 
 
 @router.get(
@@ -95,6 +122,7 @@ async def convert_to_apollon_layout(
     tags=["Assessments"],
     status_code=status.HTTP_201_CREATED,
     response_model=SuccessResponse[AssessmentResult],
+    responses=_ASSESSMENT_ERROR_RESPONSES,
     description=ASSESSMENT_DESCRIPTION,
     dependencies=[Security(api_key)],
 )
@@ -135,7 +163,11 @@ async def _stream_cleanup() -> AsyncIterator[AsyncExitStack]:
     "/assessments/streams",
     tags=["Assessments"],
     response_class=EventSourceResponse,
-    description=ASSESSMENT_DESCRIPTION,
+    description=ASSESSMENT_STREAM_DESCRIPTION,
+    responses={
+        401: _ASSESSMENT_ERROR_RESPONSES[401],
+        422: _ASSESSMENT_ERROR_RESPONSES[422],
+    },
     dependencies=[Security(api_key)],
 )
 @inject
@@ -180,6 +212,9 @@ async def stream_assessment(
                 )
                 return
     except BaseAppException as exc:
+        logger.exception(
+            "Assessment stream failed error_code={}", exc.error_code
+        )
         yield ServerSentEvent(
             event="error",
             data=FailResponse(
@@ -188,6 +223,7 @@ async def stream_assessment(
             ),
         )
     except Exception:
+        logger.exception("Assessment stream failed error_code=INTERNAL_ERROR")
         yield ServerSentEvent(
             event="error",
             data=FailResponse(

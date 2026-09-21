@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from src.controller.di import assessment_container
 
+from .descriptions import API_DESCRIPTION
 from .exception_handlers import add_exception_handlers
 from .lifespan import lifespan
 from .middleware import middlewares
@@ -15,6 +16,7 @@ def create_app(
     container: AsyncContainer = assessment_container,
 ) -> FastAPI:
     app = FastAPI(
+        description=API_DESCRIPTION,
         lifespan=lifespan,
         middleware=middlewares,
     )

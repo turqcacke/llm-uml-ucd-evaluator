@@ -25,8 +25,9 @@ class ApollonJsonExtractor(
         self, data: ApollonJsonExtractorInput
     ) -> UseCaseDiagramPresentation:
         logger.info(
-            "Apollon Json extraction started object={}",
-            data.apollon_model,
+            "Apollon extraction started elements={} relationships={}",
+            len(data.apollon_model.model.elements),
+            len(data.apollon_model.model.relationships),
         )
         result = self._converter.convert(data.apollon_model)
         logger.info(

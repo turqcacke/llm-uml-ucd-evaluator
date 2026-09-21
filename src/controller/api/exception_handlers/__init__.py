@@ -5,6 +5,7 @@ from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 
+from src.app_logging import logger
 from src.controller.api.responses import failure
 from src.services.exceptions import (
     BaseAppException,
@@ -33,8 +34,14 @@ _SERVICE_ERROR_STATUSES: dict[type[BaseAppException], int] = {
 }
 
 
-async def service_error(_: Request, exc: Exception) -> JSONResponse:
+async def service_error(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, BaseAppException)
+    logger.opt(exception=exc).error(
+        "API operation failed method={} path={} error_code={}",
+        request.method,
+        request.url.path,
+        exc.error_code,
+    )
     status = next(
         (
             status
@@ -64,7 +71,12 @@ async def http_error(_: Request, exc: Exception) -> JSONResponse:
     )
 
 
-async def internal_error(_: Request, __: Exception) -> JSONResponse:
+async def internal_error(request: Request, exc: Exception) -> JSONResponse:
+    logger.opt(exception=exc).error(
+        "API internal error method={} path={}",
+        request.method,
+        request.url.path,
+    )
     return failure(500, "INTERNAL_ERROR", INTERNAL_ERROR_MESSAGE)
 
 
