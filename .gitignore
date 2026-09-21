@@ -222,4 +222,4 @@ __marimo__/
 .DS_Store
 scripts_out
 eval_out/
-eval/figures/
+eval/figures
