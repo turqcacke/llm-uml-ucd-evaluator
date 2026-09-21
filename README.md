@@ -156,6 +156,10 @@ returned `uid` identifies the stored assessment.
 
 ## Evaluation
 
+> [!NOTE]
+> A [MongoDB backup with experiment data](https://drive.google.com/drive/u/2/folders/1rUOZo8sPrs6Rjy2RchAhc_r_7UVPp0M-)
+> is available for analyzing existing results without rerunning the experiments.
+
 Start MongoDB with `make up-infra` and configure the models listed below.
 Each example starts a new experiment; choose a unique name for each run.
 
