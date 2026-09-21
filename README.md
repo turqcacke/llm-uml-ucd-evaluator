@@ -1,257 +1,271 @@
 # LLM UML Evaluator
 
+Evaluate UML use case diagrams using extraction, semantic matching, and
+syntactic and pragmatic evaluation.
+
 ## Contents
 
-- [Datasets](#datasets)
+- [Setup](#setup)
 - [HTTP API](#http-api)
+- [Environment files](#environment-files)
 - [Development MongoDB](#development-mongodb)
-- [JupyterLab](#jupyterlab)
 - [Workflow CLI](#workflow-cli)
-- [Matching Mutation Evaluation](#matching-mutation-evaluation)
-- [Pragmatic Naming Mutation Evaluation](#pragmatic-naming-mutation-evaluation)
-- [Gold Standard Evaluation](#gold-standard-evaluation)
+- [Evaluation](#evaluation)
+- [JupyterLab](#jupyterlab)
+- [Tests and linting](#tests-and-linting)
+- [Datasets](datasets/README.md)
 
-## Datasets
+## Setup
 
-- `datasets/23_exercises/`: 23 Apollon exercises and an example document.
-- `datasets/60_artificial/`: 60 textual requirements samples.
-- `datasets/60_ideal_UCD/`: ideal use case diagrams for those samples.
-- `datasets/10_match_mutations/`: controlled semantic matching mutations.
-- `datasets/10_pragmatic_mutations/`: controlled naming mutations.
+Run commands from the repository root. Install Python 3.14+, uv, and Make.
+For local MongoDB, install Docker with Docker Compose and start the Docker
+daemon before running `make up-infra`.
 
-## HTTP API
+Install the Graphviz system package for the current operating system:
 
-The Graphviz system package is required; API startup fails unless `dot -V`
-succeeds. Install it for the current operating system:
+| Platform | Command |
+|---|---|
+| macOS (Homebrew) | `brew install graphviz` |
+| Windows (Windows Package Manager) | `winget install graphviz` |
+| Ubuntu / Debian | `sudo apt install graphviz` |
+| Fedora / Rocky Linux / RHEL / CentOS | `sudo dnf install graphviz` |
 
-```sh
-# macOS (Homebrew)
-brew install graphviz
-
-# Windows (Windows Package Manager)
-winget install graphviz
-
-# Ubuntu or Debian
-sudo apt install graphviz
-
-# Fedora, Rocky Linux, RHEL, or CentOS
-sudo dnf install graphviz
-```
-
-See the [official Graphviz download page](https://graphviz.org/download/) for
-installers, alternative package managers, and other operating systems. Verify
-the installation:
-
-```sh
-dot -V
-```
-
-Then install the Python dependencies, create the local configuration, and
-start MongoDB from the repository root:
+API startup requires `dot -V` to succeed.
 
 ```sh
 uv sync
 cp .env.example .env
-docker compose -f docker-compose-infra.yml up -d --wait mongodb
 ```
 
-Edit `.env`: set a nonempty `API_SECRET` and configure the extractor, matcher,
-and evaluator model credentials. Start the development API with auto-reload:
+Choose additional dependency groups as needed:
+
+| Command | Installed dependencies |
+|---|---|
+| `uv sync` | Application dependencies and the default `dev` group (Testcontainers for integration tests). |
+| `uv sync --group eval` | Also installs JupyterLab, pandas, and Matplotlib for analysis notebooks. |
+| `uv sync --group tools` | Also installs Ruff and ty for linting and type checks. |
+| `uv sync --all-groups` | Installs all groups: `dev`, `eval`, and `tools`. |
+
+Groups can be combined: `uv sync --group eval --group tools`.
+
+## HTTP API
+
+Set a nonempty `API_SECRET` in
+`.env`, configure all three models, then start the API with auto-reload:
 
 ```sh
-uv run uvicorn src.controller.api.app:app --reload
+make up-infra
+make run-api
 ```
 
-The API listens on `http://127.0.0.1:8000` by default. Open
-`http://127.0.0.1:8000/docs`, authorize with the configured secret as
-`X-API-Key`, and use the interactive API documentation.
+Open <http://127.0.0.1:8000/docs> and authorize with `API_SECRET` as
+`X-API-Key`. Development is the default environment.
+`GRAPHVIZ_CONCURRENCY_LIMIT` defaults to `4` concurrent layout jobs.
+CLI commands do not require `API_SECRET`.
 
-Development is the default environment. `GRAPHVIZ_CONCURRENCY_LIMIT` controls
-concurrent layout jobs and defaults to `4`. API configuration is loaded only
-when the API starts, so the CLI commands do not require `API_SECRET`.
+## Environment files
+
+| File | Purpose |
+|---|---|
+| [`.env.example`](.env.example) | Backend configuration template with local MongoDB settings and placeholder model credentials. Copy it to `.env` and replace the placeholders. |
+| `.env` | Local configuration for the HTTP API, workflow CLI, and evaluation collectors. Loaded automatically by backend settings; JupyterLab loads it through `--env-file .env`. |
+
+The `.env` file is ignored by Git. The `.env.example` file contains placeholders
+and serves as the shared configuration template.
+
+### Backend settings
+
+The complete set of application settings is defined in
+[`src/config.py`](src/config.py) and included in `.env.example`.
+
+| Variable | Purpose / default |
+|---|---|
+| `API_SECRET` | Nonempty access key required by the HTTP API; sent as `X-API-Key`. Not required by CLI commands. |
+| `MONGODB_URI` | Database connection, including the database name; defaults to the local replica set described below. |
+| `ENVIRONMENT` | API environment: `DEV` (default) or `PROD`. |
+| `LOG_LEVEL` | Minimum log level, case-insensitive: `trace`, `debug`, `info`, `success`, `warning`, `error`, or `critical`; default `info`. Logs are written to stderr. |
+| `GRAPHVIZ_CONCURRENCY_LIMIT` | Maximum concurrent API layout jobs; positive integer, default `4`. |
+
+Configure model settings in the root `.env` or the process environment:
+
+| Component | Model and credentials | Used by |
+|---|---|---|
+| Extractor | `EXTRACTOR_MODEL`, `EXTRACTOR_API_KEY` | Text extraction, description assessment, gold standard evaluation |
+| Matcher | `MATCHER_MODEL`, `MATCHER_API_KEY` | Matching, Diagram Assessment, matching and gold standard evaluation |
+| Evaluator | `EVALUATOR_MODEL`, `EVALUATOR_API_KEY` | Diagram Assessment, pragmatic and gold standard evaluation |
+
+Each component has four settings:
+
+| Variables | Purpose / default |
+|---|---|
+| `EXTRACTOR_MODEL`, `MATCHER_MODEL`, `EVALUATOR_MODEL` | Model identifiers; required, with no application default. |
+| `EXTRACTOR_API_KEY`, `MATCHER_API_KEY`, `EVALUATOR_API_KEY` | Provider credentials; required, with no application default. |
+| `EXTRACTOR_BASE_URL`, `MATCHER_BASE_URL`, `EVALUATOR_BASE_URL` | Optional provider endpoint overrides; omitted by default. The template uses a local endpoint at `http://127.0.0.1:8317/v1`; replace it or remove these entries to use provider defaults. |
+| `EXTRACTOR_PROVIDER`, `MATCHER_PROVIDER`, `EVALUATOR_PROVIDER` | Optional provider identifiers; omitted by default so LangChain infers the provider from the model name. The template explicitly selects `openai`. |
+
+> [!NOTE]
+> Currently supported values for `EXTRACTOR_PROVIDER`, `MATCHER_PROVIDER`,
+> and `EVALUATOR_PROVIDER` are `openai` and `openrouter`.
+
+Apollon extraction is deterministic and requires no LLM configuration.
 
 ## Development MongoDB
 
-Start the locally bound single-node replica set used by Diagram Assessment:
-
 ```sh
-docker compose -f docker-compose-infra.yml up -d --wait mongodb
+make up-infra
 ```
 
-The default connection is
-`mongodb://127.0.0.1:27017/llm_uml_evaluator?replicaSet=rs0`. Set
-`MONGODB_URI` to override it; the URI must include the database name, and
-credentials belong in the untracked `.env` file. The named Docker volume keeps
-data through ordinary restarts. Running
-`docker compose -f docker-compose-infra.yml down -v` intentionally deletes it.
+Starts the locally bound single-node replica set and waits until it is ready.
 
+| Command | Effect |
+|---|---|
+| `make up-infra` | Start MongoDB and wait for readiness. |
+| `make down-infra` | Stop and remove containers; preserve stored data. |
+| `make down-infra V=1` | Stop containers and delete the MongoDB data volume. |
+
+The default URI is
+`mongodb://127.0.0.1:27017/llm_uml_evaluator?replicaSet=rs0`.
+Override it with `MONGODB_URI` in `.env`; include the database name.
 Fresh databases create `use_case_diagram_presentations` and
-`diagram_assessments` with unique UID indexes. Startup refuses to initialize
-when the old draft collections `usecase_digarm_presentations` or
-`metrics_presentations` contain data; migrating that data is separate work.
+`diagram_assessments` with unique UID indexes. Startup rejects populated
+legacy collections `usecase_digarm_presentations` and `metrics_presentations`;
+these require a separate migration.
 
-Integration tests start an isolated MongoDB replica set with Testcontainers:
+## Workflow CLI
 
 ```sh
-PYTHONPATH=. uv run pytest tests/integration
+uv run python -m src.controller.scripts.run_description_extractor description.txt
+uv run python -m src.controller.scripts.run_apollon_extractor apollon.json
+uv run python -m src.controller.scripts.run_mathcer reference.json candidate.json
+uv run python -m src.controller.scripts.run_description_reference_assessment description.txt candidate_apollon.json
+uv run python -m src.controller.scripts.run_apollon_to_apollon_assessment reference_apollon.json candidate_apollon.json
+```
+
+| Argument | Meaning |
+|---|---|
+| Positional paths | Input files in the order shown; text is read as UTF-8. Matcher inputs are serialized `UseCaseDiagramPresentation` documents; Apollon inputs use `ApollonJson`. |
+| `--description PATH` | Optional Context Description for the matcher and Apollon-to-Apollon assessment. |
+| `--results-path PATH` | Output directory; defaults to `scripts_out/<script_name>/`. |
+| `--help` | Show usage without configuring or calling an LLM. |
+
+Results are saved as UTF-8 JSON files with unique UUID filenames and logged.
+Directories are created automatically; repeated runs preserve earlier files.
+Errors return a nonzero exit code. Diagram Assessment commands require MongoDB
+and persist both diagrams and each distinct result in one transaction; the
+returned `uid` identifies the stored assessment.
+
+## Evaluation
+
+Start MongoDB with `make up-infra` and configure the models listed below.
+Each example starts a new experiment; choose a unique name for each run.
+
+### Common arguments
+
+| Argument | Meaning / default |
+|---|---|
+| `--experiment-name NAME` | Letters, digits, underscores, and hyphens only. Required for mutation evaluations; defaults to `gold_standard` for gold standard evaluation. Completed names cannot be reused. |
+| `--resume` | Resume with the original name, repetition count or size, and unchanged dataset contents and ordering. |
+| `--batch-size N` | Concurrent samples per batch; positive integer, default `3`. |
+| `--requests-per-minute N` | Maximum sample starts per minute; positive integer, default `10`. |
+| `--help` | Show command usage. |
+
+### Matching Mutation Evaluation
+
+Requires the matcher. Compares semantic matches across
+[60 controlled cases](datasets/10_match_mutations/README.md).
+
+```sh
+uv run python -m eval.matching.collect_observations \
+  --experiment-name matching_run_1 --repetitions 3
+```
+
+| Argument | Meaning / default |
+|---|---|
+| `--repetitions {1,2,3}` | Repetitions per case; default `3`. |
+
+Observations: `matching_eval` collection.
+Checkpoint: `eval_out/<experiment-name>_matching.json`.
+
+### Pragmatic Naming Mutation Evaluation
+
+Requires the evaluator. Compares Naming Understandability Scores across
+[40 controlled cases](datasets/10_pragmatic_mutations/README.md).
+
+```sh
+uv run python -m eval.pragmatic.collect_observations \
+  --experiment-name pragmatic_run_1 --repetitions 3 --with-context 1
+```
+
+| Argument | Meaning / default |
+|---|---|
+| `--repetitions {1,2,3}` | Repetitions per case; default `3`. |
+| `--with-context {0,1}` | Include the Context Description (`1`, default for new runs) or omit it (`0`). Both modes use full-context expectations. |
+
+Observations: `pragmatic_naming_eval` collection.
+Checkpoint: `eval_out/<experiment-name>_pragmatic.json`.
+On resume, the checkpoint controls the context mode: omit `--with-context`
+to use it silently; a conflicting explicit value warns and is overridden.
+
+### Gold Standard Evaluation
+
+Requires the extractor, matcher, and evaluator. Compares description-derived
+Candidate Diagrams with the ReqUCD60 Reference Diagrams.
+
+```sh
+uv run python -m eval.gold_standard.collect_metrics \
+  --experiment-name gold_standard_run_1 --size short
+```
+
+| Argument | Meaning / default |
+|---|---|
+| `--size {short,full}` | `short` (default): samples 1, 11, 21, 31, 41, 51. `full`: all 60 samples in numeric order. |
+
+Observations: `gold_standard_eval` collection.
+Checkpoint: `eval_out/<experiment-name>_requcd60_<size>.json`.
+A crash between assessment persistence and progress recording can repeat an
+assessment. Use a new name after changing references or conversion conventions.
+
+To resume, repeat the original command with `--resume`, for example:
+
+```sh
+uv run python -m eval.gold_standard.collect_metrics \
+  --experiment-name gold_standard_run_1 --size short --resume
 ```
 
 ## JupyterLab
-
-Install the evaluation dependencies, then start JupyterLab from the repository
-root:
 
 ```sh
 uv sync --group eval
 uv run --env-file .env --group eval jupyter lab
 ```
 
-The analysis notebooks are in `eval/notebooks/`. The `.env` file supplies the
-`MONGODB_URI` used by the notebooks.
+Analysis notebooks are in [`eval/notebooks/`](eval/notebooks/).
+The `.env` file supplies their `MONGODB_URI`.
 
-## Workflow CLI
+## Tests and linting
 
-Run from the repository root with Python 3.14+ and dependencies installed
-(`uv sync`). Configure `EXTRACTOR_MODEL`, `EXTRACTOR_API_KEY`, `MATCHER_MODEL`,
-`MATCHER_API_KEY`, `EVALUATOR_MODEL`, and `EVALUATOR_API_KEY` in the
-environment or in the root `.env` file. Matching `*_BASE_URL` and
-`*_PROVIDER` settings configure each provider endpoint. Omit a provider to let
-LangChain determine it from the model name.
-
-Apollon extraction uses deterministic conversion and requires no LLM
-configuration. `EXTRACTOR_*` settings apply only to text-description extraction.
+Install development dependencies and run the full test suite:
 
 ```sh
-uv run python -m src.controller.scripts.run_description_extractor description.txt > reference.json
-uv run python -m src.controller.scripts.run_apollon_extractor apollon.json > candidate.json
-uv run python -m src.controller.scripts.run_mathcer reference.json candidate.json > matching.json
-uv run python -m src.controller.scripts.run_description_reference_assessment description.txt candidate.json
-uv run python -m src.controller.scripts.run_apollon_to_apollon_assessment reference.json candidate.json
+uv sync --group dev
+make tests-run
 ```
 
-All paths are positional arguments. Text is read as UTF-8. Matcher inputs
-must be serialized `UseCaseDiagramPresentation` documents; Apollon input
-must match `ApollonJson`. Each command writes its result as JSON to stdout.
-Errors go to stderr with a nonzero exit code. Use `--help` for usage without
-configuring or calling an LLM.
-
-Each command also saves a UTF-8 JSON file with a unique UUID filename. Its
-`RESULTS_PATH` constant defaults to `BASE_URL / "scripts_out" / <script_name>`:
-
-- `scripts_out/run_description_extractor/`
-- `scripts_out/run_apollon_extractor/`
-- `scripts_out/run_mathcer/`
-- `scripts_out/run_description_reference_assessment/`
-- `scripts_out/run_apollon_to_apollon_assessment/`
-
-Directories are created automatically, and repeated runs keep earlier
-results. Override the output directory with `--results-path /path/to/results`.
-
-Workflow providers live directly in `src/controller/di/` and use the existing
-Dishka chat model registrations. Workflow modules live directly under
-`src/services/`; LangChain, Apollon conversion, and MongoDB metadata live under
-`src/infrastructure/`. Shared outbound contracts live in `src/services/ports/`;
-feature-local contracts stay with their owning workflow module.
-
-Diagram Assessment commands persist both diagrams and each distinct result in
-one MongoDB transaction. The returned result `uid` identifies the stored
-assessment.
-
-Evaluation collectors process three samples concurrently and start at most ten
-samples per minute by default. Use `--batch-size` and
-`--requests-per-minute` to tune these limits for the configured API provider.
-
-## Matching Mutation Evaluation
-
-Start MongoDB, configure `MATCHER_MODEL` and `MATCHER_API_KEY`, then run the
-experiment from the repository root. It uses three repetitions by default:
+Integration tests require a running Docker daemon. Testcontainers starts an
+isolated MongoDB replica set, so `make up-infra` is not required for tests.
+To run only integration tests:
 
 ```sh
-uv run python -m eval.matching.collect_observations \
-  --experiment-name "matching_$(date +%Y-%m-%d)"
+PYTHONPATH=. uv run pytest tests/integration
 ```
 
-Use `--repetitions 1`, `2`, or `3` to change the repetition count. Resume an
-interrupted run with the same experiment name and repetition count:
+Ruff and ty are managed by the project's `tools` dependency group:
 
 ```sh
-uv run python -m eval.matching.collect_observations \
-  --experiment-name matching_2026-09-16 --repetitions 3 --resume
+uv sync --group tools
+make lint
 ```
 
-Observations are stored in the `matching_eval` MongoDB collection. Resume
-positions are stored in `eval_out/<experiment-name>_matching.json`. Completed
-experiment names cannot be reused; choose a new name for another run.
-
-## Pragmatic Naming Mutation Evaluation
-
-Start MongoDB and configure `EVALUATOR_MODEL`, `EVALUATOR_API_KEY`, and the
-matching optional `EVALUATOR_BASE_URL` and `EVALUATOR_PROVIDER` values. Then
-run a contextual experiment from the repository root:
-
-```sh
-uv run python -m eval.pragmatic.collect_observations \
-  --experiment-name "pragmatic_context_$(date +%Y-%m-%d)"
-```
-
-Run without the Context Description, or select one repetition:
-
-```sh
-uv run python -m eval.pragmatic.collect_observations \
-  --experiment-name "pragmatic_no_context_$(date +%Y-%m-%d)" --with-context 0
-uv run python -m eval.pragmatic.collect_observations \
-  --experiment-name "pragmatic_context_once_$(date +%Y-%m-%d)" --repetitions 1
-```
-
-The command evaluates all 40 controlled mutations three times by default and
-stores observations in the `pragmatic_naming_eval` MongoDB collection. Use
-`--with-context 0` for a context-free run and `--repetitions 1`, `2`, or `3`
-to change the repetition count. Experiment names may contain only letters,
-digits, underscores, and hyphens and cannot be reused.
-
-Resume an interrupted run with its original experiment name and repetition
-count:
-
-```sh
-uv run python -m eval.pragmatic.collect_observations \
-  --experiment-name pragmatic_context_2026-09-18 --repetitions 3 --resume
-```
-
-Resume uses the context mode saved in
-`eval_out/<experiment-name>_pragmatic.json`. Omitting `--with-context` is
-silent; an explicit conflicting value produces a warning and is overridden by
-the checkpoint.
-
-## Gold Standard Evaluation
-
-Run the six-sample gold-standard comparison from the repository root. It uses
-examples 1, 11, 21, 31, 41, and 51:
-
-```sh
-uv run python -m eval.gold_standard.collect_metrics --experiment-name "gold_standard_$(date +%Y-%m-%d)"
-```
-
-The explicit short form is equivalent:
-
-```sh
-uv run python -m eval.gold_standard.collect_metrics --experiment-name "gold_standard_$(date +%Y-%m-%d)" --size=short
-```
-
-Run all 60 samples in numeric order:
-
-```sh
-uv run python -m eval.gold_standard.collect_metrics --experiment-name "gold_standard_$(date +%Y-%m-%d)" --size=full
-```
-
-To resume, use the original experiment name, unchanged size, and add `--resume`:
-
-```sh
-uv run python -m eval.gold_standard.collect_metrics --experiment-name gold_standard_2026-09-15 --size=full --resume
-```
-
-Resume positions are stored in
-`eval_out/<experiment_name>_requcd60_<size>.json`. Resume requires
-unchanged dataset contents and ordering. A crash after an assessment is
-persisted but before progress advances can repeat that assessment; execution is
-not exactly once. Use a new experiment name after changing reference content or
-conversion conventions.
+`make lint` runs both tools through `uv run --group tools`: Ruff applies
+automatic fixes, and ty checks types. Their configuration is in
+[`pyproject.toml`](pyproject.toml).
