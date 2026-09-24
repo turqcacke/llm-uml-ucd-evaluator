@@ -16,6 +16,9 @@ Candidate Diagram across different models.
 | `9` | `datasets/60_ideal_UCD/51-60/59_result.json` | `datasets/60_artificial/51-60/59.txt` | 6 |
 | `10` | `datasets/60_ideal_UCD/51-60/60_result.json` | `datasets/60_artificial/51-60/60.txt` | 6 |
 
+Files in each numeric directory are named `{n}_{mutation}.json`, where `n`
+is the directory number and `mutation` is the mutation number described below.
+
 Each file is an executable benchmark case:
 
 ```json
@@ -40,7 +43,7 @@ Each file is an executable benchmark case:
 
 - `mutation` is a complete ReqUCD60 result.
 - `expectation` is the complete MinMatching that a semantically correct
-  matcher returns when comparing the mutation with that directory's `_0`
+  matcher returns when comparing the mutation with that directory's mutation 0
   Reference Diagram.
 
 Expectation rules:
@@ -51,17 +54,17 @@ Expectation rules:
 3. Every case includes the converter's synthetic `system` to `system` Node
    Match.
 
-In each directory, `{n}_0.json` is also the unchanged self-match control.
-Its expectation matches every node and relation to itself. Files
-`{n}_1.json`–`{n}_5.json` are independent Candidate Diagram mutations:
+In each directory, mutation 0 is the unchanged self-match control. Its
+expectation matches every node and relation to itself. Mutations 1–5 are
+independent Candidate Diagram mutations:
 
-- `_1` reorders the diagram. Its expectation follows semantic elements across
+- `1` reorders the diagram. Its expectation follows semantic elements across
   changed ordinal UIDs.
-- `_2` introduces a typo and still matches the renamed use case and relations.
-- `_3` paraphrases a use case and still matches the renamed use case and
+- `2` introduces a typo and still matches the renamed use case and relations.
+- `3` paraphrases a use case and still matches the renamed use case and
   relations.
-- `_4` removes a use case. Its expectation omits that node and its relations.
-- `_5` adds an unrelated use case. Its expectation omits the added node.
+- `4` removes a use case. Its expectation omits that node and its relations.
+- `5` adds an unrelated use case. Its expectation omits the added node.
 
 `eval.matching.load_dataset` loads all 60 cases and rejects unknown or reused
 Reference/Candidate UIDs and expectations without the system match before an
@@ -90,15 +93,15 @@ name cannot be reused; choose a new name for another run.
 
 | Mutation | Specification | Metric changes |
 |---|---|---|
-| `_1` | Reorder actors, use cases, and relationships without changing the graph. | None |
-| `_2` | Introduce one typo in a use case name. | None |
-| `_3` | Paraphrase one use case name without changing its meaning. | None |
-| `_4` | Remove one use case and all its relationships. | `node_matches↓, relation_matches↓, missing_nodes↑, missing_relations↑` |
-| `_5` | Add one similarly named but semantically different unconnected use case. | `redundant_nodes↑` |
+| `1` | Reorder actors, use cases, and relationships without changing the graph. | None |
+| `2` | Introduce one typo in a use case name. | None |
+| `3` | Paraphrase one use case name without changing its meaning. | None |
+| `4` | Remove one use case and all its relationships. | `node_matches↓, relation_matches↓, missing_nodes↑, missing_relations↑` |
+| `5` | Add one similarly named but semantically different unconnected use case. | `redundant_nodes↑` |
 
 ## Exact mutations
 
-| Directory | Reference Diagram (`_0`) | Reordered (`_1`) | Typo (`_2`) | Paraphrase (`_3`) | Removed (`_4`) | Added (`_5`) |
+| Directory | Reference Diagram (`0`) | Reordered (`1`) | Typo (`2`) | Paraphrase (`3`) | Removed (`4`) | Added (`5`) |
 |---|---|---|---|---|---|---|
 | `1` | Copy of `51_result.json` | Reordered actors, use cases, relationship entries, and target lists. | `View Delivery Records` → `View Delivry Records`; updated its `Administrator` association and incoming `extend`. | `Check Delivery Status` → `Monitor Delivery Status`; updated its `Customer` association. | Removed `Record Return Time` and its `Delivery Personnel` association. | Added unconnected `Check Account Status`. |
 | `2` | Copy of `52_result.json` | Reordered actors, use cases, relationship entries, and target lists. | `Search Catalog` → `Search Catlog`; updated its `Library Member` and `Student Member` associations. | `Process Returns` → `Handle Returned Books`; updated its `Librarian` and `Senior Librarian` associations. | Removed `Generate Monthly Acquisition Reports` and its `Senior Librarian` association. | Added unconnected `Borrow E-Books`. |

@@ -16,6 +16,9 @@ actor and use case renames.
 | `9` | `datasets/60_ideal_UCD/1-10/9_result.json` | `datasets/60_artificial/1-10/9.txt` | 4 |
 | `10` | `datasets/60_ideal_UCD/1-10/10_result.json` | `datasets/60_artificial/1-10/10.txt` | 4 |
 
+Files in each numeric directory are named `{n}_{mutation}.json`, where `n`
+is the directory number and `mutation` is the mutation number described below.
+
 Each file is a benchmark case:
 
 ```json
@@ -52,12 +55,12 @@ their naming.
 
 | Case | Changes | Target scores |
 |---|---|---|
-| `_0` | Unchanged control. | Original full-context scores. |
-| `_1` | Rename one actor and one use case with meaningless names. | LOW, LOW. |
-| `_2` | Rename the same actor and use case with overly general names. | MEDIUM, MEDIUM. |
-| `_3` | Apply one meaningless and one overly general rename to the same pair. | LOW, MEDIUM. |
+| `0` | Unchanged control. | Original full-context scores. |
+| `1` | Rename one actor and one use case with meaningless names. | LOW, LOW. |
+| `2` | Rename the same actor and use case with overly general names. | MEDIUM, MEDIUM. |
+| `3` | Apply one meaningless and one overly general rename to the same pair. | LOW, MEDIUM. |
 
-Every mutant is derived independently from `_0`. Only names and affected
+Every mutant is derived independently from mutation 0. Only names and affected
 name-based relationship references change; node order, types, and graph
 structure remain unchanged. Mixed cases assign LOW to the actor in directories
 1, 3, 5, 7, and 9, and to the use case in directories 2, 4, 6, 8, and 10.
@@ -113,7 +116,7 @@ Description. Without it, the marked name remains plausibly ambiguous.
 Unless specified by the mutation table, every expected node score is HIGH
 (`3`).
 
-| Directory | Control (`_0`) | Meaningless (`_1`) | Overly general (`_2`) | Mixed (`_3`) |
+| Directory | Control (`0`) | Meaningless (`1`) | Overly general (`2`) | Mixed (`3`) |
 |---|---|---|---|---|
 | `1` | Copy of `1_result.json`. Targets: `[CD] User` (`actor-0`) and `Open PDF File` (`usecase-0`). The description establishes the generic actor as the PDF-reader user. | `User` → `Tavrix` (1); `Open PDF File` → `Quindle` (1); updated association references. | `User` → `Person` (2); `Open PDF File` → `Access File` (2); the names omit the PDF-reader role, PDF format, and opening action. | `User` → `Tavrix` (1); `Open PDF File` → `Access File` (2); updated association references. |
 | `2` | Copy of `2_result.json`. Targets: `Employee` (`actor-0`) and `Submit Reimbursement Request` (`usecase-1`). | `Employee` → `Morzap` (1); `Submit Reimbursement Request` → `Flibber` (1); updated association references. | `Employee` → `Person` (2); `Submit Reimbursement Request` → `Handle Request` (2); the names omit the employee role, reimbursement, and submission action. | `Employee` → `Person` (2); `Submit Reimbursement Request` → `Flibber` (1); updated association references. |
